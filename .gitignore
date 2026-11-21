@@ -1,0 +1,12 @@
+# Build outputs
+build/
+.dart_tool/
+.gradle/
+*.iml
+local.properties
+**/android/app/.cxx/
+# Thermion web engine (fetched by its build hook)
+spike/thermion_spike/web/thermion_dart.js
+spike/thermion_spike/web/thermion_dart.wasm
+# Large/unlicensed scratch
+*.keystore.bak

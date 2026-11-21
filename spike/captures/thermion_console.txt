@@ -1,0 +1,54 @@
+[debug] Injecting <script> tag. Using callback.
+[warning] [.WebGL-0x1ff40673c600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[log] Creating WebGL context for #thermion_canvas_0
+[log] Created WebGL context 2.0
+[log] Made WebGL context current
+[log] Returning context
+[log] FEngine (32 bits) created at 0xe40050 (threading is disabled)
+
+[log] [WebKit], [WebKit WebGL], [OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))], [OpenGL ES GLSL ES 3.00 (WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium))]
+
+[log] Feature level: 1
+
+[log] Active workarounds: 
+
+[log] disable_material_instance_uniform_batching
+
+[log] Backend feature level: 1
+
+[log] FEngine feature level: 1
+
+[log] No material provider specified, using default ubershader provider
+[log] Emscripten_voidCallback: requestId 18
+[log] SPIKE: viewer available (web)
+[warning] Height of Platform View type: [imported-canvas-thermion_canvas_0] may not be set. Defaulting to `height: 100%`.
+Set `style.height` to any appropriate value to stop this message.
+[warning] Width of Platform View type: [imported-canvas-thermion_canvas_0] may not be set. Defaulting to `width: 100%`.
+Set `style.width` to any appropriate value to stop this message.
+[warning] [.WebGL-0x1ff40673c600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warning] [.WebGL-0x1ff40673c600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+[log] Emscripten_voidCallback: requestId 25
+[log] SPIKE: KTX IBL loaded
+[log] SPIKE: post: bloom + TAA + shadows on
+[log] SPIKE: GTAO on
+[log] SPIKE: height fog on
+[log] SPIKE: DoF: no binding in thermion_dart 0.7.0 View API
+[log] SPIKE: dynamic resolution: no binding in thermion_dart 0.7.0 View API
+[log] Set light color to 1.000000 1.000000 1.000000 (RGB)
+[log] Set light color to 1.000000 0.415921 0.098380 (2700.000000K)
+[log] SPIKE: sun + shadowed point light added
+[error] Set canvas #thermion_canvas_0 to size 564x626
+[log] SPIKE: glTF + 20 instances
+[log] FEngine (32 bits) created at 0x4930050 (threading is disabled)
+
+[log] Backend feature level: 1
+
+[log] FEngine feature level: 1
+
+[log] SPIKE: runtime-compiled refractive water material OK
+[log] SPIKE: scene built
+[log] SPIKE: resized to 300x700 (#1)
+[error] Set canvas #thermion_canvas_0 to size 300x700
+[log] SPIKE: resized to 564x626 (#2)
+[error] Set canvas #thermion_canvas_0 to size 564x626
+[harness] renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)
