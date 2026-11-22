@@ -1,0 +1,16 @@
+inner shot1 194.568s shot=1 t=7.00 d=1.66 ff=4 luma=70.1±28.6
+inner shot2 218.851s shot=2 t=38.25 d=7.35 ff=7 luma=70.9±29.9
+inner shot3 214.265s shot=3 t=18.08 d=3.59 ff=4 luma=70.1±30.7
+inner shot4 207.888s shot=4 t=120.78 d=24.00 ff=21 luma=68.9±29.5
+inner shot5 212.473s shot=5 t=80.36 d=16.50 ff=10 luma=74.1±28.9
+inner shot6 211.987s shot=6 t=38.46 d=7.37 ff=7 luma=70.5±29.8
+inner shot7 215.638s shot=7 t=161.14 d=32.00 ff=26 luma=79.5±28.7
+inner shot8 178.272s shot=8 t=205.88 d=40.26 ff=35 luma=60.3±32.1
+cover shot1 160.726s shot=1 t=7.00 d=1.66 ff=4 luma=55.4±25.8
+cover shot2 176.851s shot=2 t=38.25 d=7.35 ff=7 luma=63.5±31.4
+cover shot3 167.928s shot=3 t=18.08 d=3.59 ff=4 luma=61.8±31.3
+cover shot4 179.929s shot=4 t=120.78 d=24.00 ff=21 luma=52.4±26.2
+cover shot5 182.245s shot=5 t=80.36 d=16.50 ff=10 luma=68.6±29.8
+cover shot6 173.327s shot=6 t=38.46 d=7.37 ff=7 luma=62.8±31.0
+cover shot7 189.449s shot=7 t=161.14 d=32.00 ff=26 luma=68.7±32.1
+cover shot8 134.364s shot=8 t=205.88 d=40.26 ff=35 luma=47.5±29.0
