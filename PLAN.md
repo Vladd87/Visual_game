@@ -260,6 +260,10 @@ The APK target is 95 MB so it can live in git; GitHub rejects single files over 
 | APKs committed to `releases/`, one current file per kind, overwritten each milestone | You asked for APKs in the repo. History grows by roughly one APK per milestone; I'll say if that becomes a problem. |
 | Critic gets a copied folder, not the repo | The closest practical way to guarantee "no access to code or reasoning". |
 | CC BY-NC reference (ref12) kept | References never ship, so non-commercial terms don't bind the app. |
+| Water stopped at round 5 by the stop rule (M2) | Rounds 4 and 5 both gained less than 0.3. The remaining water problem, reflection strength against a lantern-lit bed, is a light-balance question, so it moves to M4 rather than spending more water rounds. |
+| Rocks are photogrammetry scans decimated to 2,400 triangles (M3) | 13 Poly Haven scans at roughly 10k triangles each would be drawn in the main, mirror and shadow passes. At 2,400 the normal map carries the detail, and a rock is under about 200 px on screen. |
+| Surface textures at 1k, three maps per surface: colour, normal, and AO/roughness/height (M3) | Enough texels for macro framing. Ten samplers in the ground shader stays under the 16-sampler limit on GLES and WebGL. The JPEGs keep the APK small (about 6.5 MB of surface textures). |
+| The bed rises into gravel mounds under rocks that can't reach it (M3) | A rock stretched to the deep bed looked like a cylinder (round-5 critic). Rocks resting on gravel bars match refs 08 and 09 and keep every scan at natural proportions. |
 
 ## 8. Risks I'm watching
 
