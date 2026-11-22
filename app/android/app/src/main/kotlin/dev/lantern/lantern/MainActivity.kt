@@ -26,17 +26,18 @@ class MainActivity : FlutterActivity() {
         const val EXTRA_SAFE_MODE = "lantern.safe_mode"
     }
 
-    private lateinit var displayMode: DisplayModeHelper
-    private lateinit var thermal: ThermalHelper
-    private lateinit var haptics: HapticsHelper
-    private lateinit var tilt: TiltHelper
+    // Lazy, not lateinit: FlutterActivity calls configureFlutterEngine() from
+    // inside super.onCreate(), which registers these as channel handlers. With
+    // lateinit they were still unset there and every launch crashed ~130 ms
+    // after start (UninitializedPropertyAccessException). The activity is
+    // already attached at that point, so creating them on first use is safe.
+    private val displayMode by lazy { DisplayModeHelper(this) }
+    private val thermal by lazy { ThermalHelper(this) }
+    private val haptics by lazy { HapticsHelper(this) }
+    private val tilt by lazy { TiltHelper(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        displayMode = DisplayModeHelper(this)
-        thermal = ThermalHelper(this)
-        haptics = HapticsHelper(this)
-        tilt = TiltHelper(this)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.attributes = window.attributes.apply {
             layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

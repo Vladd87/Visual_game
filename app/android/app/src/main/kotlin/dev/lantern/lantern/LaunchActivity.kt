@@ -203,8 +203,9 @@ object CrashReport {
             val p = ProcessBuilder("logcat", "-d", "-v", "time", "-t", "4000").redirectErrorStream(true).start()
             val lines = p.inputStream.bufferedReader().readLines()
             p.waitFor()
-            val tag = "($pid)"
-            val mine = lines.filter { it.contains(tag) || it.contains(" $pid ") }
+            // "-v time" pads the pid: "E/AndroidRuntime(  577): ...".
+            val tag = Regex("\\(\\s*$pid\\)")
+            val mine = lines.filter { tag.containsMatchIn(it) || it.contains(" $pid ") }
             val keep = mine.filter { l ->
                 !l.contains(" V/") && !l.contains(" D/") || l.contains("flutter", true) || l.contains("impeller", true)
             }
