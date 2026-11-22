@@ -265,6 +265,8 @@ The APK target is 95 MB so it can live in git; GitHub rejects single files over 
 | Surface textures at 1k, three maps per surface: colour, normal, and AO/roughness/height (M3) | Enough texels for macro framing. Ten samplers in the ground shader stays under the 16-sampler limit on GLES and WebGL. The JPEGs keep the APK small (about 6.5 MB of surface textures). |
 | The bed rises into gravel mounds under rocks that can't reach it (M3) | A rock stretched to the deep bed looked like a cylinder (round-5 critic). Rocks resting on gravel bars match refs 08 and 09 and keep every scan at natural proportions. |
 | Paired two-critic panel with a best-version ratchet, from round 9 (your call) | One fresh critic per round swung ±0.5 on its own calibration. Two critics each scoring new against best side by side cancel that offset. Regressions are reverted instead of kept. Cost: about 3× the critic tokens per round (about 450k against 150k); wall time is unchanged because capture dominates. |
+| At most about 6 of my own samplers per lit material; the harness fails any shader over 16 (after the M3 crash) | Android only guarantees 16 fragment samplers, and flutter_scene's lit pipeline uses about 10. The M3 ground shader's 11 extra textures crashed the phone at launch, which the 32-sampler capture browser hid. Surfaces are now packed: two images per surface and a shared atlas, decoded and packed on load. |
+| On-device boot journal and safe mode | I can't run the phone. A launch that dies mid-boot is named on the next start, which then falls back to plain materials; errors show on screen, so a screenshot is a full report. |
 
 ## 8. Risks I'm watching
 
