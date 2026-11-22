@@ -142,6 +142,7 @@ class GameScene {
     for (final set in ['rock_moss_set_01', 'rock_moss_set_02']) {
       final m = await loadFmatMaterial('assets/materials/rock.fmat');
       await _bindSurface(m, set, 'r_');
+      await _bindSurface(m, 'moss', 'm_');
       _rockMats.add(m);
     }
     for (final m in [_waterMat!, _groundMat!]) {

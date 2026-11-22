@@ -160,10 +160,7 @@ fragment {
       // ground near the water, with dark bare earth and litter between.
       float level = smoothstep(0.75, 0.95, geo.y);
       float near = 1.0 - smoothstep(0.0, 0.5, out_d);
-      // Two patch scales: whole mossy zones vs bare litter zones (~3 m), and
-      // cushions within them.
-      float zone = texture(noise_tex, p * 0.045 + 0.71).a;
-      float mossField = n1 * 0.45 + n2 * 0.3 + (zone - 0.53) * 0.9 + 0.13 + (level - 0.7) * 0.06 + near * 0.06;
+      float mossField = n1 * 0.6 + n2 * 0.4 + (level - 0.7) * 0.06 + near * 0.06;
       // Mud only along the stream margin (out_d is metres / 1.5), never in
       // hollows further up the bank; its width varies, and in places moss and
       // ground run down to the water instead (refs 07, 13).
