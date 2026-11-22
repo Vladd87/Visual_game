@@ -28,6 +28,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-6 | stone/moss v1 | 2.75 | 2.75 | 2.75 | 2 | 0/4 | **+0.94**. Stone/ground 3/10: scanned rocks read as rock; banks "camouflage", rocks not wet, no moss caps |
 | round-7 | stone/moss v2 | 3.13 | 3.00 | 3.06 | 2 | 0/4 | +0.31 (continue). Stone 3.5/10: moss texture on every rock face, soft dark contact halos, uniform dirt lip |
 | round-8 | stone/moss v3 | 2.50 | 2.44 | 2.47 | 2 | 0/4 | −0.59 (1st sub-0.3 round for M3). Stone 3/10: projected moss caps read as "lawn on rocks", stretched rock texels, blurred black bank edge |
+| round-9 | stone/moss v4 (panel) | 3.22 | 3.03 | 3.12 | 2.5 | 0/4 | Paired panel vs round 7: **−0.56** (critics −0.56 / −0.56). v4 rejected; **M3 stops at v2** |
 
 ## Round 1: water v1
 
@@ -319,3 +320,42 @@ The critic's ceiling estimate: even with all five fixed, about 5–6. The map-li
 - The projected caps are dropped. Rock tops keep the scan's own photographed moss, a little more saturated; it is real moss at real scale.
 - The rock colour and normal atlases go to 2k (about +3 MB of APK).
 - The ground uses dominant-axis triplanar mapping on steep faces, so the bank lip shows real soil and mud texture instead of smeared streaks.
+
+
+## Round 9: stone and moss v4 (M3), the first paired panel
+
+**What changed (v4):**
+- Projected moss caps dropped; only the scan's own moss is kept, on top faces.
+- 2k rock atlases.
+- Arc-length bank UVs.
+
+**Panel**
+
+Two fresh critics each scored round 9 against round 7 (the best, v2), side by side, as unlabelled X and Y. The order was flipped between the two critics.
+
+| Critic | Round 9 (new) | Round 7 (best) | Difference | Stone, new vs best |
+|---|---|---|---|---|
+| a (new = X, ran A/B) | 3.09 | 3.66 | −0.56 | 3.5 vs 4.5 |
+| b (new = Y) | 3.16 | 3.72 | −0.56 | 3 vs 4 |
+
+- **Gain −0.56**, with a critic spread of 0.00.
+- The new round's absolute score is 3.12 (inner 3.22, cover 3.03; worst shot 2.5).
+- A/B: 0/4 fooled.
+- Tokens: about 350k for the panel (174k and 176k).
+
+**Why v2 wins, in the critics' words:**
+- v4 rocks are "bare, sharp-faceted charcoal with a violet cast", reading as "coal lumps or props".
+- The denser shore stones look "dropped in": sharp, black and sitting on the turf.
+- v2's moss caps over dark sides match refs 03 and 09.
+
+Both critics also point out that the v2 moss is brown-olive (R above G, about 54/50/45) where real moss is yellow-green (about 70/78/46). That colour comes partly from the lavender dusk light (M4).
+
+**Decision**
+- Rounds 8 and 9 both failed to beat the best by 0.3 (−0.59 single-critic, then −0.56 panel), so **M3 stops at its best version, v2**.
+- Kept from v3 and v4 as clear fixes: arc-length bank UVs, the weaker contact halo, the water thin-shore reflection fix, and the 2k rock atlases.
+- The final M3 build is captured as `captures/m3-final/`. That is the baseline the first M4 round is judged against.
+- The panel's highest-gain items for later systems:
+  - the lantern (M7)
+  - dusk light balance: darker, bluer ambient; a local warm key; grain (M4 and M8)
+  - the water surface: sky reflection, glints, wakes (M4)
+  - leaves and fireflies (M6 and M7)
