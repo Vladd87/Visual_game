@@ -109,7 +109,9 @@ fragment {
     vec2 uv2 = R * uv + vec2(0.43, 0.17);
     vec3 a1 = texture(arhT, uv).rgb;
     vec3 a2 = texture(arhT, uv2).rgb;
-    float t = clamp((blend - 0.5) * 3.0 + 0.5 + (a2.b - a1.b) * 1.5, 0.0, 1.0);
+    // Steep, height-led transition: one photo or the other, not a cross-fade
+    // (a soft blend of two taps reads as a painterly smear).
+    float t = clamp((blend - 0.5) * 7.0 + 0.5 + (a2.b - a1.b) * 4.0, 0.0, 1.0);
     col = SRGBToLinear(mix(texture(colT, uv).rgb, texture(colT, uv2).rgb, t));
     vec3 n1 = DecodeNormal(texture(nrmT, uv).rgb);
     vec3 n2 = DecodeNormal(texture(nrmT, uv2).rgb);
@@ -158,9 +160,12 @@ fragment {
       float near = 1.0 - smoothstep(0.0, 0.5, out_d);
       float mossField = n1 * 0.6 + n2 * 0.4 + (level - 0.7) * 0.06 + near * 0.06;
       // Mud only along the stream margin (out_d is metres / 1.5), never in
-      // hollows further up the bank.
-      float mudBand = (1.0 - smoothstep(0.025, 0.075, above + (n2 - 0.5) * 0.05)) *
-                      (1.0 - smoothstep(0.06, 0.14, out_d));
+      // hollows further up the bank; its width varies, and in places moss and
+      // ground run down to the water instead (refs 07, 13).
+      float mudTop = 0.02 + 0.07 * n1;
+      float mudBand = (1.0 - smoothstep(mudTop - 0.02, mudTop + 0.02, above + (n3 - 0.5) * 0.03)) *
+                      (1.0 - smoothstep(0.06, 0.14, out_d)) *
+                      smoothstep(0.38, 0.5, texture(noise_tex, p * 0.31 + 0.53).a);
       float mossW = 0.0;
       if (mossField > 0.4) {
         vec3 mc, mn, ma;
@@ -189,9 +194,11 @@ fragment {
       col *= 0.8 + 0.4 * texture(noise_tex, p * 0.09 + 0.21).a;
       rough = mix(rough, rough * 0.8, damp * (1.0 - mossW));
       // Saturated mud at the waterline, with puddles in its low spots.
-      float soak = mudW * (1.0 - smoothstep(0.0, 0.05, above));
+      // Whatever reaches the waterline is soaked (moss and soil too).
+      float nearWater = 1.0 - smoothstep(0.0, 0.035, above);
+      float soak = max(mudW * (1.0 - smoothstep(0.0, 0.05, above)), nearWater * 0.85);
       col *= mix(1.0, 0.62, soak);
-      float puddle = soak * (1.0 - smoothstep(0.3, 0.42, arh.b));
+      float puddle = mudW * soak * (1.0 - smoothstep(0.3, 0.42, arh.b));
       rough = mix(rough, 0.25, soak);
       rough = mix(rough, 0.04, puddle);
       n = normalize(mix(n, geo, puddle));

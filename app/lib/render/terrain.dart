@@ -41,7 +41,10 @@ double flatGroundHeight(Course c, V2 p) {
     return -depth + relief;
   }
   final out = -clear;
-  final lip = smoothstep(0.0, 0.22, out); // the wet lip up to the bank top
+  // The lip up to the bank top: steep cut banks in places, long gentle
+  // shelves in others (refs 03, 07, 13).
+  final lipW = 0.22 * (0.4 + 1.2 * (0.5 + 0.5 * math.sin(p.y * 0.83 + 1.3) * math.sin(p.y * 0.37 + p.x * 0.5)));
+  final lip = smoothstep(0.0, lipW, out);
   final crest = 0.09 + 0.07 * (0.5 + 0.5 * math.sin(p.y * 0.9 + p.x * 1.7)) +
       0.04 * math.sin(p.x * 4.1 - p.y * 2.3);
   final roll = smoothstep(0.1, 1.2, out) * (0.05 * math.sin(p.y * 1.7 + p.x * 3.1));
@@ -120,6 +123,7 @@ MeshArrays buildGroundChunk(Course c, double d0, double d1,
 /// rg = surface flow (sim axes, v * 2 + 0.5), b = foam potential,
 /// a = turbulence near rocks.
 MeshArrays buildWaterChunk(Course c, FlowField flow, double d0, double d1, {double step = 0.03}) {
+  final placements = rockPlacements(c, flatGroundHeight);
   final rows = ((d1 - d0) / step).ceil() + 1;
   const cols = 56;
   final pos = Float32List(rows * cols * 3);
@@ -139,7 +143,8 @@ MeshArrays buildWaterChunk(Course c, FlowField flow, double d0, double d1, {doub
       lo = math.min(lo, c.poolCenter.x - half);
       hi = math.max(hi, c.poolCenter.x + half);
     }
-    final rocks = c.rocksNear(d - 0.6, d + 0.25).where((r) => r.emergent).toList();
+    // Rocks that pierce the surface (sim rocks and shore stones).
+    final rocks = placementsNear(placements, d - 0.6, d + 0.3).where((pl) => pl.topY > 0 && pl.baseY < 0).toList();
     final speed0 = c.flowSpeed(d);
     for (var j = 0; j < cols; j++) {
       final x = lo + (hi - lo) * j / (cols - 1);
@@ -153,30 +158,29 @@ MeshArrays buildWaterChunk(Course c, FlowField flow, double d0, double d1, {doub
       // Foam: fronts and flanks of emergent rocks, their wakes, and bank lines,
       // stronger where the current is fast.
       var foam = 0.0, turb = 0.0;
-      for (final r in rocks) {
-        final rel = p - r.pos;
-        final dist = rel.length;
-        final gap = dist - r.radius;
-        if (gap < 0.3) {
+      for (final pl in rocks) {
+        final rel = p - pl.rock.pos;
+        final gap = pl.surfaceGap(p, 0.0);
+        if (gap != null && gap < 0.3) {
+          final dist = rel.length;
           final n = dist > 1e-6 ? rel / dist : const V2(0, -1);
           // Upstream cushion: water piles against the front face (refs 04, 13).
           final front = clamp01(-n.y * 1.25);
-          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.05) * front * 0.75);
-          // Thin collar where the water wraps the stone sides.
-          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.01) * 0.18);
+          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.04) * front * (pl.shore ? 0.35 : 0.7));
+          // A thin collar hugging the stone's own waterline outline.
+          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.007) * 0.12);
           turb = math.max(turb, math.exp(-math.max(gap, 0) / 0.08));
         }
-        // Wake: foam streaks shed from both flanks, drifting downstream and
-        // slowly converging and spreading (refs 04, 13).
-        final len = r.radius * 12;
-        if (rel.y > -r.radius * 0.3 && rel.y < len) {
-          final k = clamp01(rel.y / len);
+        // Wake: a soft, widening trail of broken foam downstream (refs 04,
+        // 13), not two ruled lines.
+        final len = pl.reach * 8;
+        if (!pl.shore && rel.y > 0 && rel.y < len) {
+          final k = rel.y / len;
           final fade = math.pow(1 - k, 1.6).toDouble();
-          final lineX = r.radius * (0.95 - 0.35 * k);
-          final width = 0.012 + 0.03 * k;
-          final edge = (rel.x.abs() - lineX).abs();
-          foam = math.max(foam, math.exp(-edge / width) * fade * 0.85);
-          if (rel.x.abs() < r.radius * 1.3) turb = math.max(turb, fade * 0.8);
+          final w = pl.reach * (0.6 + 0.8 * k);
+          final lateral = math.exp(-(rel.x * rel.x) / (2 * w * w));
+          foam = math.max(foam, lateral * fade * 0.3);
+          turb = math.max(turb, lateral * fade * 0.8);
         }
       }
       final clear = c.clearance(p);
