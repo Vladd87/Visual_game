@@ -1,7 +1,8 @@
 """Fill a critic prompt template.
 
-Usage: python3 -I tools/critic/render_prompt.py <packet_dir> <with_ab: 0|1> <out.md>
+Usage: python3 -I tools/critic/render_prompt.py <packet_dir> <with_ab: 0|1> <out.md> [system]
        python3 -I tools/critic/render_prompt.py --ab <ab_packet_dir> <out.md>
+  system: stone (default), light, rain, vegetation, lantern, post, grade
 
 From round 10 the scoring critics run with with_ab = 0 and the A/B pairs go
 to their own critic (critic_prompt_ab.md), which sees nothing else.
@@ -19,7 +20,18 @@ For each pair, say which image (A or B) is the real photograph, your confidence 
 AB_JSON = ',\n "ab": [{"pair": 1, "real": "A", "confidence": 90}, ...]'
 
 
-def main(packet, with_ab, out):
+SYSTEMS = {
+    'stone': ('the rocks, banks and ground (shape, material, moss, wetness, how they sit in the water and the ground)', 'the rocks and ground'),
+    'light': ('the lighting and atmosphere (time of day, light balance and colour, exposure, blacks and highlights, mist and haze)', 'the lighting'),
+    'rain': ('the rain (drops, streaks, splashes, ripples, wetness)', 'the rain'),
+    'vegetation': ('the plants (ferns, grass, moss cushions, leaves)', 'the plants'),
+    'lantern': ('the lantern and the fireflies (paper, glow, reflections, light on the scene)', 'the lantern and fireflies'),
+    'post': ('the camera and lens (depth of field, motion, grain, bloom, sharpness)', 'the camera rendering'),
+    'grade': ('the colour grade and tonal range', 'the grade'),
+}
+
+
+def main(packet, with_ab, out, system='stone'):
     here = os.path.dirname(os.path.abspath(__file__))
     t = open(os.path.join(here, 'critic_prompt_paired.md')).read()
     ab = with_ab == '1'
@@ -28,6 +40,8 @@ def main(packet, with_ab, out):
     t = t.replace('{AB_SECTION}', AB_SECTION if ab else '\n')
     t = t.replace('{JSON_N}', '5' if ab else '4')
     t = t.replace('{AB_JSON}', AB_JSON if ab else '')
+    desc, short = SYSTEMS[system]
+    t = t.replace('{SYSTEM_DESC}', desc).replace('{SYSTEM_SHORT}', short)
     open(out, 'w').write(t)
 
 
@@ -37,4 +51,4 @@ if __name__ == '__main__':
         t = open(os.path.join(here, 'critic_prompt_ab.md')).read().replace('{PACKET}', sys.argv[2])
         open(sys.argv[3], 'w').write(t)
     else:
-        main(*sys.argv[1:4])
+        main(*sys.argv[1:5])

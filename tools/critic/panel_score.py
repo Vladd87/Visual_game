@@ -31,14 +31,14 @@ def main(args):
         best_inner, best_cover = sc[best_label]['inner'], sc[best_label]['cover']
         n = mean(new_inner + new_cover)
         b = mean(best_inner + best_cover)
-        st = c.get('stone', {})
+        st = c.get('system', c.get('stone', {}))
         rows.append({'critic': critic_path, 'new': n, 'best': b, 'diff': n - b,
                      'new_inner': mean(new_inner), 'new_cover': mean(new_cover),
                      'stone_new': st.get(new_label), 'stone_best': st.get(best_label)})
         new_shots.append(new_inner + new_cover)
     for r in rows:
         print(f"{r['critic']}: new {r['new']:.2f} (inner {r['new_inner']:.2f}, cover {r['new_cover']:.2f}) "
-              f"best {r['best']:.2f} diff {r['diff']:+.2f} stone {r['stone_new']} vs {r['stone_best']}")
+              f"best {r['best']:.2f} diff {r['diff']:+.2f} system {r['stone_new']} vs {r['stone_best']}")
     gain = statistics.median(r['diff'] for r in rows)
     spread = max(r['diff'] for r in rows) - min(r['diff'] for r in rows)
     absolute = mean([r['new'] for r in rows])

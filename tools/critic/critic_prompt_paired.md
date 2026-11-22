@@ -33,7 +33,7 @@ End with one fenced JSON block:
 ```json
 {"scores": {"X": {"inner": [s1, ..., s8], "cover": [s1, ..., s8]},
             "Y": {"inner": [s1, ..., s8], "cover": [s1, ..., s8]}},
- "stone": {"X": n, "Y": n},
+ "system": {"X": n, "Y": n},
  "giveaways": ["short label 1", "...", "short label 5"]{AB_JSON}}
 ```
-`stone` is a 1–10 score for the rocks, banks and ground alone (shape, material, moss, wetness, how they sit in the water and the ground). After the JSON, add one line naming the single biggest thing that still makes the rocks and ground look rendered.
+`system` is a 1–10 score for {SYSTEM_DESC} alone. After the JSON, add one line naming the single biggest thing that still makes {SYSTEM_SHORT} look rendered.
