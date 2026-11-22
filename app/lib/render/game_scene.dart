@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/widgets.dart' show decodeImageFromList;
 import 'package:flutter_scene/scene.dart';
 import 'package:vector_math/vector_math.dart' as vm;
 
@@ -27,6 +29,11 @@ class GameScene {
   late final PointLight _lanternLight;
   late final PhysicallyBasedMaterial _paper;
   bool _staticBuilt = false;
+  PreprocessedMaterial? _waterMat;
+  PreprocessedMaterial? _groundMat;
+  Texture2D? _waterNormal;
+  Texture2D? _caustics;
+  static final vm.Vector3 ambient = vm.Vector3(0.018, 0.022, 0.028);
 
   static const int maxLeaves = 48;
 
@@ -37,9 +44,8 @@ class GameScene {
     scene.environmentSettings = EnvironmentSettings(
       toneMapping: ToneMappingMode.agx,
       exposure: 1.6,
-      environmentIntensity: 0.22,
+      environmentIntensity: 0.2,
     );
-    scene.environment = EnvironmentMap.studio();
     scene.directionalLight = DirectionalLight(
       direction: vm.Vector3(0.35, -0.8, 0.45),
       color: vm.Vector3(0.62, 0.7, 0.9),
@@ -63,8 +69,10 @@ class GameScene {
     _lanternLight = PointLight(
       color: vm.Vector3(1.0, 0.6, 0.28),
       intensity: 0.9,
-      range: 3.0,
+      range: 2.2,
       castsShadow: true,
+      radius: 0.03, // a 7 cm paper lantern, not a point: soft shadows, broad glints
+      shadowSoftness: 3.0,
       shadowNear: 0.02,
       shadowMapResolution: 512,
     );
@@ -96,6 +104,30 @@ class GameScene {
       ..frustumCulled = false);
   }
 
+  /// Loads materials, baked textures and the environment (before [buildCourse]).
+  Future<void> loadAssets() async {
+    _waterNormal = await _loadTexture('assets/textures/water_normal.png');
+    _caustics = await _loadTexture('assets/textures/caustics.png');
+    _waterMat = await loadFmatMaterial('assets/materials/water.fmat');
+    _groundMat = await loadFmatMaterial('assets/materials/ground.fmat');
+    _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
+    _groundMat!.parameters.setTexture('caustic_tex', _caustics!.gpuTexture, sampler: _caustics!.sampledSampler);
+    for (final m in [_waterMat!, _groundMat!]) {
+      m.parameters.setVec3('ambient', ambient);
+    }
+    // Dusk sky (after sunset) for water reflections and ambient light.
+    await scene.loadEnvironment('assets/env/qwantani_dusk_2_1k.hdr', showSkybox: false, intensity: 0.2, maxWidth: 1024);
+  }
+
+  static Future<Texture2D> _loadTexture(String path) async {
+    final bytes = await rootBundle.load(path);
+    final image = await decodeImageFromList(bytes.buffer.asUint8List());
+    final data = await image.toByteData();
+    return Texture2D.fromPixels(data!.buffer.asUint8List(), image.width, image.height,
+        content: TextureContent.data,
+        sampling: const TextureSampling(maxAnisotropy: 8));
+  }
+
   /// (Re)builds everything that depends on the course of [world].
   void buildCourse(World world) {
     _world = world;
@@ -106,27 +138,29 @@ class GameScene {
     if (_rocksNode != null) scene.remove(_rocksNode!);
 
     final c = world.course;
-    final groundMat = PhysicallyBasedMaterial()
-      ..metallicFactor = 0
-      ..roughnessFactor = 0.92;
-    final waterMat = PhysicallyBasedMaterial()
-      ..baseColorFactor = vm.Vector4(0.035, 0.05, 0.055, 0.78)
-      ..metallicFactor = 0
-      ..roughnessFactor = 0.06
-      ..alphaMode = AlphaMode.blend;
+    final Material groundMat = _groundMat ?? (PhysicallyBasedMaterial()..metallicFactor = 0..roughnessFactor = 0.92);
+    final Material waterMat = _waterMat ??
+        (PhysicallyBasedMaterial()
+          ..baseColorFactor = vm.Vector4(0.035, 0.05, 0.055, 0.78)
+          ..metallicFactor = 0
+          ..roughnessFactor = 0.06
+          ..alphaMode = AlphaMode.blend);
     const chunk = 4.0;
-    for (var d0 = -1.5; d0 < c.endD + 0.5; d0 += chunk) {
-      final d1 = math.min(d0 + chunk, c.endD + 1.5);
+    for (var d0 = -2.5; d0 < c.endD + 4.0; d0 += chunk) {
+      final d1 = math.min(d0 + chunk, c.endD + 4.5);
       final g = buildGroundChunk(c, d0, d1);
       final ground = Node(
         name: 'ground_${d0.toStringAsFixed(0)}',
         mesh: Mesh(MeshGeometry.fromArrays(positions: g.positions, normals: g.normals, colors: g.colors, indices: g.indices), groundMat),
       )..shadowStatic = true;
-      final w = buildWaterChunk(c, d0, d1);
+      final w = buildWaterChunk(c, world.flow, d0, d1);
       final water = Node(
         name: 'water_${d0.toStringAsFixed(0)}',
         mesh: Mesh(MeshGeometry.fromArrays(positions: w.positions, normals: w.normals, colors: w.colors, indices: w.indices), waterMat),
-      )..shadowCastingMode = ShadowCastingMode.off;
+      )
+        ..shadowCastingMode = ShadowCastingMode.off
+        // One shared mirror capture for every water chunk (they are co-planar).
+        ..addComponent(PlanarReflectorComponent(resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002));
       scene.add(ground);
       scene.add(water);
       _chunks..add(ground)..add(water);
@@ -181,8 +215,15 @@ class GameScene {
     );
     final flicker = 0.92 + 0.05 * math.sin(realTime * 13.0) + 0.03 * math.sin(realTime * 29.0 + 1.3);
     final f = w.flame;
-    _lanternLight.intensity = 0.25 + 1.1 * f * flicker;
+    _lanternLight.intensity = 0.12 + 0.55 * f * flicker;
     _paper.emissiveStrength = 0.3 + 4.0 * f * flicker;
+    final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
+    final ll = vm.Vector3(1.0, 0.6, 0.28) * _lanternLight.intensity;
+    for (final m in [_waterMat, _groundMat]) {
+      if (m == null) continue;
+      m.parameters.setVec3('lantern_pos', lp);
+      m.parameters.setVec3('lantern_light', ll);
+    }
 
     // Fireflies: hover, blink; collected ones spiral up into the lantern and fade.
     _fireflyMesh.updateInstanceTransforms((list) {

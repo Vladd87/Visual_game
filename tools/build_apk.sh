@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Build LANTERN APKs (arm64) and copy them into releases/.
+# Clears app/build/app first: with Flutter 3.50 + Gradle 9.5, Gradle's strict
+# task validation fails on stale Android outputs inside the Flutter project dir.
+# Usage: tools/build_apk.sh <tag> [release|debug|both]
+set -euo pipefail
+tag=${1:?tag, e.g. m2}
+kind=${2:-release}
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root/app"
+mkdir -p "$root/releases"
+build() {
+  local mode=$1
+  rm -rf build/app
+  for i in 1 2 3; do
+    if flutter build apk --"$mode" --target-platform android-arm64; then return 0; fi
+    echo "build failed (try $i); retrying in 60 s in case of a registry rate limit" >&2
+    sleep 60
+    rm -rf build/app
+  done
+  return 1
+}
+if [[ $kind == release || $kind == both ]]; then
+  build release
+  cp build/app/outputs/flutter-apk/app-release.apk "$root/releases/lantern-$tag-release.apk"
+fi
+if [[ $kind == debug || $kind == both ]]; then
+  build debug
+  rm -f "$root/releases/lantern-$tag-debug.apk.part-"*
+  split -b 90M -d -a 2 build/app/outputs/flutter-apk/app-debug.apk "$root/releases/lantern-$tag-debug.apk.part-"
+fi
+cd "$root/releases"
+{ for f in lantern-*-release.apk; do sha256sum "$f"; done
+  for t in $(ls lantern-*-debug.apk.part-00 2>/dev/null | sed 's/-debug.apk.part-00//'); do
+    echo "$(cat "$t"-debug.apk.part-* | sha256sum | cut -d' ' -f1)  $t-debug.apk (reassembled)"
+  done; } > SHA256SUMS
+cat SHA256SUMS

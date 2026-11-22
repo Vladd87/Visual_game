@@ -1,0 +1,143 @@
+// LANTERN ground (stream bed and banks).
+//
+// Under the water and on the wet lip: a procedural pebble bed (round stones of
+// mixed size partly buried in silt, per-stone tone, domed normals, algae film) so refraction
+// and caustics read like refs 08/09. Caustics: lantern light focused by the
+// rippled surface (baked pattern, two advected layers, slight chromatic split),
+// additive only. Above the waterline the greybox palette stays until M3.
+material {
+  name: "Ground",
+  shading_model: lit,
+  parameters: [
+    { type: sampler2d, name: caustic_tex, hint: default_black },
+    { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
+    { type: vec3, name: lantern_light, default: [1.0, 0.6, 0.28] },
+    { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
+    { type: float, name: caustic_strength, default: 1.0 },
+  ],
+}
+
+fragment {
+  vec2 Hash22(vec2 p) {
+    vec3 a = fract(p.xyx * vec3(123.34, 234.34, 345.65));
+    a += dot(a, a + 34.45);
+    return fract(vec2(a.x * a.y, a.y * a.z));
+  }
+
+  float Hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+  }
+
+  // Round pebbles partly buried in silt: for each nearby cell, a disc of random
+  // radius around a jittered centre (not Voronoi tiles, which read as paving).
+  // Returns stone coverage, the offset to the winning centre (in cell units),
+  // that stone's radius and id.
+  float Pebbles(vec2 p, out vec2 toCenter, out float radius, out vec2 cellId) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    float best = 0.0;
+    toCenter = vec2(1.0);
+    radius = 1.0;
+    cellId = i;
+    for (int y = -1; y <= 1; y++) {
+      for (int x = -1; x <= 1; x++) {
+        vec2 g = vec2(float(x), float(y));
+        vec2 h = Hash22(i + g);
+        vec2 r = g + h * 0.7 + 0.15 - f;
+        float rad = 0.22 + 0.3 * Hash12(i + g + 3.1);
+        // Slightly elongated stones with random orientation.
+        float a = Hash12(i + g + 9.7) * 6.2831;
+        vec2 ax = vec2(cos(a), sin(a));
+        vec2 rr = vec2(dot(r, ax), dot(r, vec2(-ax.y, ax.x))) * vec2(0.8, 1.25);
+        float d = length(rr);
+        float cover = smoothstep(rad, rad * 0.82, d);
+        if (cover > best) {
+          best = cover;
+          toCenter = rr / rad;
+          radius = rad;
+          cellId = i + g;
+        }
+      }
+    }
+    return best;
+  }
+
+  vec3 LanternIrradiance(vec3 p) {
+    vec3 d = material_params.lantern_pos - p;
+    float r2 = dot(d, d);
+    float window = clamp(1.0 - r2 / 9.0, 0.0, 1.0);
+    return material_params.lantern_light * (0.012 / (r2 + 0.0025)) * window * window;
+  }
+
+  float Caustic(vec2 uv) {
+    return texture(caustic_tex, uv).r * 4.0;
+  }
+
+  void Surface(inout MaterialInputs material) {
+    vec4 vc = GetVertexColor();
+    highp vec3 wp = GetWorldPosition();
+    float t = GetTime();
+    vec2 p = wp.xz;
+    float under = smoothstep(0.004, -0.012, wp.y);   // below the water surface
+    float wet = smoothstep(0.03, -0.004, wp.y);      // wet lip just above it
+
+    vec3 albedo = vc.rgb;
+    vec3 n = GetWorldNormal();
+    float rough = 0.9;
+    if (wet > 0.0) {
+      // Patches: cobble-rich areas vs silty gravel (low-frequency mask).
+      float patchy = smoothstep(0.35, 0.75, texture(caustic_tex, p * 0.35 + 0.17).r * 2.0);
+      vec2 tc, id;
+      float rad;
+      float stone = Pebbles(p * 22.0 + vec2(17.3, -4.1), tc, rad, id);
+      vec2 tc2, id2;
+      float rad2;
+      float pebble = Pebbles(p * 55.0, tc2, rad2, id2) * 0.85;
+      stone *= mix(0.55, 1.0, patchy);
+      float h = Hash12(id);
+      float h2 = Hash12(id + 7.7);
+      // Muted stream-stone tones (refs 08, 09): grey, slate, ochre, olive; a few pale.
+      vec3 tone = mix(vec3(0.19, 0.18, 0.165), vec3(0.27, 0.23, 0.17), h);
+      tone = mix(tone, vec3(0.14, 0.145, 0.14), step(0.7, h2));
+      tone = mix(tone, vec3(0.32, 0.30, 0.26), step(0.92, h2));
+      vec3 small = mix(vec3(0.16, 0.14, 0.11), vec3(0.24, 0.21, 0.16), Hash12(id2));
+      float grain = 0.88 + 0.24 * Hash12(floor(p * 300.0));
+      vec3 silt = vec3(0.085, 0.072, 0.052) * grain;
+      vec3 bed = mix(silt, small * grain, pebble);
+      bed = mix(bed, tone * grain, stone);
+      // A film of olive algae and silt settles over everything in slack water.
+      float film = smoothstep(0.3, 0.8, texture(caustic_tex, p * 0.9 + 0.5).r * 2.0);
+      bed = mix(bed, bed * vec3(0.8, 0.86, 0.62), film * 0.6);
+      albedo = mix(albedo, bed, wet);
+      // Domed stone normals.
+      float dome = max(stone, pebble * 0.6);
+      vec2 slope = (stone >= pebble ? tc : tc2) * dome * 0.9;
+      vec3 pn = normalize(vec3(slope.x, 1.0, slope.y));
+      n = normalize(mix(n, pn, wet));
+      albedo *= mix(1.0, 0.65, wet);
+      rough = mix(0.9, mix(0.7, 0.35, dome), wet);
+    }
+    material.base_color = vec4(albedo, 1.0);
+    material.normal = n;
+    material.metallic = 0.0;
+    material.roughness = rough;
+    material.occlusion = 1.0;
+    if (under > 0.0) {
+      // Two caustic layers drifting downstream (-Z) at different scales/speeds;
+      // the minimum of the two keeps the network crisp as it evolves.
+      vec2 u1 = p * 2.2 + vec2(0.012, 0.05) * t;
+      vec2 u2 = p * 1.7 * mat2(0.8, -0.6, 0.6, 0.8) + vec2(-0.02, 0.07) * t;
+      vec3 c;
+      c.r = min(Caustic(u1 + 0.0015), Caustic(u2 + 0.0015));
+      c.g = min(Caustic(u1), Caustic(u2));
+      c.b = min(Caustic(u1 - 0.0015), Caustic(u2 - 0.0015));
+      float depth = -wp.y;
+      float focus = smoothstep(0.0, 0.03, depth) * (1.0 - smoothstep(0.12, 0.35, depth));
+      vec3 light = LanternIrradiance(wp) + material_params.ambient * 0.6;
+      vec3 gain = max(c * 1.6 - vec3(0.55), vec3(0.0)) * focus * under * material_params.caustic_strength;
+      material.emissive = albedo * light * gain;
+    }
+  }
+}

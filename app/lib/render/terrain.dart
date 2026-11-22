@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import '../sim/course.dart';
+import '../sim/flow_field.dart';
 import '../sim/vec2.dart';
 
 /// CPU-side mesh arrays (positions, normals, vertex colours, indices).
@@ -27,7 +28,7 @@ double groundHeight(Course c, V2 p) {
     return -depth + relief;
   }
   final out = -clear;
-  final lip = smoothstep(0.0, 0.13, out); // the wet lip up to the bank top
+  final lip = smoothstep(0.0, 0.22, out); // the wet lip up to the bank top
   final crest = 0.09 + 0.07 * (0.5 + 0.5 * math.sin(p.y * 0.9 + p.x * 1.7)) +
       0.04 * math.sin(p.x * 4.1 - p.y * 2.3);
   final roll = smoothstep(0.1, 1.2, out) * (0.05 * math.sin(p.y * 1.7 + p.x * 3.1));
@@ -37,7 +38,7 @@ double groundHeight(Course c, V2 p) {
 /// Ground chunk covering stream distance [d0, d1] and [halfSpan] metres either
 /// side of the centreline. Vertex colours carry the greybox palette.
 MeshArrays buildGroundChunk(Course c, double d0, double d1,
-    {double halfSpan = 2.6, double step = 0.05}) {
+    {double halfSpan = 2.8, double step = 0.04}) {
   final rows = ((d1 - d0) / step).ceil() + 1;
   final cols = (halfSpan * 2 / step).ceil() + 1;
   final pos = Float32List(rows * cols * 3);
@@ -106,33 +107,80 @@ MeshArrays buildGroundChunk(Course c, double d0, double d1,
   return MeshArrays(pos, nrm, col, idx);
 }
 
-/// Flat water surface (y = 0) covering the channel (plus a margin under the
-/// banks) and the pool, for stream distance [d0, d1].
-MeshArrays buildWaterChunk(Course c, double d0, double d1, {double step = 0.08}) {
+/// Water surface (y = 0) covering the channel (plus a margin under the banks)
+/// and the pool, for stream distance [d0, d1].
+///
+/// Vertex colours carry what the water shader needs (see water.fmat):
+/// rg = surface flow (sim axes, v * 2 + 0.5), b = foam potential,
+/// a = turbulence near rocks.
+MeshArrays buildWaterChunk(Course c, FlowField flow, double d0, double d1, {double step = 0.03}) {
   final rows = ((d1 - d0) / step).ceil() + 1;
-  const cols = 24;
+  const cols = 56;
   final pos = Float32List(rows * cols * 3);
   final nrm = Float32List(rows * cols * 3);
   final col = Float32List(rows * cols * 4);
   for (var i = 0; i < rows; i++) {
     final d = math.min(d0 + i * step, d1);
     final cx = c.centerX(d);
-    var hw = d <= c.length + 0.3 ? c.halfWidth(d) + 0.22 : 0.0;
-    final dp = d - c.poolCenter.y;
-    if (dp.abs() < c.poolRadius + 0.3) {
-      hw = math.max(hw, math.sqrt(math.max(0, (c.poolRadius + 0.3) * (c.poolRadius + 0.3) - dp * dp)) + (c.poolCenter.x - cx).abs());
+    var lo = cx - (c.halfWidth(d) + 0.22), hi = cx + (c.halfWidth(d) + 0.22);
+    if (d > c.length + 0.3) {
+      lo = hi = cx;
     }
+    final dp = d - c.poolCenter.y;
+    final pr = c.poolRadius + 0.3;
+    if (dp.abs() < pr) {
+      final half = math.sqrt(math.max(0, pr * pr - dp * dp));
+      lo = math.min(lo, c.poolCenter.x - half);
+      hi = math.max(hi, c.poolCenter.x + half);
+    }
+    final rocks = c.rocksNear(d - 0.6, d + 0.25).where((r) => r.emergent).toList();
+    final speed0 = c.flowSpeed(d);
     for (var j = 0; j < cols; j++) {
-      final x = cx - hw + 2 * hw * j / (cols - 1);
+      final x = lo + (hi - lo) * j / (cols - 1);
       final k = i * cols + j;
+      final p = V2(x, d);
       pos[k * 3] = x;
       pos[k * 3 + 1] = 0;
       pos[k * 3 + 2] = -d;
       nrm[k * 3 + 1] = 1;
-      col[k * 4] = 1;
-      col[k * 4 + 1] = 1;
-      col[k * 4 + 2] = 1;
-      col[k * 4 + 3] = 1;
+      final v = flow.velocityAt(p, 0);
+      // Foam: fronts and flanks of emergent rocks, their wakes, and bank lines,
+      // stronger where the current is fast.
+      var foam = 0.0, turb = 0.0;
+      for (final r in rocks) {
+        final rel = p - r.pos;
+        final dist = rel.length;
+        final gap = dist - r.radius;
+        if (gap < 0.3) {
+          final n = dist > 1e-6 ? rel / dist : const V2(0, -1);
+          // Upstream cushion: water piles against the front face (refs 04, 13).
+          final front = clamp01(-n.y * 1.25);
+          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.045) * front);
+          // Thin collar where the water wraps the stone sides.
+          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.01) * 0.3);
+          turb = math.max(turb, math.exp(-math.max(gap, 0) / 0.08));
+        }
+        // Wake: foam streaks shed from both flanks, drifting downstream and
+        // slowly converging and spreading (refs 04, 13).
+        final len = r.radius * 12;
+        if (rel.y > -r.radius * 0.3 && rel.y < len) {
+          final k = clamp01(rel.y / len);
+          final fade = math.pow(1 - k, 1.6).toDouble();
+          final lineX = r.radius * (0.95 - 0.35 * k);
+          final width = 0.012 + 0.03 * k;
+          final edge = (rel.x.abs() - lineX).abs();
+          foam = math.max(foam, math.exp(-edge / width) * fade * 0.85);
+          if (rel.x.abs() < r.radius * 1.3) turb = math.max(turb, fade * 0.8);
+        }
+      }
+      final clear = c.clearance(p);
+      if (clear > -0.05) foam = math.max(foam, math.exp(-math.max(clear, 0) / 0.01) * 0.22);
+      final fast = clamp01(speed0 / 0.22);
+      foam *= 0.35 + 0.65 * fast;
+      col[k * 4] = (v.x * 2 + 0.5).clamp(0.0, 1.0);
+      col[k * 4 + 1] = (v.y * 2 + 0.5).clamp(0.0, 1.0);
+      col[k * 4 + 2] = clamp01(foam);
+      col[k * 4 + 3] = clamp01(turb);
     }
   }
   final idx = <int>[];

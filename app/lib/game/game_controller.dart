@@ -62,6 +62,9 @@ class GameController extends ChangeNotifier {
     await Scene.preload();
     scene = Scene();
     gameScene = GameScene(scene)..buildStatic();
+    loadingText = 'filling the stream';
+    notifyListeners();
+    await gameScene.loadAssets();
     platform.start();
     platform.enableTilt(settings.control == ControlMode.tilt);
     unawaited(platform.setRefreshRate(settings.performance120 ? 120 : 60));

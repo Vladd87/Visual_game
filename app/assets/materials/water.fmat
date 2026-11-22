@@ -1,0 +1,142 @@
+// LANTERN stream water (M2, round 2).
+//
+// Per-vertex data from the CPU (render/terrain.dart):
+//   color.rg = surface flow in sim axes, encoded v * 2 + 0.5 (m/s)
+//   color.b  = foam potential (rock fronts, trailing wakes, faint bank lines)
+//   color.a  = turbulence near rocks
+//
+// Shading:
+// - flow-mapped, flow-stretched ripple normals (two cross-faded phases)
+// - refraction of the opaque scene behind (pebble bed, rocks), placed by refracting
+//   the view ray through the ripple normal over the measured water depth
+// - depth absorption, with in-scatter lit by the lantern
+// - a planar reflection (lantern, rocks, banks, fireflies), distorted by the ripples
+//   and Fresnel-weighted; the lit model's IBL specular supplies the sky where
+//   nothing is mirrored
+// - streaky, partially transparent foam advected with the current
+material {
+  name: "Water",
+  shading_model: lit,
+  blending: alpha,
+  culling: back,
+  effects_depth: true,
+  engine_inputs: [ scene_color, scene_depth, planar_reflection ],
+  parameters: [
+    { type: sampler2d, name: normal_tex, hint: default_normal },
+    { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
+    { type: vec3, name: lantern_light, default: [1.0, 0.6, 0.28] },
+    { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
+    { type: vec3, name: absorption, default: [3.0, 4.0, 6.2] },
+    { type: vec3, name: murk, default: [0.10, 0.085, 0.05] },
+    { type: float, name: normal_strength, default: 1.0 },
+    { type: float, name: refraction, default: 2.5 },
+    { type: float, name: foam_amount, default: 1.0 },
+    { type: float, name: reflection, default: 1.0 },
+  ],
+}
+
+fragment {
+  vec2 SampleSlope(vec2 uv) {
+    return texture(normal_tex, uv).rg * 2.0 - 1.0;
+  }
+
+  // Ripple slope at world xz, stretched along the flow and advected with it.
+  vec2 RippleSlope(vec2 p, vec2 dir, float speed, float t, float scale,
+                   float stretch, float seed) {
+    vec2 perp = vec2(-dir.y, dir.x);
+    vec2 q = vec2(dot(p, dir), dot(p, perp));
+    const float cycle = 1.8;
+    float ph0 = fract(t / cycle);
+    float ph1 = fract(t / cycle + 0.5);
+    float w0 = 1.0 - abs(ph0 * 2.0 - 1.0);
+    vec2 k = vec2(scale / stretch, scale);
+    vec2 a = SampleSlope((q - vec2(speed * ph0 * cycle, 0.0)) * k + seed);
+    vec2 b = SampleSlope((q - vec2(speed * ph1 * cycle, 0.0)) * k + seed + 0.5);
+    vec2 s = mix(b, a, w0);
+    return dir * (s.x / stretch) + perp * s.y;
+  }
+
+  vec3 LanternIrradiance(vec3 p) {
+    vec3 d = material_params.lantern_pos - p;
+    float r2 = dot(d, d);
+    float window = clamp(1.0 - r2 / 9.0, 0.0, 1.0);
+    return material_params.lantern_light * (0.012 / (r2 + 0.0025)) * window * window;
+  }
+
+  // Planar reflection sampled at a ripple-displaced world point.
+  vec4 Mirror(vec3 wp, vec2 slope) {
+    if (planar_reflection_info.params.x < 0.5) return vec4(0.0);
+    vec3 q = wp + vec3(slope.x, 0.0, slope.y) * 0.035;
+    vec4 clip = planar_reflection_info.view_projection * vec4(q, 1.0);
+    if (clip.w <= 0.0) return vec4(0.0);
+    vec2 uv = vec2(0.5 + 0.5 * clip.x / clip.w, 0.5 - 0.5 * clip.y / clip.w);
+    uv = clamp(uv, vec2(0.001), vec2(0.999));
+    return texture(planar_reflection, uv);
+  }
+
+  void Surface(inout MaterialInputs material) {
+    vec4 vc = GetVertexColor();
+    vec2 flowSim = (vc.rg - 0.5) * 0.5;
+    vec2 flowW = vec2(flowSim.x, -flowSim.y);  // world xz
+    float speed = length(flowW);
+    vec2 dir = speed > 1e-4 ? flowW / speed : vec2(0.0, -1.0);
+    vec2 perp = vec2(-dir.y, dir.x);
+    float turb = vc.a;
+    float t = GetTime();
+    highp vec3 wp = GetWorldPosition();
+    vec2 p = wp.xz;
+
+    // --- normals -------------------------------------------------------------
+    float stretch = 1.0 + 0.9 * clamp(speed / 0.25, 0.0, 1.0);
+    vec2 slope = RippleSlope(p, dir, speed * 1.1, t, 2.6, stretch, 0.0) * 0.55;
+    slope += RippleSlope(p, dir, speed * 1.4, t * 1.07, 6.0, stretch * 0.8, 0.37) * (0.18 + 0.45 * turb);
+    slope += SampleSlope(p * 1.3 + vec2(t * 0.013, -t * 0.009)) * 0.18;
+    slope *= material_params.normal_strength * (0.55 + 0.8 * turb);
+    vec3 n = normalize(vec3(-slope.x * 0.42, 1.0, -slope.y * 0.42));
+
+    // --- refraction ------------------------------------------------------------
+    vec3 v = GetViewDirection();  // toward the camera
+    float fragDepth = GetFragmentViewDepth();
+    float thick0 = max(GetSceneDepth(vec2(0.0)) - fragDepth, 0.0);
+    vec3 tdir = refract(-v, n, 1.0 / 1.33);
+    float reach = min(thick0, 0.25) * 0.85 * material_params.refraction;
+    vec2 off = ProjectWorldOffsetToScreenUv(tdir * reach) - GetScreenUv();
+    float sceneD = GetSceneDepth(off);
+    if (sceneD < fragDepth) {
+      off = vec2(0.0);
+      sceneD = GetSceneDepth(off);
+    }
+    float path = clamp(sceneD - fragDepth, 0.0, 2.0);
+    vec3 behind = GetSceneColor(off);
+    vec3 trans = exp(-material_params.absorption * path);
+    vec3 light = material_params.ambient + LanternIrradiance(wp) * 0.35;
+    vec3 scatter = material_params.murk * light * (1.0 - trans.g);
+
+    // --- Fresnel and mirror ------------------------------------------------------
+    float ndv = clamp(dot(n, v), 0.0, 1.0);
+    float f = 0.02 + 0.98 * pow(1.0 - ndv, 5.0);
+    vec4 mir = Mirror(wp, slope * 0.42);
+    float covered = clamp(mir.a, 0.0, 1.0);
+    vec3 mirrored = mir.rgb * f * material_params.reflection;
+
+    // --- foam ----------------------------------------------------------------------
+    // Streaks: long along the flow, narrow across it, advected downstream.
+    vec2 fq = vec2(dot(p, dir) - speed * t, dot(p, perp));
+    float s1 = texture(normal_tex, fq * vec2(1.8, 3.6)).b;
+    float s2 = texture(normal_tex, fq * vec2(3.6, 7.2) + 0.37).b;
+    float blobs = texture(normal_tex, fq * 4.0 + 0.71).a;
+    float breakup = s1 * 0.55 + s2 * 0.25 + blobs * 0.2;
+    float foam = smoothstep(0.5, 0.75, vc.b * material_params.foam_amount * (0.3 + 1.2 * breakup));
+    foam *= smoothstep(0.0, 0.01, thick0 + 0.004);
+    float foamCover = foam * 0.85;  // thin foam lets the water show through
+
+    material.normal = normalize(mix(n, vec3(0.0, 1.0, 0.0), foam * 0.5));
+    material.base_color = vec4(vec3(0.42, 0.42, 0.4) * foam, 1.0);
+    material.metallic = 0.0;
+    material.roughness = mix(0.07, 0.6, foam);
+    // F0 = 0.02 for water; where an object is mirrored, its reflection replaces the sky.
+    material.specular = 0.5 * (1.0 - covered);
+    material.emissive = ((behind * trans + scatter) * (1.0 - f) + mirrored) * (1.0 - foamCover);
+    material.occlusion = 1.0;
+  }
+}

@@ -62,6 +62,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   assets:
+    - assets/textures/
+    - assets/env/
     - flutter_scene_generated/
     - path: flutter_scene_generated/metal_ios/
       platforms:
