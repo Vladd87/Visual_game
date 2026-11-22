@@ -18,6 +18,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-2 | water v2 | 1.56 | 1.81 | 1.69 | 1 | 0/4 | +0.60. Water alone 1.5/10: pebble bed, planar reflection, but the surface still invisible |
 | round-3 | water v3 | 2.06 | 2.13 | 2.09 | 1.5 | 0/4 | +0.40. Water 2/10; "glass over gravel", no sky reflection |
 | round-4 | water v4 | 1.81 | 2.00 | 1.91 | 1.5 | 0/4 | −0.18 (1st sub-0.3 round). Water 2/10; sky sheen read as a uniform "frosted lavender veil" |
+| round-5 | water v5 | 1.81 | 1.81 | 1.81 | 1.5 | 0/4 | −0.10 (2nd sub-0.3 round in a row → **water stops**). Water 3/10; depth and lantern spill work, the reflection is now too weak |
 
 ## Round 1: water v1
 
@@ -141,3 +142,42 @@ Also flagged:
 - **Rocks** extended down to the deeper bed so none float.
 - **Reflected sky broken by a canopy/treeline mask**, so ripples alternate bright sky gaps and dark foliage (refs 06, 11). The boost is reduced to 1.6×.
 - **Whiter foam** in the fast sections.
+
+
+## Round 5: water v5 (final water round)
+
+**Scores (1–10)**
+- inner: 2, 1.5, 2.5, 2, 2, 1.5, 1.5, 1.5 (mean 1.81)
+- cover: 2, 1.5, 2.5, 2, 2, 1.5, 1.5, 1.5 (mean 1.81)
+
+**Water alone:** 3/10, up from 2. The critic credits the "depth darkening toward the channel and the warm light spill on the bed". The biggest remaining problem is "no surface reflection at all: no sky, no broken specular glitter, no reflection of the lantern".
+
+**Top 5 giveaways**
+1. Clay-egg boulders: no texture, wetness, moss or waterline. They fuse, and are not seated in the water (+2).
+2. Featureless blurred green banks: a spline edge with a glassy rim and a yellow halo stripe (+1 to +1.5 inner).
+3. Water:
+   - no reflection, specular or Fresnel
+   - swirl and smear flow artefacts (concentric arcs in shot 8, radial streaks in shot 4)
+   - compressed tone: p1 ≈ 0.10 against ≈ 0.02 in the refs; p99 0.4–0.6 against ≥ 0.9
+   - fine-detail energy 2–8× lower than the refs
+4. Debug-looking sprites:
+   - square orange leaves
+   - outlined firefly discs
+   - a ring of square specks in the pool
+   - a hard dark trapezoid in shot 5
+   - a "translucent grey cylinder" under the lantern in shots 2 and 6
+5. The lantern: a clipped white box with a lens-flare star and no reflection.
+
+**A/B:** 0/4 fooled, all at 100 % confidence. The critic notes that each render half is a recognisable crop of a capture under review, so A/B can't discriminate until the gap closes.
+
+**Stop rule applied.** Round 4 (−0.18) and round 5 (−0.10) both gained less than 0.3, so water stops at v5. Overall scores are now held down by things water can't fix: rocks, banks, sprites, lantern and grade.
+
+**Carried forward**
+- **Reflection balance** (sky and canopy against the bed): v4 was too much, a veil; v5 too little, no surface. This is really a light-balance problem (sky radiance against lantern-lit bed), so it moves to **M4 lighting and fog** and is re-tuned there with real numbers.
+- **Specular glitter** from the lantern on wavelets: M7 (lantern glow).
+- **Tone compression:** M9 grade.
+- **Swirl smears:** M8 (the TAA history on flow-advected detail is suspected).
+
+**Bugs fixed before the M2 APK**
+- The shot-5 trapezoid was the greybox leaf's shadow from the lantern's point light 3 cm away, magnified onto the bed. Leaves no longer cast shadows; M6 brings real leaves with soft shadows.
+- The shot 2/6 "cylinder" is a greybox rock stretched down to the deeper bed (a regression in v5). The M3 scanned rocks replace it.

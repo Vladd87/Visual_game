@@ -101,9 +101,13 @@ class GameScene {
     for (var i = 0; i < maxLeaves; i++) {
       _leafMesh.addInstance(vm.Matrix4.zero());
     }
+    // The greybox leaves sit centimetres from the lantern's point light, so their
+    // shadow lands on the bed magnified into a hard dark trapezoid (round-5
+    // critic). Off until M6 gives leaves real shapes and softer shadows.
     scene.add(Node(name: 'leaves')
       ..addComponent(InstancedMeshComponent(_leafMesh))
-      ..frustumCulled = false);
+      ..frustumCulled = false
+      ..shadowCastingMode = ShadowCastingMode.off);
   }
 
   /// Loads materials, baked textures and the environment (before [buildCourse]).
