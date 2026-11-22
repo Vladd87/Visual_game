@@ -18,17 +18,11 @@ material {
   name: "Ground",
   shading_model: lit,
   parameters: [
-    { type: sampler2d, name: caustic_tex, hint: default_black },
-    { type: sampler2d, name: noise_tex, hint: default_black },
-    { type: sampler2d, name: g_col, hint: default_white },
-    { type: sampler2d, name: g_nrm, hint: default_normal },
-    { type: sampler2d, name: g_arh, hint: default_white },
-    { type: sampler2d, name: m_col, hint: default_white },
-    { type: sampler2d, name: m_nrm, hint: default_normal },
-    { type: sampler2d, name: m_arh, hint: default_white },
-    { type: sampler2d, name: u_col, hint: default_white },
-    { type: sampler2d, name: u_nrm, hint: default_normal },
-    { type: sampler2d, name: u_arh, hint: default_white },
+    // Three samplers only: Android guarantees 16 per fragment shader and the
+    // engine's lit pipeline uses about ten (lib/render/surface_pack.dart).
+    { type: sampler2d, name: s_t1, hint: default_white },
+    { type: sampler2d, name: s_t2, hint: default_white },
+    { type: sampler2d, name: data_tex, hint: default_black },
     { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
     { type: vec3, name: lantern_light, default: [1.0, 0.6, 0.28] },
     { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
@@ -92,32 +86,64 @@ fragment {
   }
 
   float Caustic(vec2 uv) {
-    return texture(caustic_tex, uv).r * 4.0;
+    return texture(data_tex, uv).r * 4.0;
   }
 
   vec3 DecodeNormal(vec3 t) {
     return t * 255.0 / 127.0 - 128.0 / 127.0;
   }
 
+  // Padded 2x2 atlas of the bank surfaces (see surface_pack.dart):
+  // T1 = albedo (sRGB) + roughness, T2 = normal XY + AO + height.
+  const float kAtlas = 2176.0;
+  const float kTile = 1088.0;
+  const float kPad = 32.0;
+  const float kInner = 1024.0;
+
+  // Tileable lookup inside one atlas tile, with explicit gradients (fract()
+  // would otherwise break the mip selection at every repeat) clamped so the
+  // footprint stays inside the padding.
+  vec4 AtlasTap(sampler2D t, highp vec2 uv, vec2 tile, vec2 dx, vec2 dy) {
+    highp vec2 a = (tile * kTile + kPad + fract(uv) * kInner) / kAtlas;
+    vec2 gx = dx * (kInner / kAtlas);
+    vec2 gy = dy * (kInner / kAtlas);
+    float m = max(length(gx), length(gy)) * kAtlas;
+    if (m > 24.0) {
+      gx *= 24.0 / m;
+      gy *= 24.0 / m;
+    }
+    return textureGrad(t, a, gx, gy);
+  }
+
+  vec3 DecodeNormalXY(vec2 t) {
+    vec2 xy = t * 255.0 / 127.0 - 128.0 / 127.0;
+    return vec3(xy, sqrt(max(1.0 - dot(xy, xy), 0.0)));
+  }
+
   // One photographed surface, sampled twice (second tap rotated and offset)
   // and blended by low-frequency noise and the surface's own height, so the
   // 1 m tiles never repeat visibly. Returns linear albedo, tangent-space
-  // normal (in uv's frame) and AO/roughness/height.
-  void SampleSurface(sampler2D colT, sampler2D nrmT, sampler2D arhT, vec2 uv, float blend,
+  // normal (in uv's frame) and AO/roughness/height. [dx]/[dy] are the
+  // screen derivatives of [uv], taken outside any branch.
+  void SampleSurface(vec2 tile, highp vec2 uv, vec2 dx, vec2 dy, float blend,
                      out vec3 col, out vec3 tn, out vec3 arh) {
     const mat2 R = mat2(0.6, 0.8, -0.8, 0.6);
-    vec2 uv2 = R * uv + vec2(0.43, 0.17);
-    vec3 a1 = texture(arhT, uv).rgb;
-    vec3 a2 = texture(arhT, uv2).rgb;
+    highp vec2 uv2 = R * uv + vec2(0.43, 0.17);
+    vec2 dx2 = R * dx;
+    vec2 dy2 = R * dy;
+    vec4 a1 = AtlasTap(s_t1, uv, tile, dx, dy);
+    vec4 b1 = AtlasTap(s_t2, uv, tile, dx, dy);
+    vec4 a2 = AtlasTap(s_t1, uv2, tile, dx2, dy2);
+    vec4 b2 = AtlasTap(s_t2, uv2, tile, dx2, dy2);
     // Steep, height-led transition: one photo or the other, not a cross-fade
     // (a soft blend of two taps reads as a painterly smear).
-    float t = clamp((blend - 0.5) * 7.0 + 0.5 + (a2.b - a1.b) * 4.0, 0.0, 1.0);
-    col = SRGBToLinear(mix(texture(colT, uv).rgb, texture(colT, uv2).rgb, t));
-    vec3 n1 = DecodeNormal(texture(nrmT, uv).rgb);
-    vec3 n2 = DecodeNormal(texture(nrmT, uv2).rgb);
+    float t = clamp((blend - 0.5) * 7.0 + 0.5 + (b2.a - b1.a) * 4.0, 0.0, 1.0);
+    col = SRGBToLinear(mix(a1.rgb, a2.rgb, t));
+    vec3 n1 = DecodeNormalXY(b1.rg);
+    vec3 n2 = DecodeNormalXY(b2.rg);
     n2.xy = transpose(R) * n2.xy;
     tn = normalize(mix(n1, n2, t));
-    arh = mix(a1, a2, t);
+    arh = mix(vec3(b1.b, a1.a, b1.a), vec3(b2.b, a2.a, b2.a), t);
   }
 
   void Surface(inout MaterialInputs material) {
@@ -133,9 +159,9 @@ fragment {
     float damp = material_params.damp;
     vec3 geo = GetWorldNormal();
 
-    float n1 = texture(noise_tex, p * 0.23).a;
-    float n2 = texture(noise_tex, p * 0.71 + 0.3).a;
-    float n3 = texture(noise_tex, p * 2.3 + 0.7).a;
+    float n1 = texture(data_tex, p * 0.23).g;
+    float n2 = texture(data_tex, p * 0.71 + 0.3).g;
+    float n3 = texture(data_tex, p * 2.3 + 0.7).g;
 
     vec3 albedo = vec3(0.1);
     vec3 n = geo;
@@ -148,8 +174,10 @@ fragment {
       // centre, v = world z): no stretching on steep lips.
       highp vec2 uv = GetUV0();
       mat3 tbn = CotangentFrame(geo, -v_viewvector, uv);
+      // Derivatives for every surface scale, outside the branches below.
+      vec2 duvx = dFdx(uv), duvy = dFdy(uv);
       vec3 gc, gn, ga;
-      SampleSurface(g_col, g_nrm, g_arh, uv / 0.9, n1, gc, gn, ga);
+      SampleSurface(vec2(0.0, 0.0), uv / 0.9, duvx / 0.9, duvy / 0.9, n1, gc, gn, ga);
       vec3 col = gc;
       vec3 tn = gn;
       vec3 arh = ga;
@@ -167,11 +195,11 @@ fragment {
       float mudTop = 0.02 + 0.07 * n1;
       float mudBand = (1.0 - smoothstep(mudTop - 0.02, mudTop + 0.02, above + (n3 - 0.5) * 0.03)) *
                       (1.0 - smoothstep(0.06, 0.14, out_d)) *
-                      smoothstep(0.38, 0.5, texture(noise_tex, p * 0.31 + 0.53).a);
+                      smoothstep(0.38, 0.5, texture(data_tex, p * 0.31 + 0.53).g);
       float mossW = 0.0;
       if (mossField > 0.4) {
         vec3 mc, mn, ma;
-        SampleSurface(m_col, m_nrm, m_arh, uv / 0.45, n2, mc, mn, ma);
+        SampleSurface(vec2(1.0, 0.0), uv / 0.45, duvx / 0.45, duvy / 0.45, n2, mc, mn, ma);
         mossW = clamp((mossField - 0.54 + (ma.b - 0.44) * 0.35) * 9.0, 0.0, 1.0) * (1.0 - mudBand);
         col = mix(col, mc, mossW);
         tn = normalize(mix(tn, mn, mossW));
@@ -180,7 +208,7 @@ fragment {
       float mudW = 0.0;
       if (mudBand > 0.0) {
         vec3 uc, un, ua;
-        SampleSurface(u_col, u_nrm, u_arh, uv / 0.6, n3, uc, un, ua);
+        SampleSurface(vec2(0.0, 1.0), uv / 0.6, duvx / 0.6, duvy / 0.6, n3, uc, un, ua);
         mudW = clamp(mudBand * 1.4 - (ua.b - 0.5) * 0.6, 0.0, 1.0);
         col = mix(col, uc, mudW);
         tn = normalize(mix(tn, un, mudW));
@@ -193,7 +221,7 @@ fragment {
       // darkens but stays matte.
       col *= mix(1.0, mix(0.6, 0.8, mossW), damp);
       // Large, soft light/dark patches (litter, soil moisture).
-      col *= 0.8 + 0.4 * texture(noise_tex, p * 0.09 + 0.21).a;
+      col *= 0.8 + 0.4 * texture(data_tex, p * 0.09 + 0.21).g;
       rough = mix(rough, rough * 0.8, damp * (1.0 - mossW));
       // Saturated mud at the waterline, with puddles in its low spots.
       // Whatever reaches the waterline is soaked (moss and soil too).
@@ -211,7 +239,7 @@ fragment {
     if (wet > 0.0) {
       // ---- Pebble bed ----
       // Patches: cobble-rich areas vs silty gravel (low-frequency mask).
-      float patchy = smoothstep(0.35, 0.75, texture(caustic_tex, p * 0.35 + 0.17).r * 2.0);
+      float patchy = smoothstep(0.35, 0.75, texture(data_tex, p * 0.35 + 0.17).r * 2.0);
       patchy = max(patchy, mound);
       vec2 tc, id;
       float rad;
@@ -226,7 +254,7 @@ fragment {
       float cobble = Pebbles(p * 9.0 + vec2(-3.7, 8.2), tc3, rad3, id3);
       cobble *= step(0.45, Hash12(id3 + 1.3)) * smoothstep(0.3, 0.7, patchy);
       // Silt/sand flats bury most stones in the slow areas (not on mounds).
-      float flats = smoothstep(0.55, 0.85, texture(caustic_tex, p * 0.21 + 0.61).r * 2.2) * (1.0 - mound);
+      float flats = smoothstep(0.55, 0.85, texture(data_tex, p * 0.21 + 0.61).r * 2.2) * (1.0 - mound);
       stone *= 1.0 - 0.75 * flats;
       float h = Hash12(id);
       float h2 = Hash12(id + 7.7);
@@ -243,7 +271,7 @@ fragment {
       bed = mix(bed, cobbleTone * grain, cobble);
       bed = mix(bed, vec3(0.13, 0.115, 0.085) * grain, flats * (1.0 - cobble) * 0.7);
       // A film of olive algae and silt settles over everything in slack water.
-      float film = smoothstep(0.3, 0.8, texture(caustic_tex, p * 0.9 + 0.5).r * 2.0);
+      float film = smoothstep(0.3, 0.8, texture(data_tex, p * 0.9 + 0.5).r * 2.0);
       bed = mix(bed, bed * vec3(0.8, 0.86, 0.62), film * 0.6);
       bed *= 0.65;
       // Domed stone normals.

@@ -1,3 +1,4 @@
+import '../game/diagnostics.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -150,6 +151,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           ),
         if (!loading && c.capture == null) ..._overlays(layout),
         if (loading) _Loading(text: c.loadingText),
+        if (c.capture == null) const _DiagnosticsPanel(),
       ]),
     );
   }
@@ -458,4 +460,51 @@ class _FlexPanel extends StatelessWidget {
       ]),
     );
   }
+}
+
+
+/// Shows a crashed previous launch or an error, so a screenshot reports it.
+class _DiagnosticsPanel extends StatefulWidget {
+  const _DiagnosticsPanel();
+
+  @override
+  State<_DiagnosticsPanel> createState() => _DiagnosticsPanelState();
+}
+
+class _DiagnosticsPanelState extends State<_DiagnosticsPanel> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<String?>(
+        valueListenable: Diagnostics.lastError,
+        builder: (context, error, _) {
+          final text = Diagnostics.panelText(error);
+          if (text == null || (_dismissed && error == null)) return const SizedBox.shrink();
+          return SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _dismissed = true;
+                  Diagnostics.lastError.value = null;
+                }),
+                child: Container(
+                  margin: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  decoration: BoxDecoration(
+                    color: const Color(0xE6201010),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0x66FF8A65)),
+                  ),
+                  child: Text(
+                    '$text\n(tap to dismiss)',
+                    style: const TextStyle(color: Color(0xFFFFD8CC), fontSize: 12, height: 1.3),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
 }

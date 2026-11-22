@@ -18,6 +18,30 @@ const ASPECTS = {
   cover: { width: 1080, height: 2520, hinge: false },
 };
 
+
+// Android only guarantees 16 fragment samplers; this browser (SwiftShader)
+// allows 32, so a shader that cannot run on the phone would still render
+// here. Count the sampler uniforms of every linked program and flag any
+// program over the limit (counts both stages: conservative).
+const SAMPLER_GUARD = `(() => {
+  const S = new Set([0x8B5E,0x8B5F,0x8B60,0x8B62,0x8DC1,0x8DC4,0x8DC5,0x8DCA,0x8DCB,0x8DCC,0x8DCF,0x8DD2,0x8DD3,0x8DD4,0x8DD7]);
+  window.__maxSamplers = 0;
+  const link = WebGL2RenderingContext.prototype.linkProgram;
+  WebGL2RenderingContext.prototype.linkProgram = function (prog) {
+    link.call(this, prog);
+    try {
+      let n = 0;
+      const count = this.getProgramParameter(prog, this.ACTIVE_UNIFORMS) || 0;
+      for (let i = 0; i < count; i++) {
+        const u = this.getActiveUniform(prog, i);
+        if (u && S.has(u.type)) n += u.size;
+      }
+      window.__maxSamplers = Math.max(window.__maxSamplers, n);
+      if (n > 16) console.error('SAMPLER_LIMIT program uses ' + n + ' samplers (Android guarantees 16)');
+    } catch (e) {}
+  };
+})();`;
+
 function arg(name, def) {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 ? process.argv[i + 1] : def;
@@ -79,6 +103,7 @@ async function lumaStats(page, buf) {
     for (const shot of shots) {
       const viewport = { width: Math.round(a.width * scale), height: Math.round(a.height * scale) };
       const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
+      await page.addInitScript(SAMPLER_GUARD);
       const logs = [];
       page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
       page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
@@ -95,9 +120,11 @@ async function lumaStats(page, buf) {
       const file = path.join(outDir, aspect, `shot${shot}.png`);
       const buf = await page.screenshot({ path: file });
       const st = await lumaStats(page, buf).catch(() => null);
-      const blank = !st || st.std < 2.0;
+      const maxSamplers = await page.evaluate(() => window.__maxSamplers).catch(() => -1);
+      const overLimit = logs.some((l) => l.includes('SAMPLER_LIMIT'));
+      const blank = !st || st.std < 2.0 || overLimit;
       if (blank) failures++;
-      const line = `${aspect} shot${shot} ${(Date.now() - t0) / 1000}s ${info} luma=${st ? st.mean.toFixed(1) : '?'}±${st ? st.std.toFixed(1) : '?'}${blank ? '  BLANK/FLAT -> harness failure' : ''}`;
+      const line = `${aspect} shot${shot} ${(Date.now() - t0) / 1000}s ${info} luma=${st ? st.mean.toFixed(1) : '?'}±${st ? st.std.toFixed(1) : '?'} samplers<=${maxSamplers}${overLimit ? '  SAMPLER_LIMIT -> will not run on Android' : ''}${blank && !overLimit ? '  BLANK/FLAT -> harness failure' : ''}`;
       console.log(line);
       report.push(line);
       fs.writeFileSync(path.join(outDir, aspect, `shot${shot}.log`), logs.join('\n'));

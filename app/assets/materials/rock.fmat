@@ -11,28 +11,46 @@ material {
   shading_model: lit,
   culling: back,
   parameters: [
-    { type: sampler2d, name: r_col, hint: default_white },
-    { type: sampler2d, name: r_nrm, hint: default_normal },
-    { type: sampler2d, name: r_arh, hint: default_white },
-    { type: sampler2d, name: m_col, hint: default_white },
-    { type: sampler2d, name: m_nrm, hint: default_normal },
-    { type: sampler2d, name: m_arh, hint: default_white },
+    // Four samplers: the rock set's packed pair and the bank atlas (moss
+    // caps). Android guarantees only 16 per fragment shader and the engine's
+    // lit pipeline uses about ten (lib/render/surface_pack.dart).
+    { type: sampler2d, name: r_t1, hint: default_white },
+    { type: sampler2d, name: r_t2, hint: default_white },
+    { type: sampler2d, name: s_t1, hint: default_white },
+    { type: sampler2d, name: s_t2, hint: default_white },
     { type: float, name: damp, default: 0.35 },
   ],
 }
 
 fragment {
-  vec3 DecodeNormal(vec3 t) {
-    return t * 255.0 / 127.0 - 128.0 / 127.0;
+  vec3 DecodeNormalXY(vec2 t) {
+    vec2 xy = t * 255.0 / 127.0 - 128.0 / 127.0;
+    return vec3(xy, sqrt(max(1.0 - dot(xy, xy), 0.0)));
+  }
+
+  // Moss tile of the padded bank atlas (see ground.fmat / surface_pack.dart).
+  vec4 MossTap(sampler2D t, highp vec2 uv, vec2 dx, vec2 dy) {
+    highp vec2 a = (vec2(1088.0, 0.0) + 32.0 + fract(uv) * 1024.0) / 2176.0;
+    vec2 gx = dx * (1024.0 / 2176.0);
+    vec2 gy = dy * (1024.0 / 2176.0);
+    float m = max(length(gx), length(gy)) * 2176.0;
+    if (m > 24.0) {
+      gx *= 24.0 / m;
+      gy *= 24.0 / m;
+    }
+    return textureGrad(t, a, gx, gy);
   }
 
   void Surface(inout MaterialInputs material) {
     vec2 uv = GetUV0();
-    vec3 srgb = texture(r_col, uv).rgb;
+    vec4 t1 = texture(r_t1, uv);
+    vec4 t2 = texture(r_t2, uv);
+    vec3 srgb = t1.rgb;
     vec3 col = SRGBToLinear(srgb) * GetVertexColor().rgb;
-    vec3 arh = texture(r_arh, uv).rgb;
+    vec3 arh = vec3(t2.b, t1.a, t2.a);
     vec3 geo = GetWorldNormal();
-    vec3 n = PerturbNormal(r_nrm, geo, v_viewvector, uv, 1.0);
+    mat3 tbn = TangentFrame(geo, -v_viewvector, uv);
+    vec3 n = normalize(tbn * DecodeNormalXY(t2.rg));
     highp vec3 wp = GetWorldPosition();
     float y = wp.y;
 
@@ -51,14 +69,18 @@ fragment {
 
     // Moss caps: upward faces clear of the splash zone, in patches.
     highp vec2 mp = wp.xz / 0.3;
-    vec3 ma = texture(m_arh, mp).rgb;
-    float patchField = texture(m_arh, wp.xz * 0.9 + 0.37).b;
+    vec2 mdx = dFdx(mp), mdy = dFdy(mp);
+    vec4 m1 = MossTap(s_t1, mp, mdx, mdy);
+    vec4 m2 = MossTap(s_t2, mp, mdx, mdy);
+    vec3 ma = vec3(m2.b, m1.a, m2.a);
+    highp vec2 pp = wp.xz * 0.9 + 0.37;
+    float patchField = MossTap(s_t2, pp, dFdx(pp), dFdy(pp)).a;
     float up = smoothstep(0.35, 0.8, geo.y);
     float dry = smoothstep(0.03, 0.07, y);
     float cap = up * dry * clamp((patchField - 0.42 + ma.b * 0.4 + up * 0.15) * 5.0, 0.0, 1.0);
     if (cap > 0.0) {
-      vec3 mc = SRGBToLinear(texture(m_col, mp).rgb);
-      vec3 mn = DecodeNormal(texture(m_nrm, mp).rgb);
+      vec3 mc = SRGBToLinear(m1.rgb);
+      vec3 mn = DecodeNormalXY(m2.rg);
       col = mix(col, mc * 0.8, cap);
       n = normalize(mix(n, normalize(geo + vec3(mn.x, 0.0, -mn.y) * 0.8), cap));
       rough = mix(rough, 0.85, cap);

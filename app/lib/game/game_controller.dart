@@ -1,3 +1,4 @@
+import 'diagnostics.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show FrameTiming, Offset;
@@ -53,13 +54,26 @@ class GameController extends ChangeNotifier {
   double lastBuildMs = 0, lastRasterMs = 0;
 
   Future<void> boot() async {
+    try {
+      await _boot();
+    } catch (e, st) {
+      Diagnostics.report('Startup failed: $e\n$st');
+    }
+  }
+
+  int _framesSinceBoot = 0;
+
+  Future<void> _boot() async {
+    Diagnostics.step('settings');
     await settings.load();
     governor.preset = settings.quality;
     governor.adaptive = capture == null;
     loadingText = 'loading the stream';
     notifyListeners();
+    Diagnostics.step('gpu');
     await Scene.initializeStaticResources();
     await Scene.preload();
+    Diagnostics.step('scene');
     scene = Scene();
     gameScene = GameScene(scene)..buildStatic();
     loadingText = 'filling the stream';
@@ -71,6 +85,7 @@ class GameController extends ChangeNotifier {
     governor.targetHz = settings.performance120 ? 120 : 60;
     SchedulerBinding.instance.addTimingsCallback(_onTimings);
 
+    Diagnostics.step('course');
     final cap = capture;
     if (cap != null) {
       final w = World(cap.seed);
@@ -81,6 +96,7 @@ class GameController extends ChangeNotifier {
       _install(World(_newSeed()));
       phase = AppPhase.title;
     }
+    Diagnostics.step('frames');
     notifyListeners();
   }
 
@@ -196,6 +212,8 @@ class GameController extends ChangeNotifier {
   void onTick(double dt, double aspect) {
     final w = world;
     if (w == null) return;
+    // Rendering has survived a second of frames: this launch is good.
+    if (_framesSinceBoot < 60 && ++_framesSinceBoot == 60) Diagnostics.step('ready');
     _realTime += dt;
     stats.add(_realTime, dt * 1000);
     final cap = capture;

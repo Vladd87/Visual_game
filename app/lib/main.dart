@@ -3,13 +3,15 @@ import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'game/capture.dart';
+import 'game/diagnostics.dart';
 import 'game/game_controller.dart';
 import 'ui/game_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Surface framework errors in every build mode (release swallows them otherwise).
-  FlutterError.onError = (details) => debugPrint('LANTERN_ERROR ${details.exceptionAsString()}\n${details.stack}');
+  // Boot journal, safe mode after a crashed launch, and on-screen errors
+  // (release builds otherwise swallow them).
+  Diagnostics.init();
   final capture = kIsWeb ? CaptureConfig.fromUri(Uri.base) : null;
   // Automated smoke tests on web find buttons through the semantics tree.
   if (kIsWeb && Uri.base.queryParameters['semantics'] == '1') {

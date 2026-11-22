@@ -8,8 +8,10 @@ import 'package:vector_math/vector_math.dart' as vm;
 import '../sim/entities.dart';
 import '../sim/vec2.dart';
 import '../sim/world.dart';
+import '../game/diagnostics.dart';
 import 'rock_assets.dart';
 import 'rock_layout.dart';
+import 'surface_pack.dart';
 import 'terrain.dart';
 
 /// Builds and animates the 3D scene for a [World].
@@ -33,7 +35,6 @@ class GameScene {
   PreprocessedMaterial? _waterMat;
   PreprocessedMaterial? _groundMat;
   Texture2D? _waterNormal;
-  Texture2D? _caustics;
   Texture2D? _sky;
   // M3 stone and moss: scanned rocks (one instanced batch per scan) and the
   // photographed bank surfaces.
@@ -133,8 +134,15 @@ class GameScene {
 
   /// Loads materials, baked textures and the environment (before [buildCourse]).
   Future<void> loadAssets() async {
+    if (Diagnostics.safeRender) {
+      // The previous launch died while setting up rendering: plain PBR
+      // materials and greybox rocks, so the game at least runs.
+      Diagnostics.step('environment');
+      await scene.loadEnvironment('assets/env/blue_hour_forest.hdr', showSkybox: false, intensity: envIntensity, maxWidth: 1024);
+      return;
+    }
+    Diagnostics.step('materials');
     _waterNormal = await _loadTexture('assets/textures/water_normal.png');
-    _caustics = await _loadTexture('assets/textures/caustics.png');
     _sky = await _loadTexture('assets/textures/sky_blue.png', mipmaps: false);
     _waterMat = await loadFmatMaterial('assets/materials/water.fmat');
     _groundMat = await loadFmatMaterial('assets/materials/ground.fmat');
@@ -146,18 +154,27 @@ class GameScene {
     // reflection sees it unobstructed. Until M4 adds real occlusion, this
     // ratio stands in for it.
     _waterMat!.parameters.setFloat('sky_scale', 1.3939 * envIntensity * 1.6);
-    _groundMat!.parameters.setTexture('caustic_tex', _caustics!.gpuTexture, sampler: _caustics!.sampledSampler);
-    _groundMat!.parameters.setTexture('noise_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
-    // Banks: forest ground, moss cushions and waterline mud (all CC0, ASSETS.md).
-    await _bindSurface(_groundMat!, 'forest_ground', 'g_');
-    await _bindSurface(_groundMat!, 'moss', 'm_');
-    await _bindSurface(_groundMat!, 'mud', 'u_');
-    // Rocks: two scanned sets, one material per texture atlas.
+    // Ground and rocks bind few textures: Android guarantees only 16 fragment
+    // samplers and the lit pipeline already uses about ten (surface_pack.dart).
+    Diagnostics.step('textures');
+    final data = await buildGroundData();
+    _bind(_groundMat!, 'data_tex', data);
+    // Banks: forest ground, moss cushions and waterline mud (all CC0,
+    // ASSETS.md), packed into one padded atlas pair.
+    final atlas = await buildSurfaceAtlas();
+    _bind(_groundMat!, 's_t1', atlas.t1);
+    _bind(_groundMat!, 's_t2', atlas.t2);
+    // Rocks: two scanned sets, one material per texture set; moss caps come
+    // from the bank atlas.
+    Diagnostics.step('rocks');
     _rockScans = await loadRockScans();
     for (final set in ['rock_moss_set_01', 'rock_moss_set_02']) {
       final m = await loadFmatMaterial('assets/materials/rock.fmat');
-      await _bindSurface(m, set, 'r_');
-      await _bindSurface(m, 'moss', 'm_');
+      final (t1, t2) = await packRockSet(set);
+      _bind(m, 'r_t1', t1);
+      _bind(m, 'r_t2', t2);
+      _bind(m, 's_t1', atlas.t1);
+      _bind(m, 's_t2', atlas.t2);
       _rockMats.add(m);
     }
     for (final m in [_waterMat!, _groundMat!]) {
@@ -165,6 +182,7 @@ class GameScene {
     }
     // Blue hour (Poly Haven aarfontein_dawn) behind a forest treeline, baked by
     // tools/bake/bake_env.py.
+    Diagnostics.step('environment');
     await scene.loadEnvironment('assets/env/blue_hour_forest.hdr', showSkybox: false, intensity: envIntensity, maxWidth: 1024);
   }
 
@@ -180,17 +198,8 @@ class GameScene {
         sampling: TextureSampling(maxAnisotropy: 8, mipmaps: mipmaps));
   }
 
-  /// Binds one packed surface (`<name>_col/_nrm/_arh.jpg`, see
-  /// tools/bake/pack_surface_textures.py) to [m] as `<prefix>col` etc.
-  static Future<void> _bindSurface(PreprocessedMaterial m, String name, String prefix) async {
-    const dir = 'assets/textures/surfaces';
-    final col = await _loadTexture('$dir/${name}_col.jpg', content: TextureContent.color);
-    final nrm = await _loadTexture('$dir/${name}_nrm.jpg', content: TextureContent.normal);
-    final arh = await _loadTexture('$dir/${name}_arh.jpg');
-    m.parameters.setTexture('${prefix}col', col.gpuTexture, sampler: col.sampledSampler);
-    m.parameters.setTexture('${prefix}nrm', nrm.gpuTexture, sampler: nrm.sampledSampler);
-    m.parameters.setTexture('${prefix}arh', arh.gpuTexture, sampler: arh.sampledSampler);
-  }
+  static void _bind(PreprocessedMaterial m, String name, Texture2D t) =>
+      m.parameters.setTexture(name, t.gpuTexture, sampler: t.sampledSampler);
 
   /// (Re)builds everything that depends on the course of [world].
   void buildCourse(World world) {
