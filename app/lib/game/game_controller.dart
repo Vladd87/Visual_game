@@ -65,7 +65,7 @@ class GameController extends ChangeNotifier {
 
   Future<void> _boot() async {
     Diagnostics.step('settings');
-    if (await platform.safeModeRequested()) Diagnostics.safeRender = true;
+    Diagnostics.applyLaunchFlags(await platform.launchFlags());
     await settings.load();
     governor.preset = settings.quality;
     governor.adaptive = capture == null;
@@ -98,6 +98,8 @@ class GameController extends ChangeNotifier {
       phase = AppPhase.title;
     }
     Diagnostics.step('frames');
+    // With the 3D view off nothing ticks, so the UI drawing is the success.
+    if (Diagnostics.no3d) Diagnostics.step('ready');
     notifyListeners();
   }
 
@@ -213,8 +215,14 @@ class GameController extends ChangeNotifier {
   void onTick(double dt, double aspect) {
     final w = world;
     if (w == null) return;
-    // Rendering has survived a second of frames: this launch is good.
-    if (_framesSinceBoot < 60 && ++_framesSinceBoot == 60) Diagnostics.step('ready');
+    // Heartbeat for the first frames; a second of frames means this launch
+    // is good.
+    if (_framesSinceBoot < 60) {
+      _framesSinceBoot++;
+      if (_framesSinceBoot == 1) Diagnostics.step('frame 1');
+      if (_framesSinceBoot == 10) Diagnostics.step('frame 10');
+      if (_framesSinceBoot == 60) Diagnostics.step('ready');
+    }
     _realTime += dt;
     stats.add(_realTime, dt * 1000);
     final cap = capture;

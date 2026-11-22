@@ -87,15 +87,23 @@ class PlatformBridge {
     }
   }
 
-  /// True when the player chose "Safe mode" on the crash report screen.
-  Future<bool> safeModeRequested() async {
-    if (!available) return false;
+  /// Diagnostic modes picked on the crash/stall report screen:
+  /// plainMaterials, noEffects, no3d.
+  Future<Map<String, bool>> launchFlags() async {
+    if (!available) return const {};
     try {
       final m = await _methods.invokeMapMethod<String, Object?>('launchFlags');
-      return m?['safeMode'] == true;
+      return {for (final e in (m ?? const {}).entries) e.key: e.value == true};
     } catch (_) {
-      return false;
+      return const {};
     }
+  }
+
+  /// Records a boot step natively (synchronously committed), so a launch that
+  /// hangs and is swiped away can still be reported on the next start.
+  void reportStep(String step) {
+    if (!available) return;
+    _methods.invokeMethod('bootStep', {'step': step}).catchError((_) => null);
   }
 
   Future<String?> perfLogDir() async {

@@ -22,8 +22,10 @@ import io.flutter.plugin.common.MethodChannel
  */
 class MainActivity : FlutterActivity() {
     companion object {
-        /** Set by [LaunchActivity] when the player picks "Safe mode". */
-        const val EXTRA_SAFE_MODE = "lantern.safe_mode"
+        /** Diagnostic modes picked on [LaunchActivity]'s report screen. */
+        const val EXTRA_PLAIN_MATERIALS = "lantern.plain_materials"
+        const val EXTRA_NO_EFFECTS = "lantern.no_effects"
+        const val EXTRA_NO_3D = "lantern.no_3d"
     }
 
     // Lazy, not lateinit: FlutterActivity calls configureFlutterEngine() from
@@ -60,7 +62,13 @@ class MainActivity : FlutterActivity() {
                 }
                 "displayInfo" -> result.success(displayMode.info())
                 "launchFlags" -> result.success(mapOf(
-                    "safeMode" to intent.getBooleanExtra(EXTRA_SAFE_MODE, false)))
+                    "plainMaterials" to intent.getBooleanExtra(EXTRA_PLAIN_MATERIALS, false),
+                    "noEffects" to intent.getBooleanExtra(EXTRA_NO_EFFECTS, false),
+                    "no3d" to intent.getBooleanExtra(EXTRA_NO_3D, false)))
+                "bootStep" -> {
+                    CrashReport.recordStep(this, call.argument<String>("step") ?: "?")
+                    result.success(null)
+                }
                 "haptic" -> {
                     haptics.pulse((call.argument<Double>("strength") ?: 0.5).toFloat())
                     result.success(null)

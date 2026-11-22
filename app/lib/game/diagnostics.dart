@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../platform/platform_bridge.dart';
 import 'boot_journal_stub.dart' if (dart.library.io) 'boot_journal_io.dart' as journal;
 
 /// On-device diagnostics, for crashes nobody can reproduce off the phone.
@@ -19,6 +20,25 @@ class Diagnostics {
   /// Plain PBR materials instead of the custom shaders (set after a stall
   /// in a rendering step).
   static bool safeRender = false;
+
+  /// Diagnostic mode: no TAA, AO, fog, shadows, planar reflection or custom
+  /// upscale (the scene is presented directly).
+  static bool noEffects = false;
+
+  /// Diagnostic mode: no 3D view at all (checks that Flutter itself draws).
+  static bool no3d = false;
+
+  static void applyLaunchFlags(Map<String, bool> f) {
+    if (f['plainMaterials'] == true) safeRender = true;
+    if (f['noEffects'] == true) noEffects = true;
+    if (f['no3d'] == true) no3d = true;
+  }
+
+  static String get modeLabel => [
+        if (safeRender) 'plain materials',
+        if (noEffects) 'no effects',
+        if (no3d) 'no 3D',
+      ].join(', ');
 
   static final ValueNotifier<String?> lastError = ValueNotifier(null);
 
@@ -42,7 +62,11 @@ class Diagnostics {
   }
 
   /// Records that boot is entering [step].
-  static void step(String step) => journal.write(step);
+  static void step(String step) {
+    journal.write(step);
+    debugPrint('LANTERN_STEP $step');
+    PlatformBridge.instance.reportStep(step);
+  }
 
   static void report(String text) {
     debugPrint('LANTERN_ERROR $text');
@@ -57,6 +81,7 @@ class Diagnostics {
       parts.add('The last launch stopped during "$previousStall".'
           '${safeRender ? ' Starting with plain materials (safe mode).' : ''}');
     }
+    if (modeLabel.isNotEmpty) parts.add('Diagnostic mode: $modeLabel.');
     if (error != null) parts.add(error);
     if (parts.isEmpty) return null;
     return '${parts.join('\n\n')}\n\nA screenshot of this is enough to report it.';

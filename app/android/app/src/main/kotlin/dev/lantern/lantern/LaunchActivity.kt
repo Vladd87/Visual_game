@@ -37,15 +37,16 @@ class LaunchActivity : Activity() {
         super.onCreate(savedInstanceState)
         val report = CrashReport.pending(this)
         if (report == null) {
-            startGame(safe = false)
+            startGame(null)
             return
         }
         showReport(report)
     }
 
-    private fun startGame(safe: Boolean) {
+    /** [mode]: null, or one of MainActivity's EXTRA_* diagnostic flags. */
+    private fun startGame(mode: String?) {
         val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra(MainActivity.EXTRA_SAFE_MODE, safe)
+        if (mode != null) intent.putExtra(mode, true)
         startActivity(intent)
         finish()
         @Suppress("DEPRECATION")
@@ -60,7 +61,7 @@ class LaunchActivity : Activity() {
             setPadding(pad, pad * 2, pad, pad)
         }
         root.addView(TextView(this).apply {
-            text = "Lantern stopped last time"
+            text = if (report.startsWith("STALL")) "Lantern did not finish starting last time" else "Lantern stopped last time"
             setTextColor(Color.rgb(255, 200, 150))
             textSize = 20f
         })
@@ -92,14 +93,29 @@ class LaunchActivity : Activity() {
             }
         })
         buttons.addView(Button(this).apply {
-            text = "Safe mode"
-            setOnClickListener { startGame(safe = true) }
-        })
-        buttons.addView(Button(this).apply {
             text = "Start"
-            setOnClickListener { startGame(safe = false) }
+            setOnClickListener { startGame(null) }
         })
         root.addView(buttons)
+        root.addView(TextView(this).apply {
+            text = "Test modes (to find what fails):"
+            setTextColor(Color.rgb(170, 170, 170))
+            textSize = 12f
+            setPadding(0, pad / 2, 0, 0)
+        })
+        val modes = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        for ((label, flag) in listOf(
+            "Plain materials" to MainActivity.EXTRA_PLAIN_MATERIALS,
+            "No effects" to MainActivity.EXTRA_NO_EFFECTS,
+            "No 3D" to MainActivity.EXTRA_NO_3D,
+        )) {
+            modes.addView(Button(this).apply {
+                text = label
+                textSize = 12f
+                setOnClickListener { startGame(flag) }
+            })
+        }
+        root.addView(modes)
         setContentView(root)
     }
 }
@@ -107,7 +123,22 @@ class LaunchActivity : Activity() {
 object CrashReport {
     private const val PREFS = "lantern_crash_report"
 
-    /** The report for the most recent abnormal exit not shown yet, or null. */
+    /**
+     * Records the game's current boot step (called from Dart). commit(), not
+     * apply(): it must be on disk if the process is killed right after.
+     */
+    fun recordStep(ctx: Context, step: String) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString("step", step)
+            .putInt("stepPid", android.os.Process.myPid())
+            .commit()
+    }
+
+    /**
+     * The report for the most recent exit not shown yet: an abnormal exit
+     * (crash, ANR, ...) or, whatever the exit reason, a launch whose boot
+     * never reached "ready" (a hang the player swiped away). Null otherwise.
+     */
     fun pending(ctx: Context): String? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
         return try {
@@ -116,8 +147,13 @@ object CrashReport {
             val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             if (last.timestamp <= prefs.getLong("seen", 0L)) return null
             prefs.edit().putLong("seen", last.timestamp).apply()
-            if (last.reason !in abnormal) return null
-            build(ctx, last)
+            val step = prefs.getString("step", null)
+            val stalled = step != null && step != "ready" && prefs.getInt("stepPid", -1) == last.pid
+            when {
+                last.reason in abnormal -> build(ctx, last, step)
+                stalled -> "STALL: the game stopped at boot step \"$step\" and was closed.\n" + build(ctx, last, step)
+                else -> null
+            }
         } catch (t: Throwable) {
             null
         }
@@ -144,10 +180,13 @@ object CrashReport {
         ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
         ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> "EXCESSIVE_RESOURCE_USAGE"
         ApplicationExitInfo.REASON_DEPENDENCY_DIED -> "DEPENDENCY_DIED"
+        ApplicationExitInfo.REASON_USER_REQUESTED -> "USER_REQUESTED (closed)"
+        ApplicationExitInfo.REASON_USER_STOPPED -> "USER_STOPPED (force stop)"
+        ApplicationExitInfo.REASON_OTHER -> "OTHER"
         else -> "reason $r"
     }
 
-    private fun build(ctx: Context, e: ApplicationExitInfo): String {
+    private fun build(ctx: Context, e: ApplicationExitInfo, step: String?): String {
         val sb = StringBuilder()
         val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(e.timestamp))
         val version = try {
@@ -156,6 +195,7 @@ object CrashReport {
         sb.append("Lantern $version  ·  ${Build.MANUFACTURER} ${Build.MODEL}  ·  Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})\n")
         sb.append("Exit: ${reasonName(e.reason)}  status=${e.status}  at $time\n")
         e.description?.let { sb.append("Description: $it\n") }
+        if (step != null) sb.append("Last boot step: $step\n")
         sb.append("Memory at exit: pss=${e.pss / 1024} MB rss=${e.rss / 1024} MB\n")
         // Native crashes (API 31+) carry the tombstone; ANRs carry text traces.
         try {
@@ -209,7 +249,7 @@ object CrashReport {
             val keep = mine.filter { l ->
                 !l.contains(" V/") && !l.contains(" D/") || l.contains("flutter", true) || l.contains("impeller", true)
             }
-            (if (keep.isEmpty()) lines.takeLast(80) else keep.takeLast(150)).joinToString("\n")
+            (if (keep.isEmpty()) lines.takeLast(80) else keep.takeLast(220)).joinToString("\n")
         } catch (t: Throwable) {
             "(log unavailable: ${t.javaClass.simpleName}: ${t.message})"
         }

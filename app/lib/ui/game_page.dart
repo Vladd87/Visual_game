@@ -1,3 +1,4 @@
+import 'package:flutter_scene/scene.dart' show RenderView, SceneView;
 import '../game/diagnostics.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -141,12 +142,24 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
               onPointerMove: _move,
               onPointerUp: _up,
               onPointerCancel: _up,
-              child: ScenePresenter(
-                scene: c.scene,
-                renderScale: c.governor.renderScale,
-                cameraFor: c.cameraFor,
-                onTick: (dt) => c.onTick(dt, layout.game.width / math.max(1, layout.game.height)),
-              ),
+              child: Diagnostics.no3d
+                  ? const ColoredBox(
+                      color: Color(0xFF0B0E12),
+                      child: Center(child: Text('3D view off (diagnostic mode)', style: TextStyle(color: Color(0xFF8A9099)))),
+                    )
+                  : Diagnostics.noEffects
+                      ? SceneView(
+                          c.scene,
+                          // Straight to the screen: no off-screen target, no upscale shader.
+                          viewsBuilder: (_) => [RenderView(camera: c.cameraFor(layout.game.width / math.max(1, layout.game.height)))],
+                          onTick: (elapsed, dt) => c.onTick(dt, layout.game.width / math.max(1, layout.game.height)),
+                        )
+                      : ScenePresenter(
+                          scene: c.scene,
+                          renderScale: c.governor.renderScale,
+                          cameraFor: c.cameraFor,
+                          onTick: (dt) => c.onTick(dt, layout.game.width / math.max(1, layout.game.height)),
+                        ),
             ),
           ),
         if (!loading && c.capture == null) ..._overlays(layout),
