@@ -30,6 +30,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-7 | stone/moss v2 | 3.13 | 3.00 | 3.06 | 2 | 0/4 | +0.31 (continue). Stone 3.5/10: moss texture on every rock face, soft dark contact halos, uniform dirt lip |
 | round-8 | stone/moss v3 | 2.50 | 2.44 | 2.47 | 2 | 0/4 | −0.59 (1st sub-0.3 round for M3). Stone 3/10: projected moss caps read as "lawn on rocks", stretched rock texels, blurred black bank edge |
 | round-9 | stone/moss v4 (panel) | 3.22 | 3.03 | 3.12 | 2.5 | 0/4 | Paired panel vs round 7: **−0.56** (critics −0.56 / −0.56). v4 rejected; **M3 stops at v2** |
+| round-10 | lighting/fog v1 (panel) | 3.69 | 3.91 | 3.80 | 3.5 | 0/4 (A/B-only critic) | Panel vs M3 final: **+0.83** (critics +0.91 / +0.75). New best; lighting alone 4.5 vs 3 |
 
 ## Round 1: water v1
 
@@ -360,3 +361,48 @@ Both critics also point out that the v2 moss is brown-olive (R above G, about 54
   - dusk light balance: darker, bluer ambient; a local warm key; grain (M4 and M8)
   - the water surface: sky reflection, glints, wakes (M4)
   - leaves and fireflies (M6 and M7)
+
+
+## Round 10: lighting and fog v1 (M4)
+
+**What changed:**
+- **Sky:** a blue-hour sky (Poly Haven Aarfontein Dawn) behind a baked forest treeline; Venus and stars removed.
+- **Light balance:** no directional light; the lantern is the key light (×1.6, 3 m range).
+- **Atmosphere:** dark mist that hugs the ground, plus 8 cm ground-truth ambient occlusion.
+- **Water colour:** amber tannin instead of red, which removed the magenta cast.
+
+**Panel** (each critic compared this round with `captures/m3-final` side by side, order flipped)
+
+| Critic | Round 10 (new) | M3 final (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 3.78 | 2.88 | +0.91 | 4.5 vs 3 |
+| b (new = X) | 3.81 | 3.06 | +0.75 | 4.5 vs 3 |
+
+- **Gain +0.83** (critic spread 0.16), so **this round becomes the best**.
+- Absolute score 3.80 (inner 3.69, cover 3.91; worst shot 3.5). Highest so far.
+- **A/B**, now judged by a separate critic that saw only the four pairs: **0/4 fooled**, 99 % each. The giveaway it named was the white glowing box.
+- Tokens: 172k + 166k for the panel, 73k for the A/B critic.
+
+**What both critics credit:**
+- true dusk blacks (p1 0.01–0.04, against 0.05–0.10 before)
+- a cool, neutral ambient (far grass about 38/42/41, against ref11's dusk tree mass at 43/47/51)
+- the warm lantern dominating against the cool surroundings
+- no grey veil
+
+**What both critics flag as M4 problems:**
+1. **The lantern lights like a stage light.** Bank slopes 400–500 px away glow in long, even bands that end at a hard line on the bank crest. A candle lantern's light should die within about a metre (refs 02, 03).
+2. **Near-black shadow holes on the bed** under rocks. Under water, shadows are filled by the sky and broken up by caustics (refs 05, 06).
+3. **Glossy "bean" highlights on submerged pebbles.** Stones under water lose their sheen; the highlight belongs on the water surface (refs 02, 07, 08).
+4. **No glow in the damp air around the lantern**, and little loss of contrast with distance.
+
+**Other giveaways, for later stages:**
+- the lantern is a clipped white cube (M7)
+- the water has no surface or glitter (M7 glints)
+- sprite leaves and fireflies (M6, M7)
+- flat tiled grass (M6)
+
+**Changes for round 11 (M4 v2):**
+- Lantern light range 3 m → 1.3 m, with the near pool kept, and a softer shadow.
+- No specular on submerged ground.
+- A small sky fill so shadows on the bed aren't black.
+- Slightly denser dark mist, so contrast drops with distance.
