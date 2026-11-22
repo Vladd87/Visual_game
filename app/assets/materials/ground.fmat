@@ -152,14 +152,17 @@ fragment {
       float above = wp.y;
       // Moss cushions: patchy, favoured on flatter ground near the water,
       // never in the mud band; the edge follows the moss's own height.
+      // Noise A is ~N(0.53, 0.1): this gives ~40 % cushions, more on level
+      // ground near the water, with dark bare earth and litter between.
       float level = smoothstep(0.75, 0.95, geo.y);
-      float mossField = n1 * 0.55 + n2 * 0.35 + n3 * 0.1 + level * 0.12 + (1.0 - smoothstep(0.0, 0.5, out_d)) * 0.12;
+      float near = 1.0 - smoothstep(0.0, 0.5, out_d);
+      float mossField = n1 * 0.6 + n2 * 0.4 + (level - 0.7) * 0.06 + near * 0.06;
       float mudBand = 1.0 - smoothstep(0.025, 0.075, above + (n2 - 0.5) * 0.05);
       float mossW = 0.0;
-      if (mossField > 0.42) {
+      if (mossField > 0.4) {
         vec3 mc, mn, ma;
         SampleSurface(m_col, m_nrm, m_arh, uv / 0.45, n2, mc, mn, ma);
-        mossW = clamp((mossField - 0.5 + ma.b * 0.25) * 6.0, 0.0, 1.0) * (1.0 - mudBand);
+        mossW = clamp((mossField - 0.54 + (ma.b - 0.44) * 0.35) * 9.0, 0.0, 1.0) * (1.0 - mudBand);
         col = mix(col, mc, mossW);
         tn = normalize(mix(tn, mn, mossW));
         arh = mix(arh, ma, mossW);
@@ -178,7 +181,9 @@ fragment {
       ao = arh.r;
       // Damp from the rain: soil darkens and gets a little glossier; moss
       // darkens but stays matte.
-      col *= mix(1.0, mix(0.72, 0.8, mossW), damp);
+      col *= mix(1.0, mix(0.6, 0.8, mossW), damp);
+      // Large, soft light/dark patches (litter, soil moisture).
+      col *= 0.8 + 0.4 * texture(noise_tex, p * 0.09 + 0.21).a;
       rough = mix(rough, rough * 0.8, damp * (1.0 - mossW));
       // Saturated mud at the waterline, with puddles in its low spots.
       float soak = mudW * (1.0 - smoothstep(0.0, 0.05, above));

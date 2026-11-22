@@ -10,9 +10,9 @@ material {
   shading_model: lit,
   culling: back,
   parameters: [
-    { type: sampler2d, name: col_tex, hint: default_white },
-    { type: sampler2d, name: nrm_tex, hint: default_normal },
-    { type: sampler2d, name: arh_tex, hint: default_white },
+    { type: sampler2d, name: r_col, hint: default_white },
+    { type: sampler2d, name: r_nrm, hint: default_normal },
+    { type: sampler2d, name: r_arh, hint: default_white },
     { type: float, name: damp, default: 0.35 },
   ],
 }
@@ -20,11 +20,11 @@ material {
 fragment {
   void Surface(inout MaterialInputs material) {
     vec2 uv = GetUV0();
-    vec3 srgb = texture(col_tex, uv).rgb;
+    vec3 srgb = texture(r_col, uv).rgb;
     vec3 col = SRGBToLinear(srgb) * GetVertexColor().rgb;
-    vec3 arh = texture(arh_tex, uv).rgb;
+    vec3 arh = texture(r_arh, uv).rgb;
     vec3 geo = GetWorldNormal();
-    vec3 n = PerturbNormal(nrm_tex, geo, v_viewvector, uv, 1.0);
+    vec3 n = PerturbNormal(r_nrm, geo, v_viewvector, uv, 1.0);
     highp vec3 wp = GetWorldPosition();
     float y = wp.y;
 
