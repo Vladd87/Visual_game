@@ -11,6 +11,12 @@ Every round follows the same steps (PLAN.md §5):
 - A system stops after two consecutive rounds that each gain less than 0.3 in mean score, or after 8 rounds.
 - Everything stops when every shot scores ≥ 7.5.
 
+**Paired panel (from round 9, at your request).** Rounds 1–8 used one fresh critic each. Its own calibration offset made round-to-round changes noisy: in round 8, shots the changes never touched also dropped 0.5. From round 9:
+- **Two fresh critics** score each round. Each gets its own packet holding the round under review **and the current best round of the same system**, as sets X and Y in an independent random order. They score both side by side; only one also runs the A/B test. Prompt: `tools/critic/critic_prompt_paired.md`.
+- **Gain** = the median over critics of (new − best). Each critic's offset cancels in its own difference. **Absolute score** = the mean of the critics' scores for the new round.
+- **Ratchet.** The new version becomes the best only if its gain is above zero. Otherwise the code goes back to the best version (clear bug fixes are kept) and the next attempt starts from there. The stop rule counts gains over the best: two consecutive rounds under +0.3 stop the system, at its best version.
+- Aggregation: `tools/critic/panel_score.py`.
+
 | Round | System | Inner mean | Cover mean | Overall | Min | A/B fooled | Notes |
 |---|---|---|---|---|---|---|---|
 | m1-greybox | (baseline, not critiqued) | | | | | | Plain-lighting greybox |

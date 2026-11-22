@@ -12,7 +12,13 @@ Every image is re-encoded the same way (JPEG q90, no metadata, long side
 capped) so file format cannot give the answer away. The A/B answer key is
 written OUTSIDE the packet.
 
-Usage: python3 -I make_packet.py <round_dir> <references_dir> <device_dir> <packet_dir> <key_file> [pairs] [seed]
+Usage: python3 -I make_packet.py <round_dir> <references_dir> <device_dir> <packet_dir> <key_file> [pairs] [seed] [--vs <best_round_dir>]
+
+With --vs (paired mode, from round 9): the round under review and the
+current best round both go into the packet, as captures/X/... and
+captures/Y/... in a random order, so each critic scores both in one sitting
+and its own calibration offset cancels in the difference. The key file
+records which set is which. A/B pairs come from the round under review.
 """
 import json
 import os
@@ -49,10 +55,20 @@ def center_crop_to(src, aspect, max_side):
 
 
 def main():
-    round_dir, refs_dir, device_dir, packet, key_file = sys.argv[1:6]
-    pairs = int(sys.argv[6]) if len(sys.argv) > 6 else 4
-    seed = int(sys.argv[7]) if len(sys.argv) > 7 else 1
+    argv = list(sys.argv[1:])
+    best_dir = None
+    if '--vs' in argv:
+        i = argv.index('--vs')
+        best_dir = argv[i + 1]
+        del argv[i:i + 2]
+    round_dir, refs_dir, device_dir, packet, key_file = argv[0:5]
+    pairs = int(argv[5]) if len(argv) > 5 else 4
+    seed = int(argv[6]) if len(argv) > 6 else 1
     rnd = random.Random(seed)
+    sets = {}
+    if best_dir:
+        new_is_x = rnd.random() < 0.5
+        sets = {'X': round_dir if new_is_x else best_dir, 'Y': best_dir if new_is_x else round_dir}
     caps = []
     for aspect in ('inner', 'cover'):
         d = os.path.join(round_dir, aspect)
@@ -61,8 +77,15 @@ def main():
         for f in sorted(os.listdir(d)):
             if f.endswith('.png'):
                 src = os.path.join(d, f)
-                save(src, os.path.join(packet, 'captures', aspect, f.replace('.png', '.jpg')))
+                if not best_dir:
+                    save(src, os.path.join(packet, 'captures', aspect, f.replace('.png', '.jpg')))
                 caps.append(src)
+    for label, src_dir in sets.items():
+        for aspect in ('inner', 'cover'):
+            d = os.path.join(src_dir, aspect)
+            for f in sorted(os.listdir(d)):
+                if f.endswith('.png'):
+                    save(os.path.join(d, f), os.path.join(packet, 'captures', label, aspect, f.replace('.png', '.jpg')))
     refs = sorted(f for f in os.listdir(refs_dir) if f.startswith('ref') and f.endswith('.jpg'))
     # Hold out the A/B photos: they must NOT also appear in references/, or the
     # critic can identify the real half by matching (round-1 finding).
@@ -95,7 +118,8 @@ def main():
         key.append({'pair': k, 'real': 'A' if real_is_a else 'B',
                     'capture': os.path.relpath(c, round_dir), 'reference': r})
     with open(key_file, 'w') as f:
-        json.dump(key, f, indent=2)
+        json.dump({'ab': key, 'sets': sets, 'new_label': 'X' if sets.get('X') == round_dir else 'Y'}
+                  if best_dir else key, f, indent=2)
     print(f'packet: {len(caps)} captures, {len(refs)} references, {len(key)} A/B pairs -> {packet}')
 
 

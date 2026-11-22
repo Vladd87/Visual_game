@@ -264,6 +264,7 @@ The APK target is 95 MB so it can live in git; GitHub rejects single files over 
 | Rocks are photogrammetry scans decimated to 2,400 triangles (M3) | 13 Poly Haven scans at roughly 10k triangles each would be drawn in the main, mirror and shadow passes. At 2,400 the normal map carries the detail, and a rock is under about 200 px on screen. |
 | Surface textures at 1k, three maps per surface: colour, normal, and AO/roughness/height (M3) | Enough texels for macro framing. Ten samplers in the ground shader stays under the 16-sampler limit on GLES and WebGL. The JPEGs keep the APK small (about 6.5 MB of surface textures). |
 | The bed rises into gravel mounds under rocks that can't reach it (M3) | A rock stretched to the deep bed looked like a cylinder (round-5 critic). Rocks resting on gravel bars match refs 08 and 09 and keep every scan at natural proportions. |
+| Paired two-critic panel with a best-version ratchet, from round 9 (your call) | One fresh critic per round swung ±0.5 on its own calibration. Two critics each scoring new against best side by side cancel that offset. Regressions are reverted instead of kept. Cost: about 3× the critic tokens per round (about 450k against 150k); wall time is unchanged because capture dominates. |
 
 ## 8. Risks I'm watching
 
