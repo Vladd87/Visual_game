@@ -40,7 +40,9 @@ class GameScene {
   List<RockScan> _rockScans = const [];
   final List<PreprocessedMaterial> _rockMats = [];
   final List<Node> _rockNodes = [];
-  static final vm.Vector3 ambient = vm.Vector3(0.018, 0.022, 0.028);
+  // Sky-lit ambient for the hand-made terms in water.fmat and ground.fmat:
+  // about a tenth of the open-sky radiance at envIntensity (blue hour).
+  static final vm.Vector3 ambient = vm.Vector3(0.006, 0.008, 0.016);
 
   static const int maxLeaves = 48;
 
@@ -48,17 +50,30 @@ class GameScene {
   void buildStatic() {
     if (_staticBuilt) return;
     _staticBuilt = true;
+    // M4 lighting: blue hour under a treeline. No sun or moon, so no
+    // directional light: the open sky overhead (image-based) is a cool, dim
+    // ambient and the lantern is the key light (refs 02, 05, 11).
     scene.environmentSettings = EnvironmentSettings(
       toneMapping: ToneMappingMode.agx,
       exposure: 1.6,
-      environmentIntensity: 0.2,
+      environmentIntensity: envIntensity,
+      // Unlit dusk mist hugging the water: dark, so it deepens distance
+      // rather than lifting the blacks into a veil.
+      fogEnabled: Uri.base.queryParameters['nofog'] != '1',
+      fogMode: FogMode.exponential,
+      fogColor: vm.Vector3(0.012, 0.016, 0.03),
+      fogDensity: 0.15,
+      fogHeight: 0.0,
+      fogHeightFalloff: 3.0,
+      // Ground-truth AO at macro scale: crevices between stones, under
+      // overhangs and where rocks meet the bed.
+      ambientOcclusionEnabled: Uri.base.queryParameters['noao'] != '1',
+      ambientOcclusionMethod: AmbientOcclusionMethod.groundTruth,
+      ambientOcclusionRadius: 0.08,
+      ambientOcclusionIntensity: 1.0,
+      ambientOcclusionHalfResolution: true,
     );
-    scene.directionalLight = DirectionalLight(
-      direction: vm.Vector3(0.35, -0.8, 0.45),
-      color: vm.Vector3(0.62, 0.7, 0.9),
-      intensity: 0.35,
-      castsShadow: false,
-    );
+    scene.directionalLight = null;
     scene.antiAliasingMode = AntiAliasingMode.taa;
     if (Uri.base.queryParameters['nofit'] == '1') scene.fitNearPlane = false;
 
@@ -76,8 +91,8 @@ class GameScene {
     _lantern.add(body);
     _lanternLight = PointLight(
       color: vm.Vector3(1.0, 0.6, 0.28),
-      intensity: 0.9,
-      range: 2.2,
+      intensity: 1.4,
+      range: 3.0,
       castsShadow: Uri.base.queryParameters['noshadow'] != '1',
       radius: 0.03, // a 7 cm paper lantern, not a point: soft shadows, broad glints
       shadowSoftness: 3.0,
@@ -120,17 +135,17 @@ class GameScene {
   Future<void> loadAssets() async {
     _waterNormal = await _loadTexture('assets/textures/water_normal.png');
     _caustics = await _loadTexture('assets/textures/caustics.png');
-    _sky = await _loadTexture('assets/textures/sky_dusk.png', mipmaps: false);
+    _sky = await _loadTexture('assets/textures/sky_blue.png', mipmaps: false);
     _waterMat = await loadFmatMaterial('assets/materials/water.fmat');
     _groundMat = await loadFmatMaterial('assets/materials/ground.fmat');
     _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
     _waterMat!.parameters.setTexture('sky_tex', _sky!.gpuTexture, sampler: _sky!.sampledSampler);
-    // Baked sky encodes sqrt(radiance / 4.9162) (scale printed by tools/bake/bake_sky.py).
+    // Baked sky encodes sqrt(radiance / 1.3939) (scale printed by tools/bake/bake_sky.py).
     // The reflected sky is 1.6x the diffuse sky level: in a banked channel the
     // bed sees only part of the sky (occluded diffuse), while the upward
     // reflection sees it unobstructed. Until M4 adds real occlusion, this
     // ratio stands in for it.
-    _waterMat!.parameters.setFloat('sky_scale', 4.9162 * envIntensity * 1.6);
+    _waterMat!.parameters.setFloat('sky_scale', 1.3939 * envIntensity * 1.6);
     _groundMat!.parameters.setTexture('caustic_tex', _caustics!.gpuTexture, sampler: _caustics!.sampledSampler);
     _groundMat!.parameters.setTexture('noise_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
     // Banks: forest ground, moss cushions and waterline mud (all CC0, ASSETS.md).
@@ -148,11 +163,12 @@ class GameScene {
     for (final m in [_waterMat!, _groundMat!]) {
       m.parameters.setVec3('ambient', ambient);
     }
-    // Dusk sky (after sunset) for water reflections and ambient light.
-    await scene.loadEnvironment('assets/env/qwantani_dusk_2_1k.hdr', showSkybox: false, intensity: envIntensity, maxWidth: 1024);
+    // Blue hour (Poly Haven aarfontein_dawn) behind a forest treeline, baked by
+    // tools/bake/bake_env.py.
+    await scene.loadEnvironment('assets/env/blue_hour_forest.hdr', showSkybox: false, intensity: envIntensity, maxWidth: 1024);
   }
 
-  static const double envIntensity = 0.2;
+  static const double envIntensity = 0.25;
 
   static Future<Texture2D> _loadTexture(String path,
       {bool mipmaps = true, TextureContent content = TextureContent.data}) async {
@@ -291,7 +307,7 @@ class GameScene {
     );
     final flicker = 0.92 + 0.05 * math.sin(realTime * 13.0) + 0.03 * math.sin(realTime * 29.0 + 1.3);
     final f = w.flame;
-    _lanternLight.intensity = 0.12 + 0.55 * f * flicker;
+    _lanternLight.intensity = 0.2 + 0.9 * f * flicker;
     _paper.emissiveStrength = 0.3 + 4.0 * f * flicker;
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = vm.Vector3(1.0, 0.6, 0.28) * _lanternLight.intensity;

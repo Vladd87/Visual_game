@@ -29,7 +29,7 @@ material {
     { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
     { type: vec3, name: lantern_light, default: [1.0, 0.6, 0.28] },
     { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
-    { type: vec3, name: absorption, default: [7.0, 9.0, 13.0] },
+    { type: vec3, name: absorption, default: [5.0, 6.0, 10.0] },
     { type: vec3, name: murk, default: [0.06, 0.055, 0.035] },
     { type: float, name: normal_strength, default: 1.0 },
     { type: float, name: refraction, default: 2.5 },
