@@ -13,7 +13,9 @@ build() {
   local mode=$1
   rm -rf build/app
   for i in 1 2 3; do
-    if flutter build apk --"$mode" --target-platform android-arm64; then return 0; fi
+    # LANTERN_BUILD_ARGS: extra flutter args, e.g. the GLES diagnostic variant:
+    #   LANTERN_BUILD_ARGS=--android-project-arg=lanternGles=1
+    if flutter build apk --"$mode" --target-platform android-arm64 ${LANTERN_BUILD_ARGS:-}; then return 0; fi
     echo "build failed (try $i); retrying in 60 s in case of a registry rate limit" >&2
     sleep 60
     rm -rf build/app

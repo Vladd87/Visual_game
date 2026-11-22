@@ -1,3 +1,4 @@
+import '../game/diagnostics.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -94,10 +95,16 @@ class _UpscalePainter extends CustomPainter {
   final double dpr;
   final double sharpen;
 
+  static bool _firstPaint = true;
+
   @override
   void paint(Canvas canvas, Size size) {
     final tex = rt.texture;
     if (tex == null) return;
+    if (_firstPaint) {
+      _firstPaint = false;
+      Diagnostics.step('first 3D paint');
+    }
     final img = tex.asImage();
     final shader = program.fragmentShader()
       ..setFloat(0, size.width * dpr)

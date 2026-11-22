@@ -16,7 +16,13 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "dev.lantern.lantern"
+        // Diagnostic variant (-P lanternGles=1, via flutter build
+        // --android-project-arg): its own package so both install side by
+        // side, with Impeller on its OpenGL ES backend instead of Vulkan.
+        val gles = (project.findProperty("lanternGles") as String?) == "1"
+        applicationId = if (gles) "dev.lantern.lantern.gles" else "dev.lantern.lantern"
+        manifestPlaceholders["impellerBackend"] = if (gles) "opengles" else "vulkan"
+        manifestPlaceholders["appLabel"] = if (gles) "Lantern GLES" else "Lantern"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 29
