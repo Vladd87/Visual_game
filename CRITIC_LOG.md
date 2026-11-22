@@ -19,6 +19,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-3 | water v3 | 2.06 | 2.13 | 2.09 | 1.5 | 0/4 | +0.40. Water 2/10; "glass over gravel", no sky reflection |
 | round-4 | water v4 | 1.81 | 2.00 | 1.91 | 1.5 | 0/4 | −0.18 (1st sub-0.3 round). Water 2/10; sky sheen read as a uniform "frosted lavender veil" |
 | round-5 | water v5 | 1.81 | 1.81 | 1.81 | 1.5 | 0/4 | −0.10 (2nd sub-0.3 round in a row → **water stops**). Water 3/10; depth and lantern spill work, the reflection is now too weak |
+| round-6 | stone/moss v1 | 2.75 | 2.75 | 2.75 | 2 | 0/4 | **+0.94**. Stone/ground 3/10: scanned rocks read as rock; banks "camouflage", rocks not wet, no moss caps |
 
 ## Round 1: water v1
 
@@ -181,3 +182,48 @@ Also flagged:
 **Bugs fixed before the M2 APK**
 - The shot-5 trapezoid was the greybox leaf's shadow from the lantern's point light 3 cm away, magnified onto the bed. Leaves no longer cast shadows; M6 brings real leaves with soft shadows.
 - The shot 2/6 "cylinder" is a greybox rock stretched down to the deeper bed (a regression in v5). The M3 scanned rocks replace it.
+
+
+## Round 6: stone and moss v1 (M3)
+
+**What changed:**
+- The greybox egg rocks are replaced by 13 Poly Haven photogrammetry scans (decimated to 2.4k triangles), seated on gravel mounds.
+- The rock shader darkens wet stone by height.
+- The banks use ambientCG Ground037 and Moss001 cushions, with Poly Haven mud along the waterline.
+- The shoreline wanders off the sim's spline.
+
+**Scores (1–10)**
+- inner: 3, 2.5, 3.5, 2.5, 3, 2.5, 3, 2 (mean 2.75)
+- cover: 3, 2.5, 3.5, 2.5, 3, 2.5, 3, 2 (mean 2.75)
+
+**Stone and ground alone:** 3/10. Biggest problem: "nothing is wet and nothing touches the water". The rocks and bank edges are dry and matte, with no darker wet band, sheen or moss caps. The banks are a flat painted texture.
+
+**Top 5 giveaways** (the systems they belong to are in brackets)
+1. The lantern is a clipped white emissive box with no paper, structure or reflection (M7).
+2. The water has no surface: no reflection, Fresnel or glints; smear and swirl artefacts (M4 and M8, carried forward).
+3. Game sprites: orange squares and square-pixel fireflies (M6 and M7).
+4. Banks:
+   - flat, painterly "camouflage" texture with tiled dark clover patches
+   - dark "burn" decals
+   - a bank cut of uniform width
+   - lit like noon, not dusk (the lighting part goes to M4)
+5. Rocks don't sit in the water:
+   - no wet band, gloss or moss caps
+   - fuzzy white foam rings and ruler-straight white streaks
+   - some rocks lit gold "from no source"
+   - a few box-like silhouettes
+
+**A/B:** 0/4 fooled (99 %).
+
+**Builder notes**
+- The "burn decals" were bank hollows dipping within 3 cm of the waterline, which the mud-and-soak rule then turned to mud. A `noshadow=1` probe ruled out the lantern's shadow. Fixed: mud is limited to the stream margin, and the bank never sags back toward the waterline.
+
+**Changes for round 7 (M3 v2)**
+- Rocks:
+  - moss caps on upward faces above the splash zone (Moss001, planar from above)
+  - near-black wet stone with gloss in the splash band
+  - albedo greyed and darkened toward refs 03, 09 and 13
+- Render-only shore stones that step down into the water along both margins.
+- The bank lip varies in width and steepness; moss reaches the water's edge in places; the mud strip is no longer uniform.
+- Sharper height-based detile, so two photo taps no longer cross-fade into a painterly smear.
+- Rock foam: the straight flank streaks are removed and the fuzzy collar softened. These belong to the rock-water contact, so they are handled here.

@@ -78,7 +78,7 @@ class GameScene {
       color: vm.Vector3(1.0, 0.6, 0.28),
       intensity: 0.9,
       range: 2.2,
-      castsShadow: true,
+      castsShadow: Uri.base.queryParameters['noshadow'] != '1',
       radius: 0.03, // a 7 cm paper lantern, not a point: soft shadows, broad glints
       shadowSoftness: 3.0,
       shadowNear: 0.02,

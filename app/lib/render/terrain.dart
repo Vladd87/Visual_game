@@ -45,7 +45,8 @@ double flatGroundHeight(Course c, V2 p) {
   final crest = 0.09 + 0.07 * (0.5 + 0.5 * math.sin(p.y * 0.9 + p.x * 1.7)) +
       0.04 * math.sin(p.x * 4.1 - p.y * 2.3);
   final roll = smoothstep(0.1, 1.2, out) * (0.05 * math.sin(p.y * 1.7 + p.x * 3.1));
-  return -0.025 + (crest + 0.025) * lip + roll;
+  // Past the lip the bank never sags back toward the waterline.
+  return math.max(-0.025 + (crest + 0.025) * lip + roll, -0.025 + 0.085 * lip);
 }
 
 /// Ground chunk covering stream distance [d0, d1] and [halfSpan] metres either

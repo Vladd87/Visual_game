@@ -157,7 +157,10 @@ fragment {
       float level = smoothstep(0.75, 0.95, geo.y);
       float near = 1.0 - smoothstep(0.0, 0.5, out_d);
       float mossField = n1 * 0.6 + n2 * 0.4 + (level - 0.7) * 0.06 + near * 0.06;
-      float mudBand = 1.0 - smoothstep(0.025, 0.075, above + (n2 - 0.5) * 0.05);
+      // Mud only along the stream margin (out_d is metres / 1.5), never in
+      // hollows further up the bank.
+      float mudBand = (1.0 - smoothstep(0.025, 0.075, above + (n2 - 0.5) * 0.05)) *
+                      (1.0 - smoothstep(0.06, 0.14, out_d));
       float mossW = 0.0;
       if (mossField > 0.4) {
         vec3 mc, mn, ma;
