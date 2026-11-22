@@ -20,6 +20,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-4 | water v4 | 1.81 | 2.00 | 1.91 | 1.5 | 0/4 | −0.18 (1st sub-0.3 round). Water 2/10; sky sheen read as a uniform "frosted lavender veil" |
 | round-5 | water v5 | 1.81 | 1.81 | 1.81 | 1.5 | 0/4 | −0.10 (2nd sub-0.3 round in a row → **water stops**). Water 3/10; depth and lantern spill work, the reflection is now too weak |
 | round-6 | stone/moss v1 | 2.75 | 2.75 | 2.75 | 2 | 0/4 | **+0.94**. Stone/ground 3/10: scanned rocks read as rock; banks "camouflage", rocks not wet, no moss caps |
+| round-7 | stone/moss v2 | 3.13 | 3.00 | 3.06 | 2 | 0/4 | +0.31 (continue). Stone 3.5/10: moss texture on every rock face, soft dark contact halos, uniform dirt lip |
 
 ## Round 1: water v1
 
@@ -227,3 +228,48 @@ Also flagged:
 - The bank lip varies in width and steepness; moss reaches the water's edge in places; the mud strip is no longer uniform.
 - Sharper height-based detile, so two photo taps no longer cross-fade into a painterly smear.
 - Rock foam: the straight flank streaks are removed and the fuzzy collar softened. These belong to the rock-water contact, so they are handled here.
+
+
+## Round 7: stone and moss v2 (M3)
+
+**What changed:**
+- Rock footprints are baked from the scans, so foam and contact hug each stone's real outline.
+- Moss caps, a wet gloss band and render-only shore stones.
+- Sharper detile, a varied mud strip and a varied bank lip.
+
+**Scores (1–10)**
+- inner: 3.5, 3, 4, 2.5, 3.5, 3, 3, 2.5 (mean 3.13)
+- cover: 3, 3, 4, 2.5, 3.5, 3, 3, 2 (mean 3.00)
+
+**Stone and ground alone:** 3.5/10. Biggest problem: rocks and banks "do not react to water or gravity":
+- the same matte moss texture covers every face, including vertical sides and the waterline
+- they meet the water with a soft dark halo
+
+ref03 and ref09 show moss only on top, glossy black wet sides, and a bright wet line where stone enters the stream.
+
+**Top 5 giveaways**
+1. Water has no surface (M4 and M8). It also has a "pale grey plastic film" over the new shallow shelves, which **is** M3's doing: the water shader's shore term doubles the reflection where the water is thin.
+2. The lantern is a white self-lit cube (M7).
+3. Flat fake dusk:
+   - lifted blacks (p1 15–26/255 against 3–14 in the references)
+   - no blue/warm contrast
+   - dark AO-like halos along the banks and under rocks (the halos are M3's contact term)
+4. Flat orange squares, hard firefly dots, "glowing eye pairs" (M6 and M7).
+5. Matte, copy-pasted ground and rocks:
+   - moss on every rock face
+   - stretched sides
+   - a uniform dirt lip
+   - blotches all the same size
+   - no overhangs (overhangs are M6)
+
+**A/B:** 0/4 fooled (99 %).
+
+**Changes for round 8 (M3 v3)**
+- Rocks:
+  - the scan's own moss is suppressed on steep and low faces, which become dark wet stone
+  - caps only on faces within about 35° of horizontal
+  - the whole rock is rain-wet (glossy sides)
+  - vertical stretch capped at 1.25×, with mounds doing the rest
+- The contact halo is tightened and weakened.
+- The water's thin-shore reflection boost drops from 2× to 1.3×, removing the plastic film on the shelves.
+- The banks get a second, larger patch scale (whole mossy zones against bare litter zones), and more shore stones.
