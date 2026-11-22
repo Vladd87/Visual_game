@@ -1,6 +1,10 @@
-"""Fill tools/critic/critic_prompt_paired.md for one panel critic.
+"""Fill a critic prompt template.
 
 Usage: python3 -I tools/critic/render_prompt.py <packet_dir> <with_ab: 0|1> <out.md>
+       python3 -I tools/critic/render_prompt.py --ab <ab_packet_dir> <out.md>
+
+From round 10 the scoring critics run with with_ab = 0 and the A/B pairs go
+to their own critic (critic_prompt_ab.md), which sees nothing else.
 """
 import os
 import sys
@@ -28,4 +32,9 @@ def main(packet, with_ab, out):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:4])
+    if sys.argv[1] == '--ab':
+        here = os.path.dirname(os.path.abspath(__file__))
+        t = open(os.path.join(here, 'critic_prompt_ab.md')).read().replace('{PACKET}', sys.argv[2])
+        open(sys.argv[3], 'w').write(t)
+    else:
+        main(*sys.argv[1:4])

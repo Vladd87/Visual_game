@@ -16,6 +16,7 @@ Every round follows the same steps (PLAN.md §5):
 - **Gain** = the median over critics of (new − best). Each critic's offset cancels in its own difference. **Absolute score** = the mean of the critics' scores for the new round.
 - **Ratchet.** The new version becomes the best only if its gain is above zero. Otherwise the code goes back to the best version (clear bug fixes are kept) and the next attempt starts from there. The stop rule counts gains over the best: two consecutive rounds under +0.3 stop the system, at its best version.
 - Aggregation: `tools/critic/panel_score.py`.
+- **A/B, from round 10.** Until now the render half of each pair was a crop of a capture the same critic had just reviewed, so critics matched it rather than judged it (they said so). The pairs now go to a **separate fresh critic that sees only the 4 shuffled pairs**: no captures and no references (`tools/critic/critic_prompt_ab.md`, packet `<packet>_ab`). The scoring critics no longer get the pairs.
 
 | Round | System | Inner mean | Cover mean | Overall | Min | A/B fooled | Notes |
 |---|---|---|---|---|---|---|---|

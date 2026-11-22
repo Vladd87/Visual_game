@@ -18,7 +18,8 @@ With --vs (paired mode, from round 9): the round under review and the
 current best round both go into the packet, as captures/X/... and
 captures/Y/... in a random order, so each critic scores both in one sitting
 and its own calibration offset cancels in the difference. The key file
-records which set is which. A/B pairs come from the round under review.
+records which set is which. A/B pairs come from the round under review and go
+to a separate packet, <packet_dir>_ab, judged by its own critic.
 """
 import json
 import os
@@ -106,15 +107,19 @@ def main():
     # Blind pairs: same crop aspect and size for both images in a pair.
     key = []
     cap_pick = rnd.sample(caps, min(pairs, len(caps)))
-    os.makedirs(os.path.join(packet, 'ab'), exist_ok=True)
+    # Paired mode: the pairs go into their own packet (<packet>_ab/ab/), judged
+    # by a separate critic that has seen none of the captures, so it cannot
+    # spot the render by matching it to a capture it just reviewed.
+    ab_root = packet + '_ab' if best_dir else packet
+    os.makedirs(os.path.join(ab_root, 'ab'), exist_ok=True)
     for k, (c, r) in enumerate(zip(cap_pick, ref_pick), 1):
         aspect = 0.75 if rnd.random() < 0.5 else 1.0
         ci = center_crop_to(c, aspect, 900)
         ri = center_crop_to(os.path.join(refs_dir, r), aspect, 900).resize(ci.size, Image.LANCZOS)
         real_is_a = rnd.random() < 0.5
         a, b = (ri, ci) if real_is_a else (ci, ri)
-        clean(a).save(os.path.join(packet, 'ab', f'pair{k}_A.jpg'), 'JPEG', quality=90)
-        clean(b).save(os.path.join(packet, 'ab', f'pair{k}_B.jpg'), 'JPEG', quality=90)
+        clean(a).save(os.path.join(ab_root, 'ab', f'pair{k}_A.jpg'), 'JPEG', quality=90)
+        clean(b).save(os.path.join(ab_root, 'ab', f'pair{k}_B.jpg'), 'JPEG', quality=90)
         key.append({'pair': k, 'real': 'A' if real_is_a else 'B',
                     'capture': os.path.relpath(c, round_dir), 'reference': r})
     with open(key_file, 'w') as f:
