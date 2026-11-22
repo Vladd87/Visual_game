@@ -63,6 +63,8 @@ flutter:
   # the material Icons class.
   assets:
     - assets/textures/
+    - assets/textures/surfaces/
+    - assets/rocks/
     - assets/env/
     - flutter_scene_generated/
     - path: flutter_scene_generated/metal_ios/

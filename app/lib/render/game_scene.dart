@@ -8,6 +8,8 @@ import 'package:vector_math/vector_math.dart' as vm;
 import '../sim/entities.dart';
 import '../sim/vec2.dart';
 import '../sim/world.dart';
+import 'rock_assets.dart';
+import 'rock_layout.dart';
 import 'terrain.dart';
 
 /// Builds and animates the 3D scene for a [World].
@@ -21,7 +23,6 @@ class GameScene {
   final Scene scene;
   World? _world;
   final List<Node> _chunks = [];
-  Node? _rocksNode;
   late InstancedMesh _fireflyMesh;
   late InstancedMesh _leafMesh;
   late final Node _lantern;
@@ -34,6 +35,11 @@ class GameScene {
   Texture2D? _waterNormal;
   Texture2D? _caustics;
   Texture2D? _sky;
+  // M3 stone and moss: scanned rocks (one instanced batch per scan) and the
+  // photographed bank surfaces.
+  List<RockScan> _rockScans = const [];
+  final List<PreprocessedMaterial> _rockMats = [];
+  final List<Node> _rockNodes = [];
   static final vm.Vector3 ambient = vm.Vector3(0.018, 0.022, 0.028);
 
   static const int maxLeaves = 48;
@@ -126,6 +132,18 @@ class GameScene {
     // ratio stands in for it.
     _waterMat!.parameters.setFloat('sky_scale', 4.9162 * envIntensity * 1.6);
     _groundMat!.parameters.setTexture('caustic_tex', _caustics!.gpuTexture, sampler: _caustics!.sampledSampler);
+    _groundMat!.parameters.setTexture('noise_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
+    // Banks: forest ground, moss cushions and waterline mud (all CC0, ASSETS.md).
+    await _bindSurface(_groundMat!, 'forest_ground', 'g_');
+    await _bindSurface(_groundMat!, 'moss', 'm_');
+    await _bindSurface(_groundMat!, 'mud', 'u_');
+    // Rocks: two scanned sets, one material per texture atlas.
+    _rockScans = await loadRockScans();
+    for (final set in ['rock_moss_set_01', 'rock_moss_set_02']) {
+      final m = await loadFmatMaterial('assets/materials/rock.fmat');
+      await _bindSurface(m, set, '');
+      _rockMats.add(m);
+    }
     for (final m in [_waterMat!, _groundMat!]) {
       m.parameters.setVec3('ambient', ambient);
     }
@@ -135,13 +153,26 @@ class GameScene {
 
   static const double envIntensity = 0.2;
 
-  static Future<Texture2D> _loadTexture(String path, {bool mipmaps = true}) async {
+  static Future<Texture2D> _loadTexture(String path,
+      {bool mipmaps = true, TextureContent content = TextureContent.data}) async {
     final bytes = await rootBundle.load(path);
     final image = await decodeImageFromList(bytes.buffer.asUint8List());
     final data = await image.toByteData();
     return Texture2D.fromPixels(data!.buffer.asUint8List(), image.width, image.height,
-        content: TextureContent.data,
+        content: content,
         sampling: TextureSampling(maxAnisotropy: 8, mipmaps: mipmaps));
+  }
+
+  /// Binds one packed surface (`<name>_col/_nrm/_arh.jpg`, see
+  /// tools/bake/pack_surface_textures.py) to [m] as `<prefix>col` etc.
+  static Future<void> _bindSurface(PreprocessedMaterial m, String name, String prefix) async {
+    const dir = 'assets/textures/surfaces';
+    final col = await _loadTexture('$dir/${name}_col.jpg', content: TextureContent.color);
+    final nrm = await _loadTexture('$dir/${name}_nrm.jpg', content: TextureContent.normal);
+    final arh = await _loadTexture('$dir/${name}_arh.jpg');
+    m.parameters.setTexture('${prefix}col', col.gpuTexture, sampler: col.sampledSampler);
+    m.parameters.setTexture('${prefix}nrm', nrm.gpuTexture, sampler: nrm.sampledSampler);
+    m.parameters.setTexture('${prefix}arh', arh.gpuTexture, sampler: arh.sampledSampler);
   }
 
   /// (Re)builds everything that depends on the course of [world].
@@ -151,7 +182,10 @@ class GameScene {
       scene.remove(n);
     }
     _chunks.clear();
-    if (_rocksNode != null) scene.remove(_rocksNode!);
+    for (final n in _rockNodes) {
+      scene.remove(n);
+    }
+    _rockNodes.clear();
 
     final c = world.course;
     final Material groundMat = _groundMat ?? (PhysicallyBasedMaterial()..metallicFactor = 0..roughnessFactor = 0.92);
@@ -184,29 +218,50 @@ class GameScene {
       _chunks..add(ground)..add(water);
     }
 
-    // Rocks: one instanced batch of squashed icospheres.
-    final rockMat = PhysicallyBasedMaterial()
-      ..baseColorFactor = vm.Vector4(0.2, 0.2, 0.19, 1)
-      ..metallicFactor = 0
-      ..roughnessFactor = 0.55;
-    final rocks = InstancedMesh(geometry: IcosphereGeometry(radius: 1, subdivisions: 2), material: rockMat, cullInstances: true);
-    for (final r in c.rocks) {
-      // Reach from the rock's top down into the bed so nothing floats.
-      final bed = groundHeight(c, r.pos);
-      final ry = math.max(0.05, (r.height - bed) / 2 + 0.02);
-      final centerY = r.height - ry;
-      final yaw = (r.seed % 628) / 100.0;
-      final squash = 0.8 + (r.seed % 37) / 37 * 0.4;
-      rocks.addInstance(vm.Matrix4.compose(
-        vm.Vector3(r.pos.x, centerY, -r.pos.y),
-        vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), yaw),
-        vm.Vector3(r.radius * squash, ry, r.radius / squash),
-      ));
+    // Rocks: CC0 photogrammetry scans, one instanced batch per scan. Each sim
+    // rock picks a scan, yaw and scale (rock_layout.dart), sits on the bed or a
+    // gravel mound the terrain raises under it, and gets a slight tint.
+    if (_rockScans.isEmpty) {
+      final rockMat = PhysicallyBasedMaterial()
+        ..baseColorFactor = vm.Vector4(0.2, 0.2, 0.19, 1)
+        ..metallicFactor = 0
+        ..roughnessFactor = 0.55;
+      final rocks = InstancedMesh(geometry: IcosphereGeometry(radius: 1, subdivisions: 2), material: rockMat, cullInstances: true);
+      for (final r in c.rocks) {
+        rocks.addInstance(vm.Matrix4.compose(vm.Vector3(r.pos.x, r.height - r.radius, -r.pos.y), vm.Quaternion.identity(),
+            vm.Vector3(r.radius, r.radius, r.radius)));
+      }
+      _rockNodes.add(Node(name: 'rocks')
+        ..addComponent(InstancedMeshComponent(rocks))
+        ..shadowStatic = true);
+    } else {
+      final batches = [
+        for (final scan in _rockScans)
+          InstancedMesh(geometry: scan.geometry, material: _rockMats[scan.set], cullInstances: true),
+      ];
+      for (final pl in rockPlacements(c, flatGroundHeight)) {
+        final seed = pl.rock.seed;
+        final tint = 0.86 + 0.24 * ((seed >> 4) & 0xff) / 255.0;
+        final warm = 0.96 + 0.08 * ((seed >> 12) & 0xff) / 255.0;
+        batches[pl.type].addInstance(
+          vm.Matrix4.compose(
+            vm.Vector3(pl.rock.pos.x, pl.baseY, -pl.rock.pos.y),
+            vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), pl.yaw),
+            vm.Vector3(pl.sx, pl.sy, pl.sz),
+          ),
+          color: vm.Vector4(tint * warm, tint, tint / warm, 1),
+        );
+      }
+      for (var i = 0; i < batches.length; i++) {
+        if (batches[i].instanceCount == 0) continue;
+        _rockNodes.add(Node(name: 'rocks_$i')
+          ..addComponent(InstancedMeshComponent(batches[i]))
+          ..shadowStatic = true);
+      }
     }
-    _rocksNode = Node(name: 'rocks')
-      ..addComponent(InstancedMeshComponent(rocks))
-      ..shadowStatic = true;
-    scene.add(_rocksNode!);
+    for (final n in _rockNodes) {
+      scene.add(n);
+    }
 
     // Fireflies follow the course list one-to-one.
     _fireflyMesh.clearInstances();

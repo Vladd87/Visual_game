@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import '../sim/course.dart';
 import '../sim/flow_field.dart';
 import '../sim/vec2.dart';
+import 'rock_layout.dart';
 
 /// CPU-side mesh arrays (positions, normals, vertex colours, indices).
 class MeshArrays {
@@ -19,8 +20,19 @@ class MeshArrays {
 /// Water surface is y = 0. Inside the stream the bed slopes from a shallow
 /// margin to ~13 cm in the middle; outside, the bank rises over ~12 cm then
 /// undulates up to its crest.
-double groundHeight(Course c, V2 p) {
-  final clear = c.clearance(p);
+double groundHeight(Course c, V2 p) =>
+    applyMounds(rockPlacements(c, flatGroundHeight), p, flatGroundHeight(c, p));
+
+/// Shoreline wander (metres) so the water's edge is not a clean spline: the
+/// render's banks move up to ~5 cm in or out of the sim's channel edge.
+double shoreNoise(V2 p) =>
+    0.024 * math.sin(p.y * 7.3 + p.x * 1.1) +
+    0.014 * math.sin(p.y * 17.9 - p.x * 3.3 + 1.7) +
+    0.007 * math.sin(p.y * 41.0 + p.x * 5.0 + 0.4);
+
+/// Ground height before rock mounds.
+double flatGroundHeight(Course c, V2 p) {
+  final clear = c.clearance(p) + shoreNoise(p);
   if (clear >= 0) {
     // Shallow margins over a deep, dark centre (~28 cm): refs 08, 09, 11.
     final depth = 0.02 + 0.26 * smoothstep(0.0, 0.34, clear);
@@ -37,7 +49,7 @@ double groundHeight(Course c, V2 p) {
 }
 
 /// Ground chunk covering stream distance [d0, d1] and [halfSpan] metres either
-/// side of the centreline. Vertex colours carry the greybox palette.
+/// side of the centreline. Vertex colours carry shader data (see ground.fmat).
 MeshArrays buildGroundChunk(Course c, double d0, double d1,
     {double halfSpan = 2.8, double step = 0.04}) {
   final rows = ((d1 - d0) / step).ceil() + 1;
@@ -47,6 +59,7 @@ MeshArrays buildGroundChunk(Course c, double d0, double d1,
   final heights = Float64List(rows * cols);
   final xs = Float64List(rows * cols);
   final ds = Float64List(rows * cols);
+  final placements = rockPlacements(c, flatGroundHeight);
   for (var i = 0; i < rows; i++) {
     final d = math.min(d0 + i * step, d1);
     // Follow the centreline, but widen around the pool so it is fully covered.
@@ -62,21 +75,12 @@ MeshArrays buildGroundChunk(Course c, double d0, double d1,
       pos[k * 3] = x;
       pos[k * 3 + 1] = h;
       pos[k * 3 + 2] = -d;
-      // Greybox palette: muddy bed, dark wet lip, mossy bank, drier crest.
-      final clear = c.clearance(p);
-      double r, g, b;
-      if (clear >= 0) {
-        r = 0.16; g = 0.13; b = 0.095;
-      } else {
-        final t = smoothstep(0.0, 0.18, -clear);
-        final dry = smoothstep(0.25, 1.4, -clear);
-        r = lerpD(0.07, lerpD(0.11, 0.17, dry), t);
-        g = lerpD(0.07, lerpD(0.15, 0.17, dry), t);
-        b = lerpD(0.055, lerpD(0.06, 0.1, dry), t);
-      }
-      col[k * 4] = r;
-      col[k * 4 + 1] = g;
-      col[k * 4 + 2] = b;
+      // Data for ground.fmat: r = rock mound weight, g = distance out of the
+      // channel, b = contact occlusion beside rocks.
+      final flat = flatGroundHeight(c, p);
+      col[k * 4] = clamp01((h - flat) / 0.03);
+      col[k * 4 + 1] = clamp01(-c.clearance(p) / 1.5);
+      col[k * 4 + 2] = rockContact(placements, p, h);
       col[k * 4 + 3] = 1;
     }
   }
