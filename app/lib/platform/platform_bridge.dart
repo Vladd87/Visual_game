@@ -87,6 +87,17 @@ class PlatformBridge {
     }
   }
 
+  /// True when the player chose "Safe mode" on the crash report screen.
+  Future<bool> safeModeRequested() async {
+    if (!available) return false;
+    try {
+      final m = await _methods.invokeMapMethod<String, Object?>('launchFlags');
+      return m?['safeMode'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<String?> perfLogDir() async {
     if (!available) return null;
     try {

@@ -21,6 +21,11 @@ import io.flutter.plugin.common.MethodChannel
  * screen-oriented tilt vector.
  */
 class MainActivity : FlutterActivity() {
+    companion object {
+        /** Set by [LaunchActivity] when the player picks "Safe mode". */
+        const val EXTRA_SAFE_MODE = "lantern.safe_mode"
+    }
+
     private lateinit var displayMode: DisplayModeHelper
     private lateinit var thermal: ThermalHelper
     private lateinit var haptics: HapticsHelper
@@ -53,6 +58,8 @@ class MainActivity : FlutterActivity() {
                     result.success(displayMode.request(hz))
                 }
                 "displayInfo" -> result.success(displayMode.info())
+                "launchFlags" -> result.success(mapOf(
+                    "safeMode" to intent.getBooleanExtra(EXTRA_SAFE_MODE, false)))
                 "haptic" -> {
                     haptics.pulse((call.argument<Double>("strength") ?: 0.5).toFloat())
                     result.success(null)

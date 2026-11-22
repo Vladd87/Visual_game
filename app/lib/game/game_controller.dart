@@ -65,6 +65,7 @@ class GameController extends ChangeNotifier {
 
   Future<void> _boot() async {
     Diagnostics.step('settings');
+    if (await platform.safeModeRequested()) Diagnostics.safeRender = true;
     await settings.load();
     governor.preset = settings.quality;
     governor.adaptive = capture == null;

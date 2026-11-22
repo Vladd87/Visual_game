@@ -9,7 +9,7 @@
         <meta-data android:name="io.flutter.embedding.android.EnableFlutterGPU" android:value="true" />
         <activity
             android:name=".MainActivity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
@@ -25,6 +25,14 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+        </activity>
+        <!-- Launcher: plain Android views. Starts MainActivity, or first shows a
+             crash report (with a Copy button) after a launch that crashed. -->
+        <activity
+            android:name=".LaunchActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.NoActionBar"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
