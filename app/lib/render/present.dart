@@ -1,4 +1,5 @@
 import '../game/diagnostics.dart';
+import '../game/render_probe.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -96,6 +97,7 @@ class _UpscalePainter extends CustomPainter {
   final double sharpen;
 
   static bool _firstPaint = true;
+  static int _paints = 0;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -106,6 +108,8 @@ class _UpscalePainter extends CustomPainter {
       Diagnostics.step('first 3D paint');
     }
     final img = tex.asImage();
+    // Bring-up on new hardware: log what the 3D target actually contains.
+    if (++_paints == 30) probe3dImage(img);
     final shader = program.fragmentShader()
       ..setFloat(0, size.width * dpr)
       ..setFloat(1, size.height * dpr)

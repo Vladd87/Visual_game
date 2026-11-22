@@ -1,4 +1,5 @@
 import 'diagnostics.dart';
+import 'render_probe.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show FrameTiming, Offset;
@@ -66,6 +67,11 @@ class GameController extends ChangeNotifier {
   Future<void> _boot() async {
     Diagnostics.step('settings');
     Diagnostics.applyLaunchFlags(await platform.launchFlags());
+    // Bring-up on new hardware: which 2D primitives render (logged).
+    if (platform.available || Uri.base.queryParameters['probe'] == '1') {
+      Diagnostics.step('render probe');
+      await runRenderProbe();
+    }
     await settings.load();
     governor.preset = settings.quality;
     governor.adaptive = capture == null;
