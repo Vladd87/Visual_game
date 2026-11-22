@@ -155,9 +155,9 @@ MeshArrays buildWaterChunk(Course c, FlowField flow, double d0, double d1, {doub
           final n = dist > 1e-6 ? rel / dist : const V2(0, -1);
           // Upstream cushion: water piles against the front face (refs 04, 13).
           final front = clamp01(-n.y * 1.25);
-          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.045) * front);
+          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.05) * front * 0.75);
           // Thin collar where the water wraps the stone sides.
-          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.01) * 0.3);
+          foam = math.max(foam, math.exp(-math.max(gap, 0) / 0.01) * 0.18);
           turb = math.max(turb, math.exp(-math.max(gap, 0) / 0.08));
         }
         // Wake: foam streaks shed from both flanks, drifting downstream and

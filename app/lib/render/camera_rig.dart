@@ -171,8 +171,8 @@ class CameraRig {
       fovRadiansY: f.vfovDeg * math.pi / 180,
       position: eye,
       target: eye + fwd,
-      fovNear: 0.05,
-      fovFar: 60,
+      fovNear: 0.5,
+      fovFar: 30,
     );
   }
 

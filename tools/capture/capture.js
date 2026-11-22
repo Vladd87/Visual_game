@@ -82,7 +82,7 @@ async function lumaStats(page, buf) {
       const logs = [];
       page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
       page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
-      const url = `http://127.0.0.1:${port}/?capture=${shot}&seed=${seed}&frames=${frames}${a.hinge ? '&hinge=1' : ''}`;
+      const url = `http://127.0.0.1:${port}/?capture=${shot}&seed=${seed}&frames=${frames}${a.hinge ? '&hinge=1' : ''}${arg('extra', '')}`;
       const t0 = Date.now();
       let info = '';
       try {

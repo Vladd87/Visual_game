@@ -53,6 +53,7 @@ class GameScene {
       castsShadow: false,
     );
     scene.antiAliasingMode = AntiAliasingMode.taa;
+    if (Uri.base.queryParameters['nofit'] == '1') scene.fitNearPlane = false;
 
     // Lantern: paper cube with a warm shadow-casting point light inside.
     _paper = PhysicallyBasedMaterial()
@@ -158,11 +159,13 @@ class GameScene {
         name: 'water_${d0.toStringAsFixed(0)}',
         mesh: Mesh(MeshGeometry.fromArrays(positions: w.positions, normals: w.normals, colors: w.colors, indices: w.indices), waterMat),
       )
-        ..shadowCastingMode = ShadowCastingMode.off
+        ..shadowCastingMode = ShadowCastingMode.off;
+      if (Uri.base.queryParameters['noreflect'] != '1') {
         // One shared mirror capture for every water chunk (they are co-planar).
-        ..addComponent(PlanarReflectorComponent(resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002));
+        water.addComponent(PlanarReflectorComponent(resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002));
+      }
       scene.add(ground);
-      scene.add(water);
+      if (Uri.base.queryParameters['nowater'] != '1') scene.add(water);
       _chunks..add(ground)..add(water);
     }
 
