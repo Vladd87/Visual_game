@@ -21,6 +21,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-5 | water v5 | 1.81 | 1.81 | 1.81 | 1.5 | 0/4 | −0.10 (2nd sub-0.3 round in a row → **water stops**). Water 3/10; depth and lantern spill work, the reflection is now too weak |
 | round-6 | stone/moss v1 | 2.75 | 2.75 | 2.75 | 2 | 0/4 | **+0.94**. Stone/ground 3/10: scanned rocks read as rock; banks "camouflage", rocks not wet, no moss caps |
 | round-7 | stone/moss v2 | 3.13 | 3.00 | 3.06 | 2 | 0/4 | +0.31 (continue). Stone 3.5/10: moss texture on every rock face, soft dark contact halos, uniform dirt lip |
+| round-8 | stone/moss v3 | 2.50 | 2.44 | 2.47 | 2 | 0/4 | −0.59 (1st sub-0.3 round for M3). Stone 3/10: projected moss caps read as "lawn on rocks", stretched rock texels, blurred black bank edge |
 
 ## Round 1: water v1
 
@@ -273,3 +274,42 @@ ref03 and ref09 show moss only on top, glossy black wet sides, and a bright wet 
 - The contact halo is tightened and weakened.
 - The water's thin-shore reflection boost drops from 2× to 1.3×, removing the plastic film on the shelves.
 - The banks get a second, larger patch scale (whole mossy zones against bare litter zones), and more shore stones.
+
+
+## Round 8: stone and moss v3 (M3)
+
+**Scores (1–10)**
+- inner: 3, 2.5, 3, 2, 2.5, 2.5, 2.5, 2 (mean 2.50)
+- cover: 3, 2.5, 3, 2, 2.5, 2.5, 2.5, 1.5 (mean 2.44)
+
+**Stone and ground alone:** 3/10, down from 3.5. "Nothing is wet or seated": the rocks are matte, with "the lawn texture projected onto their tops". There is no wet band, sheen or waterline.
+
+**Top 5 giveaways**
+1. The lantern is a flat white box or hexagon (M7).
+2. Dusk lit like an overcast day:
+   - the lawn is 2–3× brighter than the water
+   - milky blacks (p1 0.06–0.10)
+   - p99 only 0.52–0.71
+   - a lavender cast
+
+   This is M4, and the critic expects it to be worth +1 to +1.5.
+3. Water has no surface: dark funnel shadows, swirl smears, a uniform cobble decal (M4 and M8).
+4. Rocks and banks are dry and unseated:
+   - lawn-like moss projected onto rock tops
+   - stretched texels on rock sides
+   - a blurred black halo at the bank edge
+5. Debug-looking particles (M6 and M7).
+
+The critic's ceiling estimate: even with all five fixed, about 5–6. The map-like framing with no haze and no grass blades at macro scale would remain (M4, M6 and M8).
+
+**A/B:** 0/4 fooled.
+
+**Builder notes.** The v2-to-v3 changes were small (rocks darker and wetter, a moss-zone scale), but the score dropped 0.59. A good part of that is likely critic-to-critic variance; I'm not reading it as a real regression. Three stone-level faults are concrete and mine, though:
+- The Moss001 caps projected from above look like lawn at rock scale.
+- The rock atlases at 1k are too coarse on sides lit by the lantern.
+- Planar xz mapping smears the steep bank lip into a blurred black band.
+
+**Changes for round 9 (M3 v4; decides whether M3 stops):**
+- The projected caps are dropped. Rock tops keep the scan's own photographed moss, a little more saturated; it is real moss at real scale.
+- The rock colour and normal atlases go to 2k (about +3 MB of APK).
+- The ground uses dominant-axis triplanar mapping on steep faces, so the bank lip shows real soil and mud texture instead of smeared streaks.
