@@ -1,0 +1,281 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' show FrameTiming, Offset;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_scene/scene.dart';
+
+import '../platform/platform_bridge.dart';
+import '../render/camera_rig.dart';
+import '../render/game_scene.dart';
+import '../render/quality_governor.dart';
+import '../sim/vec2.dart';
+import '../sim/world.dart';
+import 'capture.dart';
+import 'file_writer_stub.dart' if (dart.library.io) 'file_writer_io.dart';
+import 'settings.dart';
+
+enum AppPhase { loading, title, playing, paused, results }
+
+/// Owns the run: simulation, scene, camera, input, quality and platform glue.
+class GameController extends ChangeNotifier {
+  GameController({this.capture});
+
+  final CaptureConfig? capture;
+  final Settings settings = Settings();
+  final QualityGovernor governor = QualityGovernor();
+  final FrameStats stats = FrameStats();
+  final CameraRig rig = CameraRig();
+  final PlatformBridge platform = PlatformBridge.instance;
+
+  late final Scene scene;
+  late final GameScene gameScene;
+  World? world;
+  WorldClock? _clock;
+  AppPhase phase = AppPhase.loading;
+  String loadingText = 'warming up';
+  String pauseReason = '';
+  bool newBest = false;
+
+  // Input.
+  V2 _drag = V2.zero;
+  List<double> _tiltNeutral = const [0, 0, 1];
+  V2 get input => settings.control == ControlMode.tilt ? _tiltInput() : _drag;
+
+  // Timing.
+  double _realTime = 0;
+  int _captureFrames = 0;
+  Camera? _camera;
+  ViewportInfo? _viewport;
+  final List<String> _perfLog = ['t,fps,p95_ms,max_ms,scale,notch,thermal,headroom,profile,refresh'];
+  double _lastLog = 0;
+  double lastBuildMs = 0, lastRasterMs = 0;
+
+  Future<void> boot() async {
+    await settings.load();
+    governor.preset = settings.quality;
+    governor.adaptive = capture == null;
+    loadingText = 'loading the stream';
+    notifyListeners();
+    await Scene.initializeStaticResources();
+    await Scene.preload();
+    scene = Scene();
+    gameScene = GameScene(scene)..buildStatic();
+    platform.start();
+    platform.enableTilt(settings.control == ControlMode.tilt);
+    unawaited(platform.setRefreshRate(settings.performance120 ? 120 : 60));
+    governor.targetHz = settings.performance120 ? 120 : 60;
+    SchedulerBinding.instance.addTimingsCallback(_onTimings);
+
+    final cap = capture;
+    if (cap != null) {
+      final w = World(cap.seed);
+      cap.advanceToShot(w);
+      _install(w);
+      phase = AppPhase.playing; // frozen: capture mode never steps the sim
+    } else {
+      _install(World(_newSeed()));
+      phase = AppPhase.title;
+    }
+    notifyListeners();
+  }
+
+  int _newSeed() => DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
+
+  void _install(World w) {
+    world = w;
+    _clock = WorldClock(w);
+    gameScene.buildCourse(w);
+    rig.snapTo(w.lantern.pos);
+  }
+
+  // --- run lifecycle ----------------------------------------------------------
+
+  void startRun() {
+    final w = (phase == AppPhase.title && world != null && world!.time == 0) ? world! : World(_newSeed());
+    if (!identical(w, world)) _install(w);
+    newBest = false;
+    recalibrateTilt();
+    phase = AppPhase.playing;
+    notifyListeners();
+  }
+
+  void pause(String reason) {
+    if (phase != AppPhase.playing || capture != null) return;
+    phase = AppPhase.paused;
+    pauseReason = reason;
+    _drag = V2.zero;
+    notifyListeners();
+  }
+
+  void resume() {
+    if (phase != AppPhase.paused) return;
+    phase = AppPhase.playing;
+    recalibrateTilt();
+    notifyListeners();
+  }
+
+  void toTitle() {
+    _install(World(_newSeed()));
+    phase = AppPhase.title;
+    notifyListeners();
+  }
+
+  // --- viewport (fold / unfold / flex) ----------------------------------------
+
+  void setViewport(ViewportInfo info) {
+    final prev = _viewport;
+    _viewport = info;
+    final prevProfile = rig.profile;
+    rig.setViewport(info);
+    governor.setBase(rig.framing.renderScale);
+    if (prev != null && prevProfile != rig.profile) {
+      // A screen switch keeps the run but soft-pauses it (PLAN.md decisions);
+      // Flex mode keeps playing with the panel below.
+      if (rig.profile != ScreenProfile.flex && prevProfile != ScreenProfile.flex) {
+        pause('screen switched');
+      }
+      recalibrateTilt();
+    }
+  }
+
+  // --- input -------------------------------------------------------------------
+
+  /// Drag offset from the touch-down point, in logical px.
+  void setDrag(Offset delta, double reachPx) {
+    final v = V2(delta.dx, delta.dy) / reachPx;
+    _drag = v.clampLength(1);
+  }
+
+  void endDrag() => _drag = V2.zero;
+
+  void recalibrateTilt() => _tiltNeutral = List.of(platform.gravity.value);
+
+  V2 _tiltInput() {
+    final g = platform.gravity.value;
+    final dx = g[0] - _tiltNeutral[0];
+    final dy = g[1] - _tiltNeutral[1];
+    var v = V2(dx, dy) / 0.26; // ~15 degrees of tilt for a full nudge
+    if (v.length < 0.08) return V2.zero;
+    return v.clampLength(1);
+  }
+
+  void setControl(ControlMode m) {
+    settings.update((s) => s.control = m);
+    platform.enableTilt(m == ControlMode.tilt);
+    recalibrateTilt();
+  }
+
+  void setQuality(QualityPreset q) {
+    settings.update((s) => s.quality = q);
+    governor.preset = q;
+    governor.notifyListeners();
+  }
+
+  void setPerformance120(bool on) {
+    settings.update((s) => s.performance120 = on);
+    governor.targetHz = on ? 120 : 60;
+    unawaited(platform.setRefreshRate(on ? 120 : 60));
+  }
+
+  // --- frame -------------------------------------------------------------------
+
+  void _onTimings(List<FrameTiming> timings) {
+    for (final t in timings) {
+      lastBuildMs = t.buildDuration.inMicroseconds / 1000;
+      lastRasterMs = t.rasterDuration.inMicroseconds / 1000;
+    }
+  }
+
+  Camera cameraFor(double aspect) => _camera ?? rig.update(0, world!.lantern.pos, aspect);
+
+  void onTick(double dt, double aspect) {
+    final w = world;
+    if (w == null) return;
+    _realTime += dt;
+    stats.add(_realTime, dt * 1000);
+    final cap = capture;
+    if (cap != null) {
+      // Frozen sim; let temporal effects settle, then tell the harness.
+      _captureFrames++;
+      gameScene.update(0, w.time);
+      _camera = rig.update(1 / 60, w.lantern.pos, aspect);
+      if (_captureFrames == cap.settleFrames) {
+        cap.signalReady('shot=${cap.shot} t=${w.time.toStringAsFixed(2)} d=${w.lantern.pos.y.toStringAsFixed(2)} ff=${w.collected}');
+      }
+      return;
+    }
+    if (phase == AppPhase.playing) {
+      _clock!.advance(dt, () => input);
+      for (final e in w.drainEvents()) {
+        _onEvent(e);
+      }
+    }
+    final alpha = phase == AppPhase.playing ? _clock!.alpha : 1.0;
+    gameScene.update(alpha, _realTime);
+    _camera = rig.update(dt, w.lanternPose(alpha).pos, aspect);
+    governor.evaluate(_realTime, stats, platform.thermal.value);
+    if (_realTime - _lastLog >= 1.0) {
+      _lastLog = _realTime;
+      final th = platform.thermal.value;
+      _perfLog.add([
+        _realTime.toStringAsFixed(1),
+        stats.fps(_realTime).toStringAsFixed(0),
+        stats.percentile(0.95).toStringAsFixed(2),
+        stats.max.toStringAsFixed(2),
+        governor.renderScale.toStringAsFixed(2),
+        governor.notch,
+        th.status,
+        th.headroom.toStringAsFixed(2),
+        rig.profile.name,
+        (platform.display.value['refreshRate'] ?? 0).toString(),
+      ].join(','));
+      if (_perfLog.length > 3600) _perfLog.removeAt(1);
+    }
+  }
+
+  void _onEvent(SimEvent e) {
+    switch (e) {
+      case CollisionEvent(:final strength):
+        if (settings.haptics) unawaited(platform.haptic(0.25 + 0.75 * strength));
+      case FireflyEvent():
+        if (settings.haptics) unawaited(platform.haptic(0.08));
+      case LeafSmotherEvent():
+        if (settings.haptics) unawaited(platform.haptic(0.15));
+      case RunEndEvent(:final phase):
+        final w = world!;
+        newBest = settings.submitRun(
+            won: phase == RunPhase.won, fireflies: w.collected, time: w.endedAt, flame: w.flame);
+        // Let the ending play for a moment before the results card.
+        Future.delayed(Duration(milliseconds: phase == RunPhase.won ? 5200 : 2600), () {
+          if (this.phase == AppPhase.playing) {
+            this.phase = AppPhase.results;
+            notifyListeners();
+          }
+        });
+    }
+  }
+
+  /// Writes the perf log as CSV into the app's external files dir.
+  Future<String?> exportPerfLog() async {
+    final dir = await platform.perfLogDir();
+    if (dir == null) return null;
+    final stamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+    final path = '$dir/lantern_perf_$stamp.csv';
+    await writeTextFile(path, _perfLog.join('\n'));
+    return path;
+  }
+
+  double get elapsed => world?.time ?? 0;
+  double get realTime => _realTime;
+
+  @override
+  void dispose() {
+    SchedulerBinding.instance.removeTimingsCallback(_onTimings);
+    super.dispose();
+  }
+}
+
+/// Clamp helper used by widgets.
+double clampD(double v, double lo, double hi) => math.min(hi, math.max(lo, v));
