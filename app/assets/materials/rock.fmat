@@ -110,5 +110,7 @@ fragment {
     material.metallic = 0.0;
     material.roughness = clamp(rough, 0.05, 1.0);
     material.occlusion = arh.r;
+    // Submerged stone loses its sheen; the water surface takes the highlight.
+    material.specular = mix(1.0, 0.08, under);
   }
 }

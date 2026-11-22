@@ -43,7 +43,9 @@ class GameScene {
   final List<Node> _rockNodes = [];
   // Sky-lit ambient for the hand-made terms in water.fmat and ground.fmat:
   // about a tenth of the open-sky radiance at envIntensity (blue hour).
-  static final vm.Vector3 ambient = vm.Vector3(0.006, 0.008, 0.016);
+  // (Doubled in M4 v2: sky light scattered in the tannin water fills the
+  // rock shadows on the bed, which read as black holes.)
+  static final vm.Vector3 ambient = vm.Vector3(0.012, 0.016, 0.03);
 
   static const int maxLeaves = 48;
 
@@ -63,7 +65,7 @@ class GameScene {
       fogEnabled: Uri.base.queryParameters['nofog'] != '1',
       fogMode: FogMode.exponential,
       fogColor: vm.Vector3(0.012, 0.016, 0.03),
-      fogDensity: 0.15,
+      fogDensity: 0.25,
       fogHeight: 0.0,
       fogHeightFalloff: 3.0,
       // Ground-truth AO at macro scale: crevices between stones, under
@@ -102,10 +104,13 @@ class GameScene {
     _lanternLight = PointLight(
       color: vm.Vector3(1.0, 0.6, 0.28),
       intensity: 1.4,
-      range: 3.0,
+      // A candle in paper: its light should die within about a metre
+      // (refs 02, 03). The engine's falloff is inverse-square windowed to the
+      // range, so the range is what bounds the pool.
+      range: 1.3,
       castsShadow: Uri.base.queryParameters['noshadow'] != '1' && !Diagnostics.noEffects,
-      radius: 0.03, // a 7 cm paper lantern, not a point: soft shadows, broad glints
-      shadowSoftness: 3.0,
+      radius: 0.045, // a 7 cm paper lantern, not a point: soft shadows, broad glints
+      shadowSoftness: 5.0,
       shadowNear: 0.02,
       shadowMapResolution: 512,
     );
