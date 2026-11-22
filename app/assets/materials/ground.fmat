@@ -138,12 +138,14 @@ fragment {
     if (under > 0.0) {
       // Two caustic layers drifting downstream (-Z) at different scales/speeds;
       // the minimum of the two keeps the network crisp as it evolves.
-      vec2 u1 = p * 2.2 + vec2(0.012, 0.05) * t;
-      vec2 u2 = p * 1.7 * mat2(0.8, -0.6, 0.6, 0.8) + vec2(-0.02, 0.07) * t;
+      vec2 u1 = p * 3.0 + vec2(0.012, 0.05) * t;
+      vec2 u2 = p * 2.4 * mat2(0.8, -0.6, 0.6, 0.8) + vec2(-0.02, 0.07) * t;
+      // Geometric mean of two layers: crisp bright filaments where they cross.
       vec3 c;
-      c.r = min(Caustic(u1 + 0.0015), Caustic(u2 + 0.0015));
-      c.g = min(Caustic(u1), Caustic(u2));
-      c.b = min(Caustic(u1 - 0.0015), Caustic(u2 - 0.0015));
+      c.r = sqrt(Caustic(u1 + 0.0012) * Caustic(u2 + 0.0012));
+      c.g = sqrt(Caustic(u1) * Caustic(u2));
+      c.b = sqrt(Caustic(u1 - 0.0012) * Caustic(u2 - 0.0012));
+      c = pow(c, vec3(1.6)) * 0.85;
       float depth = -wp.y;
       float focus = smoothstep(0.0, 0.03, depth) * (1.0 - smoothstep(0.12, 0.35, depth));
       vec3 light = LanternIrradiance(wp) + material_params.ambient * 0.6;

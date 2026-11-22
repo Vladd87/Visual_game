@@ -16,6 +16,7 @@ Every round follows the same steps (PLAN.md §5):
 | m1-greybox | (baseline, not critiqued) | | | | | | Plain-lighting greybox |
 | round-1 | water v1 | 1.06 | 1.13 | 1.09 | 1 | 0/4 (see note) | Water read as opaque matte brown |
 | round-2 | water v2 | 1.56 | 1.81 | 1.69 | 1 | 0/4 | +0.60. Water alone 1.5/10: pebble bed, planar reflection, but the surface still invisible |
+| round-3 | water v3 | 2.06 | 2.13 | 2.09 | 1.5 | 0/4 | +0.40. Water 2/10; "glass over gravel", no sky reflection |
 
 ## Round 1: water v1
 
@@ -86,3 +87,30 @@ Also flagged:
 - a meniscus highlight at waterlines
 - big cobbles and silt flats in the bed
 - softer, greyer, partly transparent foam instead of fur
+
+
+## Round 3: water v3
+
+**Scores (1–10)**
+- inner: 2.5, 2, 2.5, 2, 1.5, 2, 2, 2 (mean 2.06)
+- cover: 2.5, 2, 2.5, 2, 1.5, 2, 2, 2.5 (mean 2.13)
+
+**Water alone:** 2/10.
+
+**Water issues**
+1. No sky, lantern or rock reflection and no glitter path: the stream reads as glass over gravel.
+2. No foam, wakes or waterlines around obstacles; no visible ripples.
+3. Bed: a single-scale pebble pattern; caustics read as smears rather than a network; no depth falloff; a "plastic film" strip along both edges.
+
+**Other giveaways** (later systems): egg rocks with shell slits and fur (M3); featureless blurred banks with a perfectly circular pool (M3/M6); box lantern, square leaves, pin-dot fireflies (M6/M7); milky lifted blacks with p1 ≈ 42/255 (M9).
+
+**A/B:** 0/4 fooled, 99 % confidence on each.
+
+**Verified myself:** the water's sky reflection was effectively absent. The engine IBL specular was gated by the mirror capture's alpha, which appears to be 1 over empty background. Even ungated, a physically weighted dusk sky at the diffuse environment level is only 1–5 % of the lantern-lit bed.
+
+**Changes for round 4**
+- The water now computes its own sky reflection from a blurred equirect baked from the same HDRI (`tools/bake/bake_sky.py`, engine IBL off for water). Mirrored objects replace it only where the capture is non-empty.
+- The reflected sky is 2.5× the diffuse sky level. This stands in for channel occlusion of the bed's sky light until the lighting milestone.
+- A broad 0.5 m undulation layer makes the sky reflect in soft patches.
+- Caustics: geometric mean of two layers with a power curve gives crisper filaments.
+- Narrower meniscus line (removes the edge "film" strip).

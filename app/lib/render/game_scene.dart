@@ -33,6 +33,7 @@ class GameScene {
   PreprocessedMaterial? _groundMat;
   Texture2D? _waterNormal;
   Texture2D? _caustics;
+  Texture2D? _sky;
   static final vm.Vector3 ambient = vm.Vector3(0.018, 0.022, 0.028);
 
   static const int maxLeaves = 48;
@@ -109,24 +110,34 @@ class GameScene {
   Future<void> loadAssets() async {
     _waterNormal = await _loadTexture('assets/textures/water_normal.png');
     _caustics = await _loadTexture('assets/textures/caustics.png');
+    _sky = await _loadTexture('assets/textures/sky_dusk.png', mipmaps: false);
     _waterMat = await loadFmatMaterial('assets/materials/water.fmat');
     _groundMat = await loadFmatMaterial('assets/materials/ground.fmat');
     _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
+    _waterMat!.parameters.setTexture('sky_tex', _sky!.gpuTexture, sampler: _sky!.sampledSampler);
+    // Baked sky encodes sqrt(radiance / 4.9162) (scale printed by tools/bake/bake_sky.py).
+    // The reflected sky is 2.5x the diffuse sky level: in a banked channel the
+    // bed sees only part of the sky (occluded diffuse), while the upward
+    // reflection sees it unobstructed. Until M4 adds real occlusion, this
+    // ratio stands in for it.
+    _waterMat!.parameters.setFloat('sky_scale', 4.9162 * envIntensity * 2.5);
     _groundMat!.parameters.setTexture('caustic_tex', _caustics!.gpuTexture, sampler: _caustics!.sampledSampler);
     for (final m in [_waterMat!, _groundMat!]) {
       m.parameters.setVec3('ambient', ambient);
     }
     // Dusk sky (after sunset) for water reflections and ambient light.
-    await scene.loadEnvironment('assets/env/qwantani_dusk_2_1k.hdr', showSkybox: false, intensity: 0.2, maxWidth: 1024);
+    await scene.loadEnvironment('assets/env/qwantani_dusk_2_1k.hdr', showSkybox: false, intensity: envIntensity, maxWidth: 1024);
   }
 
-  static Future<Texture2D> _loadTexture(String path) async {
+  static const double envIntensity = 0.2;
+
+  static Future<Texture2D> _loadTexture(String path, {bool mipmaps = true}) async {
     final bytes = await rootBundle.load(path);
     final image = await decodeImageFromList(bytes.buffer.asUint8List());
     final data = await image.toByteData();
     return Texture2D.fromPixels(data!.buffer.asUint8List(), image.width, image.height,
         content: TextureContent.data,
-        sampling: const TextureSampling(maxAnisotropy: 8));
+        sampling: TextureSampling(maxAnisotropy: 8, mipmaps: mipmaps));
   }
 
   /// (Re)builds everything that depends on the course of [world].
