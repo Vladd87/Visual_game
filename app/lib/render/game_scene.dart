@@ -116,11 +116,11 @@ class GameScene {
     _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
     _waterMat!.parameters.setTexture('sky_tex', _sky!.gpuTexture, sampler: _sky!.sampledSampler);
     // Baked sky encodes sqrt(radiance / 4.9162) (scale printed by tools/bake/bake_sky.py).
-    // The reflected sky is 2.5x the diffuse sky level: in a banked channel the
+    // The reflected sky is 1.6x the diffuse sky level: in a banked channel the
     // bed sees only part of the sky (occluded diffuse), while the upward
     // reflection sees it unobstructed. Until M4 adds real occlusion, this
     // ratio stands in for it.
-    _waterMat!.parameters.setFloat('sky_scale', 4.9162 * envIntensity * 2.5);
+    _waterMat!.parameters.setFloat('sky_scale', 4.9162 * envIntensity * 1.6);
     _groundMat!.parameters.setTexture('caustic_tex', _caustics!.gpuTexture, sampler: _caustics!.sampledSampler);
     for (final m in [_waterMat!, _groundMat!]) {
       m.parameters.setVec3('ambient', ambient);
@@ -187,7 +187,9 @@ class GameScene {
       ..roughnessFactor = 0.55;
     final rocks = InstancedMesh(geometry: IcosphereGeometry(radius: 1, subdivisions: 2), material: rockMat, cullInstances: true);
     for (final r in c.rocks) {
-      final ry = math.max(0.05, r.height.abs() + 0.05);
+      // Reach from the rock's top down into the bed so nothing floats.
+      final bed = groundHeight(c, r.pos);
+      final ry = math.max(0.05, (r.height - bed) / 2 + 0.02);
       final centerY = r.height - ry;
       final yaw = (r.seed % 628) / 100.0;
       final squash = 0.8 + (r.seed % 37) / 37 * 0.4;

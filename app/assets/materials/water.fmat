@@ -29,8 +29,8 @@ material {
     { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
     { type: vec3, name: lantern_light, default: [1.0, 0.6, 0.28] },
     { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
-    { type: vec3, name: absorption, default: [4.2, 5.4, 8.0] },
-    { type: vec3, name: murk, default: [0.07, 0.095, 0.085] },
+    { type: vec3, name: absorption, default: [7.0, 9.0, 13.0] },
+    { type: vec3, name: murk, default: [0.06, 0.055, 0.035] },
     { type: float, name: normal_strength, default: 1.0 },
     { type: float, name: refraction, default: 2.5 },
     { type: float, name: foam_amount, default: 1.0 },
@@ -63,10 +63,22 @@ fragment {
   // HDRI as the scene's image-based light (tools/bake/bake_sky.py), stored as
   // sqrt(radiance / scale). Same longitude convention as the engine's lookup.
   vec3 Sky(vec3 r) {
-    vec2 uv = vec2(atan(r.z, r.x) * 0.15915494 + 0.5,
-                   0.5 - asin(clamp(r.y, -1.0, 1.0)) * 0.31830989);
+    float az = atan(r.z, r.x);
+    float el = asin(clamp(r.y, -1.0, 1.0));
+    vec2 uv = vec2(az * 0.15915494 + 0.5, 0.5 - el * 0.31830989);
     vec3 e = texture(sky_tex, uv).rgb;
-    return e * e * material_params.sky_scale;
+    vec3 sky = e * e * material_params.sky_scale;
+    // The stream runs under trees and between banks: the reflection sees dark
+    // foliage masses up to a ragged treeline (~35-60 deg, varying with azimuth)
+    // and sky gaps above. Ripples tilt the reflected ray across that edge, so
+    // the surface breaks into bright and dark patches (refs 06, 11) instead of
+    // a uniform sheen.
+    vec2 cu = vec2(az * 2.0, el * 3.0);
+    float clumps = texture(normal_tex, cu * 0.37).b * 0.6 + texture(normal_tex, cu * 1.3 + 0.2).a * 0.4;
+    float line = 0.62 + 0.38 * texture(normal_tex, vec2(az * 0.9, 0.31)).b;  // treeline height, rad
+    float gap = smoothstep(line - 0.18, line + 0.1, el + (clumps - 0.5) * 0.35);
+    vec3 foliage = vec3(0.010, 0.013, 0.010) * material_params.sky_scale;
+    return mix(foliage, sky, gap);
   }
 
   vec3 LanternIrradiance(vec3 p) {
@@ -117,7 +129,7 @@ fragment {
     // (amplifying the flat bend too would overshoot past object edges).
     vec3 tFlat = refract(-v, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);
     vec3 tRip = refract(-v, n, 1.0 / 1.33);
-    float reach = min(thick0, 0.25);
+    float reach = min(thick0, 0.4);
     vec2 base = ProjectWorldOffsetToScreenUv(tFlat * reach) - GetScreenUv();
     vec2 rip = ProjectWorldOffsetToScreenUv(tRip * reach) - GetScreenUv() - base;
     vec2 off = base + rip * material_params.refraction;
@@ -132,7 +144,7 @@ fragment {
         sceneD = d0;
       }
     }
-    float path = clamp(sceneD - fragDepth, 0.0, 2.0);
+    float path = clamp(sceneD - fragDepth, 0.0, 3.0);
     vec3 behind = GetSceneColor(off);
     vec3 trans = exp(-material_params.absorption * path);
     vec3 light = material_params.ambient + LanternIrradiance(wp) * 0.35;
@@ -156,7 +168,7 @@ fragment {
     float breakup = s1 * 0.6 + s2 * 0.15 + blobs * 0.25;
     float foam = smoothstep(0.45, 0.85, vc.b * material_params.foam_amount * (0.35 + 1.1 * breakup));
     foam *= smoothstep(0.0, 0.01, thick0 + 0.004);
-    float foamCover = foam * 0.7;  // thin foam lets the water show through
+    float foamCover = foam * 0.8;  // thin foam lets the water show through
 
     // --- drifting flecks: bubbles and bits of foam riding the current -----------
     // Two cross-faded phases so the speckle pattern travels with the flow
@@ -180,7 +192,7 @@ fragment {
     float shore = 1.0 - smoothstep(0.001, 0.006, thick0);
 
     material.normal = normalize(mix(n, vec3(0.0, 1.0, 0.0), foam * 0.5));
-    material.base_color = vec4(vec3(0.36, 0.37, 0.36) * foam, 1.0);
+    material.base_color = vec4(vec3(0.5, 0.51, 0.5) * foam, 1.0);
     material.metallic = 0.0;
     material.roughness = mix(mix(0.07, 0.03, shore), 0.6, foam);
     // The lit model now only adds the lantern's specular (glints); F0 0.04.

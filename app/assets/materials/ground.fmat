@@ -147,7 +147,7 @@ fragment {
       c.b = sqrt(Caustic(u1 - 0.0012) * Caustic(u2 - 0.0012));
       c = pow(c, vec3(1.6)) * 0.85;
       float depth = -wp.y;
-      float focus = smoothstep(0.0, 0.03, depth) * (1.0 - smoothstep(0.12, 0.35, depth));
+      float focus = smoothstep(0.0, 0.03, depth) * (1.0 - smoothstep(0.15, 0.4, depth));
       vec3 light = LanternIrradiance(wp) + material_params.ambient * 0.6;
       vec3 gain = max(c * 1.6 - vec3(0.55), vec3(0.0)) * focus * under * material_params.caustic_strength;
       material.emissive = albedo * light * gain;

@@ -17,6 +17,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-1 | water v1 | 1.06 | 1.13 | 1.09 | 1 | 0/4 (see note) | Water read as opaque matte brown |
 | round-2 | water v2 | 1.56 | 1.81 | 1.69 | 1 | 0/4 | +0.60. Water alone 1.5/10: pebble bed, planar reflection, but the surface still invisible |
 | round-3 | water v3 | 2.06 | 2.13 | 2.09 | 1.5 | 0/4 | +0.40. Water 2/10; "glass over gravel", no sky reflection |
+| round-4 | water v4 | 1.81 | 2.00 | 1.91 | 1.5 | 0/4 | −0.18 (1st sub-0.3 round). Water 2/10; sky sheen read as a uniform "frosted lavender veil" |
 
 ## Round 1: water v1
 
@@ -114,3 +115,29 @@ Also flagged:
 - A broad 0.5 m undulation layer makes the sky reflect in soft patches.
 - Caustics: geometric mean of two layers with a power curve gives crisper filaments.
 - Narrower meniscus line (removes the edge "film" strip).
+
+
+## Round 4: water v4
+
+**Scores (1–10)**
+- inner: 2, 2, 2, 1.5, 2, 2, 1.5, 1.5 (mean 1.81)
+- cover: 2, 2, 2.5, 2, 2, 2, 1.5, 2 (mean 2.00)
+
+**Water alone:** 2/10.
+
+**Water issues**
+1. Still "no surface": a uniform frosted-lavender veil with no sky or bank reflections and no glints.
+2. No ripples, flow lines or foam at rocks and lantern.
+3. Uniform haze with no depth darkening; refraction smears in shot 8; a single-colour bed.
+
+**Other giveaways** (later systems): egg rocks with clipping and seams; geometric shorelines (the pool is a circle joined by a notch); the lantern is a white box with a star flare; milky grade with p1 ≈ 47–51/255 and mean saturation 0.15.
+
+**A/B:** 0/4 fooled, 99 % confidence on each.
+
+**Reading of the regression:** the reflected-sky boost added haze, not structure. Physically, a 2.5 % Fresnel sky over a clear, lantern-lit shallow bed is swamped. In refs 02, 08 and 11, deep water goes dark and tannin-coloured, and only the margins show the bed; the dark water is what makes glints and sky patches visible.
+
+**Changes for round 5**
+- **Deeper channel** (≈28 cm centre, shallow margins) with **tannin absorption** (7, 9, 13 per metre): a dark reflective centre and visible shallows.
+- **Rocks** extended down to the deeper bed so none float.
+- **Reflected sky broken by a canopy/treeline mask**, so ripples alternate bright sky gaps and dark foliage (refs 06, 11). The boost is reduced to 1.6×.
+- **Whiter foam** in the fast sections.

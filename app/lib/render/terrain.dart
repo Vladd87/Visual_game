@@ -22,7 +22,8 @@ class MeshArrays {
 double groundHeight(Course c, V2 p) {
   final clear = c.clearance(p);
   if (clear >= 0) {
-    final depth = 0.025 + 0.105 * smoothstep(0.0, 0.28, clear);
+    // Shallow margins over a deep, dark centre (~28 cm): refs 08, 09, 11.
+    final depth = 0.02 + 0.26 * smoothstep(0.0, 0.34, clear);
     // A little bed relief so the water depth is not uniform.
     final relief = 0.012 * math.sin(p.x * 11.0 + p.y * 3.7) * math.sin(p.y * 5.3 - p.x * 2.1);
     return -depth + relief;
@@ -176,7 +177,7 @@ MeshArrays buildWaterChunk(Course c, FlowField flow, double d0, double d1, {doub
       final clear = c.clearance(p);
       if (clear > -0.05) foam = math.max(foam, math.exp(-math.max(clear, 0) / 0.01) * 0.22);
       final fast = clamp01(speed0 / 0.22);
-      foam *= 0.35 + 0.65 * fast;
+      foam *= 0.3 + 0.9 * fast;
       col[k * 4] = (v.x * 2 + 0.5).clamp(0.0, 1.0);
       col[k * 4 + 1] = (v.y * 2 + 0.5).clamp(0.0, 1.0);
       col[k * 4 + 2] = clamp01(foam);
