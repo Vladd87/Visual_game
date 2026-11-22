@@ -1,6 +1,7 @@
 """Pack downloaded CC0 surface textures into the app's 3-map layout.
 
-Each surface becomes three 1024² JPEGs in app/assets/textures/surfaces/:
+Each surface becomes three JPEGs (1024², rock colour/normal atlases 2048²)
+in app/assets/textures/surfaces/:
   <name>_col.jpg   albedo, sRGB
   <name>_nrm.jpg   tangent-space normal, OpenGL convention (+Y up), linear
   <name>_arh.jpg   R = ambient occlusion, G = roughness, B = height, linear
@@ -20,10 +21,10 @@ from PIL import Image
 SIZE = 1024
 
 
-def load(path, mode='RGB'):
+def load(path, mode='RGB', size=SIZE):
     im = Image.open(path).convert(mode)
-    if im.size != (SIZE, SIZE):
-        im = im.resize((SIZE, SIZE), Image.LANCZOS)
+    if im.size != (size, size):
+        im = im.resize((size, size), Image.LANCZOS)
     return np.asarray(im).astype(np.float32) / 255.0
 
 
@@ -59,11 +60,13 @@ def main(src, out_dir):
     arm.getchannel(1).save(os.path.join(tmp, 'rough.png'))
     pack(out_dir, 'mud', t('brown_mud_02_diff_1k.jpg'), t('brown_mud_02_nor_gl_1k.jpg'),
          os.path.join(tmp, 'ao.png'), os.path.join(tmp, 'rough.png'), t('brown_mud_02_disp_1k.jpg'))
-    # Rock scan atlases (2k -> 1k). Set 01 has no height map, so B = 0.5 there.
+    # Rock scan atlases: colour and normal stay 2k (six or seven rocks share
+    # each atlas, and the lantern lights their sides up close); AO/rough/height
+    # go to 1k. Set 01 has no height map, so B = 0.5 there.
     for s in ['rock_moss_set_01', 'rock_moss_set_02']:
         d = os.path.join(src, 'dl', s, 'textures')
-        save(load(os.path.join(d, f'{s}_diff_2k.jpg')), os.path.join(out_dir, f'{s}_col.jpg'))
-        save(renorm(load(os.path.join(d, f'{s}_nor_gl_2k.jpg'))), os.path.join(out_dir, f'{s}_nrm.jpg'))
+        save(load(os.path.join(d, f'{s}_diff_2k.jpg'), size=2048), os.path.join(out_dir, f'{s}_col.jpg'))
+        save(renorm(load(os.path.join(d, f'{s}_nor_gl_2k.jpg'), size=2048)), os.path.join(out_dir, f'{s}_nrm.jpg'))
         rough = load(os.path.join(d, f'{s}_rough_2k.jpg'), 'L')
         ao = load(os.path.join(d, f'{s}_ao_2k.jpg'), 'L')
         hp = os.path.join(d, f'{s}_disp_2k.jpg')

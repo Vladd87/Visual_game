@@ -8,11 +8,12 @@ import 'rock_layout.dart';
 
 /// CPU-side mesh arrays (positions, normals, vertex colours, indices).
 class MeshArrays {
-  MeshArrays(this.positions, this.normals, this.colors, this.indices);
+  MeshArrays(this.positions, this.normals, this.colors, this.indices, {this.texCoords});
   final Float32List positions;
   final Float32List normals;
   final Float32List colors;
   final List<int> indices;
+  final Float32List? texCoords;
 }
 
 /// Height of the ground (stream bed and banks) at sim point [p], in metres.
@@ -104,6 +105,27 @@ MeshArrays buildGroundChunk(Course c, double d0, double d1,
       nrm[k * 3 + 2] = nz / l;
     }
   }
+  // Texture coordinates for the bank surfaces: u is the arc length across
+  // the ground measured from the stream centre (so steep bank lips are not
+  // stretched by top-down planar mapping), v is world z.
+  final uv = Float32List(rows * cols * 2);
+  final jc = ((cols - 1) / 2).round();
+  for (var i = 0; i < rows; i++) {
+    final row = i * cols;
+    final cx = xs[row + jc];
+    uv[(row + jc) * 2] = cx;
+    for (var j = jc + 1; j < cols; j++) {
+      final dx = xs[row + j] - xs[row + j - 1], dh = heights[row + j] - heights[row + j - 1];
+      uv[(row + j) * 2] = uv[(row + j - 1) * 2] + math.sqrt(dx * dx + dh * dh);
+    }
+    for (var j = jc - 1; j >= 0; j--) {
+      final dx = xs[row + j + 1] - xs[row + j], dh = heights[row + j + 1] - heights[row + j];
+      uv[(row + j) * 2] = uv[(row + j + 1) * 2] - math.sqrt(dx * dx + dh * dh);
+    }
+    for (var j = 0; j < cols; j++) {
+      uv[(row + j) * 2 + 1] = -ds[row + j];
+    }
+  }
   final idx = <int>[];
   for (var i = 0; i < rows - 1; i++) {
     for (var j = 0; j < cols - 1; j++) {
@@ -113,7 +135,7 @@ MeshArrays buildGroundChunk(Course c, double d0, double d1,
       idx..add(b)..add(d)..add(cc);
     }
   }
-  return MeshArrays(pos, nrm, col, idx);
+  return MeshArrays(pos, nrm, col, idx, texCoords: uv);
 }
 
 /// Water surface (y = 0) covering the channel (plus a margin under the banks)

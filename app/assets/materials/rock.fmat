@@ -3,8 +3,9 @@
 //   submerged: near-black and saturated (refs 08, 13),
 //   splash band (0-5 cm): darkest, glossy wet stone with a biofilm line at
 //                         the waterline (refs 01, 03, 13),
-//   above: damp from the light rain; moss caps on the upward faces
-//          (ambientCG Moss001, planar from above) stay matte (refs 03, 09).
+//   above: rain-wet stone; the scan's own photographed moss survives only on
+//          upward faces, a little more saturated, and stays matte (refs 03,
+//          04, 09). On steep or low faces it is turned into dark bare stone.
 // Instance colour carries a small per-rock tint (rgb) so repeats differ.
 material {
   name: "Rock",
@@ -14,18 +15,11 @@ material {
     { type: sampler2d, name: r_col, hint: default_white },
     { type: sampler2d, name: r_nrm, hint: default_normal },
     { type: sampler2d, name: r_arh, hint: default_white },
-    { type: sampler2d, name: m_col, hint: default_white },
-    { type: sampler2d, name: m_nrm, hint: default_normal },
-    { type: sampler2d, name: m_arh, hint: default_white },
     { type: float, name: damp, default: 0.7 },
   ],
 }
 
 fragment {
-  vec3 DecodeNormal(vec3 t) {
-    return t * 255.0 / 127.0 - 128.0 / 127.0;
-  }
-
   void Surface(inout MaterialInputs material) {
     vec2 uv = GetUV0();
     vec3 srgb = texture(r_col, uv).rgb;
@@ -36,41 +30,27 @@ fragment {
     highp vec3 wp = GetWorldPosition();
     float y = wp.y;
 
+    // The scan's moss: greener than it is red or blue.
+    float scanMoss = smoothstep(0.015, 0.07, srgb.g - srgb.b) * smoothstep(-0.03, 0.03, srgb.g - srgb.r);
+    float topFace = smoothstep(0.5, 0.82, geo.y) * smoothstep(0.035, 0.08, y);
+    float moss = scanMoss * topFace;
+    float strip = scanMoss * (1.0 - topFace);
+
     // Stream stone is greyer and darker than these sunlit scans (refs 03, 13).
     float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
-    col = mix(vec3(lum), col, 0.65) * 0.8;
-
-    // Moss already in the scan's albedo: greener than it is red or blue.
-    // Moss lives on tops; on steep or low faces the scan's moss is turned
-    // into bare dark stone (refs 03, 09: mossy caps over black wet sides).
-    float scanMoss = smoothstep(0.015, 0.07, srgb.g - srgb.b) * smoothstep(-0.03, 0.03, srgb.g - srgb.r);
-    float topFace = smoothstep(0.55, 0.85, geo.y) * smoothstep(0.04, 0.09, y);
-    float strip = scanMoss * (1.0 - topFace);
-    col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(0.95, 0.95, 1.0) * 0.6, strip);
-    scanMoss *= topFace;
+    vec3 stone = mix(vec3(lum), col, 0.6) * 0.78;
+    // Stripped moss becomes dark grey stone; kept moss gets a touch more
+    // yellow-green saturation (ref04 cushions).
+    stone = mix(stone, vec3(lum) * vec3(0.95, 0.95, 1.0) * 0.55, strip);
+    vec3 mossCol = mix(vec3(lum), col, 1.35) * vec3(0.95, 1.05, 0.8);
+    col = mix(stone, max(mossCol, vec3(0.0)), moss);
     float rough = mix(arh.g, 0.45, strip);
+    rough = mix(rough, 0.85, moss);
 
     float under = smoothstep(0.003, -0.012, y);
     float band = (1.0 - under) * (1.0 - smoothstep(0.0, 0.05, y));
     float line = (1.0 - under) * (1.0 - smoothstep(0.0, 0.01, y));
     float damp = material_params.damp;
-
-    // Moss caps: upward faces clear of the splash zone, in patches.
-    highp vec2 mp = wp.xz / 0.3;
-    vec3 ma = texture(m_arh, mp).rgb;
-    float patchField = texture(m_arh, wp.xz * 0.9 + 0.37).b;
-    float up = smoothstep(0.62, 0.88, geo.y);
-    float dry = smoothstep(0.03, 0.07, y);
-    float cap = up * dry * clamp((patchField - 0.42 + ma.b * 0.4 + up * 0.15) * 5.0, 0.0, 1.0);
-    if (cap > 0.0) {
-      vec3 mc = SRGBToLinear(texture(m_col, mp).rgb);
-      vec3 mn = DecodeNormal(texture(m_nrm, mp).rgb);
-      col = mix(col, mc * 0.8, cap);
-      n = normalize(mix(n, normalize(geo + vec3(mn.x, 0.0, -mn.y) * 0.8), cap));
-      rough = mix(rough, 0.85, cap);
-      arh.r = mix(arh.r, ma.r, cap);
-    }
-    float moss = max(scanMoss, cap);
 
     // Wet darkening: water fills the pores (stone darkens more than moss).
     float wet = max(max(damp, band), under);

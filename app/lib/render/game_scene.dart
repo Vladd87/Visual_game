@@ -142,7 +142,6 @@ class GameScene {
     for (final set in ['rock_moss_set_01', 'rock_moss_set_02']) {
       final m = await loadFmatMaterial('assets/materials/rock.fmat');
       await _bindSurface(m, set, 'r_');
-      await _bindSurface(m, 'moss', 'm_');
       _rockMats.add(m);
     }
     for (final m in [_waterMat!, _groundMat!]) {
@@ -202,7 +201,7 @@ class GameScene {
       final g = buildGroundChunk(c, d0, d1);
       final ground = Node(
         name: 'ground_${d0.toStringAsFixed(0)}',
-        mesh: Mesh(MeshGeometry.fromArrays(positions: g.positions, normals: g.normals, colors: g.colors, indices: g.indices), groundMat),
+        mesh: Mesh(MeshGeometry.fromArrays(positions: g.positions, normals: g.normals, colors: g.colors, texCoords: g.texCoords, indices: g.indices), groundMat),
       )..shadowStatic = true;
       final w = buildWaterChunk(c, world.flow, d0, d1);
       final water = Node(

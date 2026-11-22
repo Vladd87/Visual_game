@@ -144,7 +144,9 @@ fragment {
 
     if (wet < 0.999) {
       // ---- Banks ----
-      highp vec2 uv = p;
+      // Arc-length UVs from the mesh (u across the bank from the stream
+      // centre, v = world z): no stretching on steep lips.
+      highp vec2 uv = GetUV0();
       mat3 tbn = CotangentFrame(geo, -v_viewvector, uv);
       vec3 gc, gn, ga;
       SampleSurface(g_col, g_nrm, g_arh, uv / 0.9, n1, gc, gn, ga);
