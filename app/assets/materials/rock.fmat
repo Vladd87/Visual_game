@@ -17,7 +17,7 @@ material {
     { type: sampler2d, name: m_col, hint: default_white },
     { type: sampler2d, name: m_nrm, hint: default_normal },
     { type: sampler2d, name: m_arh, hint: default_white },
-    { type: float, name: damp, default: 0.35 },
+    { type: float, name: damp, default: 0.7 },
   ],
 }
 
@@ -41,8 +41,14 @@ fragment {
     col = mix(vec3(lum), col, 0.65) * 0.8;
 
     // Moss already in the scan's albedo: greener than it is red or blue.
+    // Moss lives on tops; on steep or low faces the scan's moss is turned
+    // into bare dark stone (refs 03, 09: mossy caps over black wet sides).
     float scanMoss = smoothstep(0.015, 0.07, srgb.g - srgb.b) * smoothstep(-0.03, 0.03, srgb.g - srgb.r);
-    float rough = arh.g;
+    float topFace = smoothstep(0.55, 0.85, geo.y) * smoothstep(0.04, 0.09, y);
+    float strip = scanMoss * (1.0 - topFace);
+    col = mix(col, vec3(dot(col, vec3(0.3, 0.4, 0.3))) * vec3(0.95, 0.95, 1.0) * 0.6, strip);
+    scanMoss *= topFace;
+    float rough = mix(arh.g, 0.45, strip);
 
     float under = smoothstep(0.003, -0.012, y);
     float band = (1.0 - under) * (1.0 - smoothstep(0.0, 0.05, y));
@@ -53,7 +59,7 @@ fragment {
     highp vec2 mp = wp.xz / 0.3;
     vec3 ma = texture(m_arh, mp).rgb;
     float patchField = texture(m_arh, wp.xz * 0.9 + 0.37).b;
-    float up = smoothstep(0.35, 0.8, geo.y);
+    float up = smoothstep(0.62, 0.88, geo.y);
     float dry = smoothstep(0.03, 0.07, y);
     float cap = up * dry * clamp((patchField - 0.42 + ma.b * 0.4 + up * 0.15) * 5.0, 0.0, 1.0);
     if (cap > 0.0) {
@@ -79,7 +85,7 @@ fragment {
     // A water film smooths the surface and makes bare stone glossy.
     float film = max(band, under) * (1.0 - moss * 0.7);
     n = normalize(mix(n, geo, film * 0.5));
-    rough = mix(rough, rough * 0.75, damp * (1.0 - moss));
+    rough = mix(rough, rough * 0.45, damp * (1.0 - moss));
     rough = mix(rough, 0.07, band * (1.0 - moss * 0.8));
     rough = mix(rough, 0.25, under);
 

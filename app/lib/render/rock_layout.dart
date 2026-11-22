@@ -108,7 +108,7 @@ List<Rock> _shoreStones(Course c, FlatGround flat) {
         final lat = side * (hw + 0.025 + radius * 0.6 + r.range(0, 0.12));
         out.add(Rock(V2(c.centerX(dd) + lat, dd), radius, -1, emergent: true, seed: r.nextU32()));
       }
-      d += r.range(0.35, 1.6);
+      d += r.range(0.25, 1.1);
     }
   }
   return out;
@@ -138,12 +138,12 @@ RockPlacement _place(Course c, Rock r, FlatGround flat, {required bool shore}) {
     // Keep at least ~45 % of a boulder above the ground it sits on.
     top = math.max(r.height, bedCenter + 0.45 * h * sy);
     // A rock that cannot reach the bed with a quarter buried is stretched up
-    // to 1.5x, then a gravel mound lifts the bed the rest of the way (rocks
+    // to 1.25x, then a gravel mound lifts the bed the rest of the way (rocks
     // resting on gravel bars, refs 08, 09). Emergent mounds stay underwater.
     hr = h * sy;
     final need = top - bed;
     if (hr * 0.75 < need) {
-      final stretched = math.min(need / 0.75, hr * 1.5);
+      final stretched = math.min(need / 0.75, hr * 1.25);
       sy *= stretched / hr;
       hr = stretched;
     }
