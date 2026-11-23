@@ -43,6 +43,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     c.addListener(_changed);
     c.governor.addListener(_changed);
     c.settings.addListener(_changed);
+    Diagnostics.hide3d.addListener(_changed);
     unawaited(c.boot());
   }
 
@@ -52,6 +53,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     c.removeListener(_changed);
     c.governor.removeListener(_changed);
     c.settings.removeListener(_changed);
+    Diagnostics.hide3d.removeListener(_changed);
     super.dispose();
   }
 
@@ -142,7 +144,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
               onPointerMove: _move,
               onPointerUp: _up,
               onPointerCancel: _up,
-              child: Diagnostics.no3d || Diagnostics.noScene
+              child: Diagnostics.no3d || Diagnostics.noScene || Diagnostics.hide3d.value
                   ? const ColoredBox(
                       color: Color(0xFF0B0E12),
                       child: Center(child: Text('3D view off (diagnostic mode)', style: TextStyle(color: Color(0xFF8A9099)))),
@@ -556,7 +558,7 @@ class _BringUpBannerState extends State<_BringUpBanner> with SingleTickerProvide
   @override
   Widget build(BuildContext context) {
     const ink = TextStyle(color: Color(0xFF000000), fontSize: 20, fontWeight: FontWeight.w600);
-    final mode = Diagnostics.modeLabel.isEmpty ? 'normal' : Diagnostics.modeLabel;
+    final mode = '${Diagnostics.auto ? 'AUTO ${Diagnostics.autoLabel} · ' : ''}${Diagnostics.modeName}';
     return Container(
       height: 150,
       color: const Color(0xFFFFD54F),

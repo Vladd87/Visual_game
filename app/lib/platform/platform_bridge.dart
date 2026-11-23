@@ -117,6 +117,23 @@ class PlatformBridge {
     }
   }
 
+  /// Bring-up auto test: this run's label ("run k/n"), or null.
+  Future<String?> autoLabel() async {
+    if (!available) return null;
+    try {
+      return await _methods.invokeMethod<String>('autoLabel');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Bring-up auto test: hand over to the next run (the launcher restarts
+  /// the game in the next mode).
+  void nextRun() {
+    if (!available) return;
+    _methods.invokeMethod('nextRun').catchError((_) => null);
+  }
+
   /// Appends a line to the launcher's history of test runs.
   void recordRun(String line) {
     if (!available) return;

@@ -67,8 +67,9 @@ class GameController extends ChangeNotifier {
   Future<void> _boot() async {
     Diagnostics.step('settings');
     Diagnostics.applyLaunchFlags(await platform.launchFlags());
+    if (Diagnostics.auto) Diagnostics.autoLabel = await platform.autoLabel() ?? '';
     // Bring-up on new hardware: which 2D primitives render (logged).
-    if (Diagnostics.stepByStep) platform.recordRun('=== mode: ${Diagnostics.modeLabel.isEmpty ? 'normal' : Diagnostics.modeLabel}');
+    if (Diagnostics.stepByStep && !Diagnostics.auto) platform.recordRun('=== mode: ${Diagnostics.modeName}');
     if (platform.available || Uri.base.queryParameters['probe'] == '1') {
       Diagnostics.step('render probe');
       await runRenderProbe();
@@ -98,6 +99,8 @@ class GameController extends ChangeNotifier {
     SchedulerBinding.instance.addTimingsCallback(_onTimings);
 
     await Diagnostics.checkpoint('course');
+    // The loading screen as the phone shows it, just before the title.
+    if (Diagnostics.stepByStep) Diagnostics.lastLoadingLit = await Diagnostics.probe('loading', wait: const Duration(milliseconds: 400));
     final cap = capture;
     if (cap != null) {
       final w = World(cap.seed);
@@ -115,14 +118,23 @@ class GameController extends ChangeNotifier {
     if (Diagnostics.stepByStep) unawaited(_afterBootChecks());
   }
 
-  /// Device bring-up: what the title screen actually shows, a few times.
+  /// Device bring-up: what the title screen actually shows. Then the 3D view
+  /// is taken off screen and put back: if the screen is black only while the
+  /// 3D view is up, drawing it is what blanks the frame; if it stays black,
+  /// presentation itself is broken.
   Future<void> _afterBootChecks() async {
-    for (var i = 1; i <= 3; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 1500));
-      await Diagnostics.checkpoint('title screen $i');
-    }
+    final loading = Diagnostics.lastLoadingLit;
+    final t1 = await Diagnostics.probe('title 1', wait: const Duration(milliseconds: 1500));
+    final t2 = await Diagnostics.probe('title 2', wait: const Duration(milliseconds: 1500));
+    Diagnostics.hide3d.value = true;
+    final hidden = await Diagnostics.probe('3D hidden', wait: const Duration(milliseconds: 800));
+    Diagnostics.hide3d.value = false;
+    final back = await Diagnostics.probe('3D back', wait: const Duration(milliseconds: 1500));
+    String v(int lit, int threshold) => lit < 0 ? '?' : (lit >= threshold ? 'shows' : 'BLACK');
+    final verdict = 'loading ${v(loading, 5)}, title ${v(t1, 50)}/${v(t2, 50)}, 3D hidden ${v(hidden, 5)}, 3D back ${v(back, 50)}';
     Diagnostics.visibleStep.value = 'done';
-    platform.recordRun('end of checks');
+    Diagnostics.recordSummary(verdict);
+    if (Diagnostics.auto) platform.nextRun();
   }
 
   int _newSeed() => DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;

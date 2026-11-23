@@ -34,23 +34,67 @@ import java.util.Locale
  * renderer otherwise just comes back to the front).
  */
 class LaunchActivity : Activity() {
+    companion object {
+        /** Set by a finished auto-test run: start the next one. */
+        const val EXTRA_AUTO_NEXT = "lantern.auto_next"
+
+        /**
+         * The automatic test series: each setup three times, interleaved so
+         * that order and warm-up effects do not line up with one setup.
+         */
+        private val AUTO_MODES: List<Pair<String, List<String>>> = listOf(
+            "default" to emptyList(),
+            "old surface" to listOf(MainActivity.EXTRA_OPAQUE_SURFACE),
+            "texture view" to listOf(MainActivity.EXTRA_TEXTURE_VIEW),
+            "no 3D view" to listOf(MainActivity.EXTRA_NO_3D),
+            "direct 3D" to listOf(MainActivity.EXTRA_NO_EFFECTS),
+            "slow load" to listOf(MainActivity.EXTRA_SLOW_STEPS),
+        )
+        private const val AUTO_ROUNDS = 3
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.getBooleanExtra(EXTRA_AUTO_NEXT, false) == true && advanceAuto()) return
         showMenu(CrashReport.build(this))
+    }
+
+    private fun autoFile() = File(filesDir, "auto.txt")
+
+    /** Starts auto-test run [index], or ends the series; true if a run was started. */
+    private fun startAuto(index: Int): Boolean {
+        val total = AUTO_MODES.size * AUTO_ROUNDS
+        if (index >= total) {
+            autoFile().delete()
+            CrashReport.recordRun(this, "=== auto test finished ($total runs)")
+            return false
+        }
+        autoFile().writeText("$index\n")
+        val (_, flags) = AUTO_MODES[index % AUTO_MODES.size]
+        startGame(flags, steps = true, auto = "${index + 1}/$total")
+        return true
+    }
+
+    private fun advanceAuto(): Boolean {
+        val i = try { autoFile().readText().trim().toInt() } catch (_: Throwable) { return false }
+        return startAuto(i + 1)
     }
 
     /**
      * [mode]: null, or one of MainActivity's EXTRA_* diagnostic flags.
      * [steps]: step-by-step bring-up run (bright banner, screen read-back).
      */
-    private fun startGame(mode: String?, steps: Boolean = true) {
+    private fun startGame(mode: String?, steps: Boolean = true) =
+        startGame(listOfNotNull(mode), steps, null)
+
+    private fun startGame(flags: List<String>, steps: Boolean, auto: String?) {
         CrashReport.killGameProcesses(this)
         CrashReport.clearStep(this)
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         if (steps) intent.putExtra(MainActivity.EXTRA_STEP_BY_STEP, true)
-        if (mode != null) intent.putExtra(mode, true)
+        for (f in flags) intent.putExtra(f, true)
+        if (auto != null) intent.putExtra(MainActivity.EXTRA_AUTO, auto)
         startActivity(intent)
         finish()
     }
@@ -68,7 +112,7 @@ class LaunchActivity : Activity() {
             textSize = 20f
         })
         root.addView(TextView(this).apply {
-            text = "Play starts the game. The test buttons run step by step with a yellow banner and read back the screen; after a test, come back here and tap Copy to send the report."
+            text = "Play starts the game. Auto test runs 18 short launches by itself (about 5 minutes, six setups three times each): just watch, don't touch, and when this menu comes back, tap Copy and paste the report. Each run shows a yellow banner with its number."
             setTextColor(Color.rgb(200, 200, 200))
             textSize = 13f
             setPadding(0, pad / 2, 0, pad / 2)
@@ -105,8 +149,15 @@ class LaunchActivity : Activity() {
         })
         root.addView(row1)
         val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        row2.addView(Button(this).apply {
+            text = "Auto test"
+            textSize = 12f
+            setOnClickListener {
+                CrashReport.recordRun(this@LaunchActivity, "=== auto test started")
+                startAuto(0)
+            }
+        })
         for ((label, flag) in listOf(
-            "Step test" to null,
             "Old surface" to MainActivity.EXTRA_OPAQUE_SURFACE,
             "Texture view" to MainActivity.EXTRA_TEXTURE_VIEW,
         )) {

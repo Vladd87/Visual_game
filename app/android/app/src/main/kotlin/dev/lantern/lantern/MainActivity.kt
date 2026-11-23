@@ -1,7 +1,10 @@
 package dev.lantern.lantern
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -34,6 +37,10 @@ class MainActivity : FlutterActivity() {
         const val EXTRA_OPAQUE_SURFACE = "lantern.opaque_surface"
         /** Flutter renders into a TextureView drawn by Android's own renderer. */
         const val EXTRA_TEXTURE_VIEW = "lantern.texture_view"
+        /** Bring-up: hold each loading step and read the screen back at it. */
+        const val EXTRA_SLOW_STEPS = "lantern.slow_steps"
+        /** Bring-up: part of the launcher's automatic test series ("run k/n"). */
+        const val EXTRA_AUTO = "lantern.auto"
     }
 
     private fun flag(name: String) = intent?.getBooleanExtra(name, false) == true
@@ -74,6 +81,25 @@ class MainActivity : FlutterActivity() {
             }
         }
         enterImmersive()
+        // Auto test: a run that never finishes its checks still hands over.
+        if (intent?.getStringExtra(EXTRA_AUTO) != null) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                CrashReport.recordRun(this, "RUN ${intent?.getStringExtra(EXTRA_AUTO)}: timed out after 45 s")
+                nextRun()
+            }, 45_000)
+        }
+    }
+
+    private var handedOver = false
+
+    /** Auto test: back to the launcher, which kills this process and starts the next run. */
+    private fun nextRun() {
+        if (handedOver) return
+        handedOver = true
+        val i = Intent(this, LaunchActivity::class.java)
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        i.putExtra(LaunchActivity.EXTRA_AUTO_NEXT, true)
+        startActivity(i)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -93,7 +119,14 @@ class MainActivity : FlutterActivity() {
                     "noScene" to flag(EXTRA_NO_SCENE),
                     "stepByStep" to flag(EXTRA_STEP_BY_STEP),
                     "opaqueSurface" to flag(EXTRA_OPAQUE_SURFACE),
-                    "textureView" to flag(EXTRA_TEXTURE_VIEW)))
+                    "textureView" to flag(EXTRA_TEXTURE_VIEW),
+                    "slowSteps" to flag(EXTRA_SLOW_STEPS),
+                    "auto" to (intent?.getStringExtra(EXTRA_AUTO) != null)))
+                "autoLabel" -> result.success(intent?.getStringExtra(EXTRA_AUTO))
+                "nextRun" -> {
+                    nextRun()
+                    result.success(null)
+                }
                 "screenProbe" -> {
                     val step = call.argument<String>("step") ?: "?"
                     ScreenProbe.run(this, step, step == "title screen 1") { line -> result.success(line) }
