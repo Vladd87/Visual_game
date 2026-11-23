@@ -20,7 +20,11 @@ material {
   blending: alpha,
   culling: back,
   effects_depth: true,
-  environment_lighting: false,  // the sky reflection below is computed explicitly
+  // Not `environment_lighting: false`: that shader variant (custom ambient)
+  // fails to build on the target phone's Adreno driver, and the water was
+  // silently not drawn at all (device bring-up, test builds 12-14). The
+  // engine's environment light is switched off below with occlusion = 0
+  // instead; the sky reflection is computed explicitly.
   engine_inputs: [ scene_color, scene_depth, planar_reflection ],
   parameters: [
     { type: sampler2d, name: normal_tex, hint: default_normal },
@@ -202,6 +206,9 @@ fragment {
     material.specular = 1.0;
     vec3 foamAmbient = material.base_color.rgb * material_params.ambient * 2.0;
     material.emissive = ((behind * trans + scatter) * (1.0 - f) + reflected * (1.0 + 0.3 * shore)) * (1.0 - foamCover) + foamAmbient;
-    material.occlusion = 1.0;
+    // Occlusion 0 removes the engine's image-based light (diffuse and
+    // specular) without the custom-ambient variant; the lantern's direct
+    // specular (glints) is unaffected.
+    material.occlusion = 0.0;
   }
 }

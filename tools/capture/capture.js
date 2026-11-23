@@ -7,6 +7,7 @@
 //
 // Usage: node tools/capture/capture.js <outDir> [--shots 1,2,..] [--aspects inner,cover]
 //                                       [--seed 2026] [--scale 0.5] [--frames 90]
+//                                       [--root <web build dir>]   (default app/build/web)
 const { chromium } = require('playwright');
 const http = require('http');
 const fs = require('fs');
@@ -97,7 +98,7 @@ async function lumaStats(page, buf) {
   const seed = arg('seed', '2026');
   const scale = parseFloat(arg('scale', '0.5'));
   const frames = arg('frames', '90');
-  const root = path.resolve(__dirname, '../../app/build/web');
+  const root = path.resolve(arg('root', path.resolve(__dirname, '../../app/build/web')));
   const server = await serve(root, 8700 + Math.floor(Math.random() * 200));
   const port = server.address().port;
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
