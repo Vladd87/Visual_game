@@ -10,3 +10,4 @@ spike/thermion_spike/web/thermion_dart.js
 spike/thermion_spike/web/thermion_dart.wasm
 # Large/unlicensed scratch
 *.keystore.bak
+captures/latest_title.png
