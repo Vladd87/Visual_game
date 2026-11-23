@@ -117,7 +117,9 @@ class GameScene {
       // (refs 01, 03). Only emitters pass the threshold.
       bloomEnabled: Uri.base.queryParameters['nobloom'] != '1',
       bloomThreshold: 0.6,
-      bloomIntensity: 0.12,
+      // M4 v8: 0.12 -> 0.18, so the lantern glows into the damp air
+      // (critics: no halation or scatter around the light; ref03).
+      bloomIntensity: _tune('bloom', 0.18),
       bloomScatter: 0.85,
     );
     // Blue-hour skylight from the open, left side of the valley: cool, faint
@@ -251,8 +253,8 @@ class GameScene {
     _waterMat!.parameters.setFloat('treeline', _tune('tree', 0.9));
     _waterMat!.parameters.setFloat('treeline_soft', _tune('tsoft', 0.08));
     _waterMat!.parameters.setFloat('canopy_cover', _tune('canopy', 0.5));
-    _waterMat!.parameters.setFloat('sky_broad', _tune('skybroad', 0.3));
-    _waterMat!.parameters.setFloat('canopy_scale', _tune('cscale', 2.2));
+    _waterMat!.parameters.setFloat('sky_broad', _tune('skybroad', 0.6));
+    _waterMat!.parameters.setFloat('canopy_scale', _tune('cscale', 1.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -289,7 +291,7 @@ class GameScene {
   /// Diffuse sky fill (image-based light) on banks, rocks and bed. M4 v6:
   /// 0.25 -> 0.19, so the canopy-shaded banks sit darker than the open sky
   /// the water mirrors (critics: "lit by a flat grey fill, not by a sky").
-  static final double envIntensity = _tune('env', 0.13);
+  static final double envIntensity = _tune('env', 0.19);
 
   /// Radiance of the open sky the water reflects, in the same units as
   /// [envIntensity]. The stream's surface sees the open sky gap above the

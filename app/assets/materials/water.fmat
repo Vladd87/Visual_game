@@ -158,8 +158,9 @@ fragment {
     // The sky and leaf reflection: broad waves only wobble it gently, fine
     // ripples break its edges into fragments. Full broad tilt warped the leaf
     // pattern by over a metre, so its crisp edges traced the warp's contour
-    // lines: fingerprint whorls, rings and brushed streaks (round-15 critics).
-    vec2 skySlope = broad * material_params.sky_broad + fine * 1.4;
+    // lines: fingerprint whorls, rings and brushed streaks (round-15 critics);
+    // 30 % left the open water a uniform veil (round 16). M4 v8: 60 %.
+    vec2 skySlope = broad * material_params.sky_broad + fine;
     vec3 nSky = normalize(vec3(-skySlope.x * 0.42, 1.0, -skySlope.y * 0.42));
 
     // --- refraction ------------------------------------------------------------

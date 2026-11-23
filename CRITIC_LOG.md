@@ -36,6 +36,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-13 | lighting/fog v4 (panel) | 3.56 | 3.56 | 3.56 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 12: **−0.11** (critics +0.38 / −0.59). Rejected; round 12 stays the best. 1st sub-0.3 round in M4 |
 | round-14 | lighting/fog v5 (panel) | 3.25 | 3.33 | 3.29 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 12: **+0.44** (critics +0.38 / +0.50). New best; lighting alone 3.5 vs 3.0 (both critics). Resets the sub-0.3 count |
 | round-15 | lighting/fog v6 (panel) | 3.44 | 3.31 | 3.38 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 14: **+0.36** (critics +0.22 / +0.50). New best; lighting alone 4.0 vs 3.5 (both critics) |
+| round-16 | lighting/fog v7 (panel) | 3.41 | 3.44 | 3.42 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 15: **−0.31** (critics −0.50 / −0.12). Rejected; round 15 stays the best. 1st sub-0.3 round since round 14 |
 
 ## Round 1: water v1
 
@@ -628,3 +629,45 @@ The captures and this panel are browser-only.
 - **Ripples without patterns.** The reflection's ripple slopes come from more scales, mixed so no single pattern dominates. This removes the visible rings, whorls and brushed streaks while keeping the broken sky gaps.
 - **Deeper blacks.** Less canopy-shaded fill, so frames away from the lantern fall toward black, as in ref10. The water's sky gaps stay as they are, so the surface reads against darker banks.
 - **Faster falloff.** The lantern light drops off faster with distance, so the banks show a bright spot near the lantern rather than long, evenly lit strips.
+
+## Round 16: lighting and fog v7 (M4), rejected
+
+**What changed** (built on round 15, judged against it):
+- **Sky and leaf reflection.** It takes 30 % of the broad wave tilt and 140 % of the fine ripple tilt (it took 100 % of both). This was meant to remove the contour rings, whorls and brushed streaks.
+- **Leaves.** Leaf clusters 2.2 times finer, with slightly softer edges.
+- **Darker fill.** 0.19 → 0.13.
+- **Lantern reach.** 1.0 m → 0.65 m.
+
+**Panel** (each critic compared this round with `captures/round-15` side by side, order flipped)
+
+| Critic | Round 16 (new) | Round 15 (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.50 | 4.00 | −0.50 | 3.5 vs 4 |
+| b (new = Y) | 3.34 | 3.47 | −0.12 | 4 vs 3.5 |
+
+- **Gain −0.31**, critic spread 0.38. **Rejected: round 15 stays the best.** This is M4's seventh round and its first under 0.3 since round 14. Round 17 is the eighth and last M4 round under the stop rule.
+- Absolute score 3.42; lowest shot 3.0.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 99 % on every pair.
+- Tokens: 187k + 184k for the panel, 75k for the A/B critic.
+
+**Where the critics agree:**
+- **The open water became a veil (the main loss).** Without the broad tilt, the open water away from the lantern turned into a smooth lilac-grey sheet. Over the darker banks it is brighter than they are (critic b: veil about 24/26/36, banks 19/23/25), so it reads as "frosted glass or ice". Critic a: "bluish-lavender veil with soft dark blotches and brush-like streaks". This repeats round 4's failure. At this steep view real water is mostly transparent, shows the bed (ref07, ref08) and carries reflections as glints and broken shapes. The rings were reduced but not gone (critic a still saw them in shot 8).
+- **The shorter lantern reach is more photographic (both critics, though in opposite sets).** Critic a, for the new set: "X's tighter pool is closer to a candle"; light on a nearby surface dies within one or two lantern widths (ref10). Critic b, for the new set: distant rocks stay cool grey instead of glowing orange.
+- **Darker fill:** split. Critic a preferred the brighter round 15 (more like blue-hour dusk, less like night). Critic b preferred the darker, cooler new round.
+- **The new pool reflection in shot 8 is the one place the new water won** (critic b: "a real dusk pond reflecting trees").
+
+**Top giveaways now (both critics):**
+1. The water has no glints or broken lantern reflection, and the ring pattern persists.
+2. The lantern is a glowing cube with a soft-capped core and no halation.
+3. Flat, stamped bank texture.
+4. Murky, compressed tones with no mist or scatter around the light.
+5. Card leaves and dot fireflies.
+
+**Ratchet.** The code goes back to round 15. Kept regardless of the result:
+- **Water depth test.** The shader now skips any water fragment with opaque scene in front of it, with highp depth values. This fixes a device bug: water drawn over low bank grass (test17 run b, `captures/device/`).
+- **The parameters themselves** (`sky_broad`, `canopy_scale`, `lantern_range`), set to round-15 values.
+
+**Changes for round 17 (M4 v8, the last M4 round, built on round 15):**
+- **Lantern reach 0.65 m.** Both critics preferred it.
+- **Sky reflection: 60 % of the broad tilt.** Half-way between round 15 (rings) and round 16 (veil). The leaf edges stay round 16's slightly softer ones, so fewer contour lines show.
+- **Halation.** Bloom intensity 0.12 → 0.18, so the lantern glows into the damp air (critics in rounds 14 and 16: "never enters the air as mist, scatter or halation"; ref03).
