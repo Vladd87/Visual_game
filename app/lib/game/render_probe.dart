@@ -56,6 +56,33 @@ Future<void> runRenderProbe() async {
     'blur': (c) => c.drawRect(r, Paint()..color = const Color(0xFFFFFFFF)..imageFilter = ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3)),
     'color-filter': (c) => c.drawRect(
         r, Paint()..color = const Color(0xFFFFFFFF)..colorFilter = const ColorFilter.mode(Color(0xFF80FF80), BlendMode.modulate)),
+    'clip-rect': (c) {
+      c.save();
+      c.clipRect(r.deflate(4));
+      c.drawRect(r, white);
+      c.restore();
+    },
+    'clip-rrect': (c) {
+      c.save();
+      c.clipRRect(RRect.fromRectAndRadius(r, const Radius.circular(8)));
+      c.drawRect(r, white);
+      c.restore();
+    },
+    'clip-path': (c) {
+      c.save();
+      c.clipPath(ui.Path()..addOval(r));
+      c.drawRect(r, white);
+      c.restore();
+    },
+    'clip-rect-text': (c) {
+      c.save();
+      c.clipRect(const Rect.fromLTWH(0, 0, size, size));
+      final b = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: 28))
+        ..pushStyle(ui.TextStyle(color: const Color(0xFFFFFFFF)))
+        ..addText('WM');
+      c.drawParagraph(b.build()..layout(const ui.ParagraphConstraints(width: size)), const Offset(2, 6));
+      c.restore();
+    },
     'shadow': (c) => c.drawShadow(ui.Path()..addRect(r), const Color(0xFFFFFFFF), 4, false),
     'mask-blur': (c) => c.drawRect(r, Paint()..color = const Color(0xFFFFFFFF)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)),
     if (program != null)

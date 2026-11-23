@@ -293,6 +293,10 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: SingleChildScrollView(
+          // No clip: on the target phone's Adreno driver an Impeller pipeline
+          // fails to compile at startup, and any on-screen frame that clips
+          // came out entirely black (device bring-up, see CRITIC_LOG/PLAN).
+          clipBehavior: Clip.none,
           child: Container(
             constraints: const BoxConstraints(maxWidth: 320),
             padding: const EdgeInsets.fromLTRB(26, 24, 26, 20),
