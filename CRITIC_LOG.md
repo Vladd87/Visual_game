@@ -33,6 +33,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-10 | lighting/fog v1 (panel) | 3.69 | 3.91 | 3.80 | 3.5 | 0/4 (A/B-only critic) | Panel vs M3 final: **+0.83** (critics +0.91 / +0.75). New best; lighting alone 4.5 vs 3 |
 | round-11 | lighting/fog v2 (panel) | 3.25 | 3.38 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 10: **+0.38** (critics +0.38 / +0.38). New best; lighting alone 4.25 vs 3.75 |
 | round-12 | lighting/fog v3 (panel) | 3.22 | 3.41 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 11: **+0.45** (critics +0.41 / +0.50). New best; lighting alone 3.75 vs 3.25 |
+| round-13 | lighting/fog v4 (panel) | 3.56 | 3.56 | 3.56 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 12: **−0.11** (critics +0.38 / −0.59). Rejected; round 12 stays the best. 1st sub-0.3 round in M4 |
 
 ## Round 1: water v1
 
@@ -505,4 +506,39 @@ The captures and this panel are browser-only.
 - Lantern core slightly brighter, still amber.
 - Softer, weaker bank spill: wider shadow penumbra, lower light intensity on the slopes.
 - A faint glow around the lantern in the damp air.
+
+## Round 13: lighting and fog v4 (M4), rejected
+
+**What changed:**
+- **Base:** a dark wooden base under the lantern, casting the lantern light's shadow downward.
+- **Brightness:** amber core 0.6 → 0.9; light intensity about 15 % lower.
+- **Shadows:** softness 5 → 11.
+- **Glow:** a faint additive halo that fades out where it meets surfaces.
+- **Banks:** a damp, darker margin within about 14 cm of the stream.
+
+**Panel** (each critic compared this round with `captures/round-12` side by side, order flipped)
+
+| Critic | Round 13 (new) | Round 12 (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 3.91 | 3.53 | +0.38 | 4 vs 3.5 |
+| b (new = X) | 3.22 | 3.81 | −0.59 | 3.5 vs 4.5 |
+
+- **Gain −0.11**, with a critic spread of 0.97, the widest so far. **Rejected: round 12 stays the best.** This is M4's first round under 0.3. If the next is under 0.3 too, M4 stops at round 12.
+- Absolute score 3.56. This is higher than round 12's 3.31 from its own panel, but levels drift between panels; only the paired difference counts.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 97–98 %.
+- Tokens: 182k + 171k for the panel, 72k for the A/B critic.
+
+**Why the critics split** (the lantern's base shadow):
+- **Critic a:** the bed in shadow under the lantern makes it float above the water, and the tighter pool is right for a candle in paper (ref02, ref10).
+- **Critic b:** the shadow reads as a hard-edged black hole beside the lantern, a teardrop, oval or wedge that "looks like missing geometry" (shots 3, 4, 5, 8; cover 1).
+- **Both:** the shape is too clean, lumpy and evenly dark. A real one would be soft and broken up by the rippled surface (ref07).
+
+**What both now rank first:**
+- **The water has no surface:** no dusk-sky sheen, no broken reflection or glitter of the lantern, no flow. They estimate +1.5 to +2 for fixing it.
+- Then the blank cube lantern, the tiled grass, the flat grey ambient with spotlight-like bank stripes, and the card leaves and dot fireflies.
+
+**Changes for round 14 (M4 v5, built on round 13, judged against round 12):**
+- The base shrinks to a 4 cm candle holder: a small, soft darkening under the lantern, not a void beside it.
+- Lantern radiance well above the scene (emission about 1.6), so its mirror image and glints show on the water at a 55° view, the way a candle dominates ref02.
+- Lantern light about 15 % lower again on the banks, to fight the stripes.
 
