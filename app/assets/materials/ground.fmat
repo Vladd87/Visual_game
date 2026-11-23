@@ -230,7 +230,7 @@ fragment {
       col *= mix(1.0, mix(0.6, 0.8, mossW), damp);
       // Large, soft light/dark patches (litter, soil moisture).
       col *= 0.8 + 0.4 * texture(data_tex, p * 0.09 + 0.21).g;
-      rough = mix(rough, rough * 0.8, damp * (1.0 - mossW));
+      rough = mix(rough, rough * 0.6, damp * (1.0 - mossW));
       // Saturated mud at the waterline, with puddles in its low spots.
       // Whatever reaches the waterline is soaked (moss and soil too).
       float nearWater = 1.0 - smoothstep(0.0, 0.035, above);

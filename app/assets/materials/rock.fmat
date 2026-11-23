@@ -101,7 +101,8 @@ fragment {
     // A water film smooths the surface and makes bare stone glossy.
     float film = max(band, under) * (1.0 - moss * 0.7);
     n = normalize(mix(n, geo, film * 0.5));
-    rough = mix(rough, rough * 0.75, damp * (1.0 - moss));
+    // Rain-wet bare stone is glossy (refs 01, 04); moss stays matte (M5).
+    rough = mix(rough, rough * 0.45, damp * (1.0 - moss));
     rough = mix(rough, 0.07, band * (1.0 - moss * 0.8));
     rough = mix(rough, 0.25, under);
 

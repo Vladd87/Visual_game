@@ -295,6 +295,11 @@ class GameScene {
     for (final m in [_waterMat!, _groundMat!]) {
       m.parameters.setVec3('ambient', ambient);
     }
+    // M5: rain wets the banks and rocks (0.35 was the light drizzle of M3/M4).
+    final damp = _tune('damp', 0.7);
+    for (final m in [_groundMat!, ..._rockMats]) {
+      m.parameters.setFloat('damp', damp);
+    }
     // Blue hour (Poly Haven aarfontein_dawn) behind a forest treeline, baked by
     // tools/bake/bake_env.py.
     await Diagnostics.checkpoint('environment');
