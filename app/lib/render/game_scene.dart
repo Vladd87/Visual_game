@@ -84,7 +84,7 @@ class GameScene {
       // Damp air: the lantern (and fireflies) glow into a wide, faint halo
       // (refs 01, 03). Only emitters pass the threshold.
       bloomEnabled: Uri.base.queryParameters['nobloom'] != '1',
-      bloomThreshold: 0.8,
+      bloomThreshold: 0.6,
       bloomIntensity: 0.12,
       bloomScatter: 0.85,
     );
@@ -117,7 +117,7 @@ class GameScene {
       ..metallicFactor = 0
       ..roughnessFactor = 0.85
       ..emissiveFactor = vm.Vector4(1.0, 0.5, 0.17, 1)
-      ..emissiveStrength = 1.2;
+      ..emissiveStrength = 0.6;
     _lantern = Node(name: 'lantern');
     final body = Node(name: 'lanternBody', mesh: Mesh(CuboidGeometry(vm.Vector3(0.07, 0.07, 0.07)), _paper));
     body.position = vm.Vector3(0, 0.03, 0);
@@ -355,7 +355,7 @@ class GameScene {
     final flicker = 0.92 + 0.05 * math.sin(realTime * 13.0) + 0.03 * math.sin(realTime * 29.0 + 1.3);
     final f = w.flame;
     _lanternLight.intensity = 0.2 + 0.9 * f * flicker;
-    _paper.emissiveStrength = 0.1 + 1.2 * f * flicker;
+    _paper.emissiveStrength = 0.05 + 0.6 * f * flicker;
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
     for (final m in [_waterMat, _groundMat]) {

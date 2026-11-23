@@ -233,6 +233,10 @@ fragment {
       rough = mix(rough, 0.04, puddle);
       n = normalize(mix(n, geo, puddle));
       col *= mix(1.0, ao, 0.5);
+      // Rain-damp dusk ground is darker than the dry scans (M4 v3): the
+      // lantern's light on the slopes beside the stream no longer outshines
+      // the water next to it, and the blacks go deeper (critics, round 11).
+      col *= 0.75;
       albedo = col;
     }
 
