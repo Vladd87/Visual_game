@@ -44,7 +44,7 @@ class LaunchActivity : Activity() {
          * and reads the screen back (device bring-up).
          */
         private val AUTO_MODES: List<Pair<String, List<String>>> = listOf(
-            "default" to emptyList(),
+            "default" to emptyList<String>(),
         ) + (1..6).map { "water v$it" to listOf("${MainActivity.EXTRA_WATER_VARIANT}=$it") }
         private const val AUTO_ROUNDS = 1
     }

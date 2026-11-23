@@ -9,6 +9,19 @@ kind=${2:-release}
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root/app"
 mkdir -p "$root/releases"
+# flutter_scene's material hook keeps the previous shaders when a .fmat
+# fails to compile and the Flutter build still succeeds, so a broken
+# material ships stale shaders silently. Fail the build instead.
+check_materials() {
+  local latest
+  latest=$(ls -t .dart_tool/hooks_runner/lantern/*/stdout.txt 2>/dev/null | head -1)
+  if [[ -n $latest ]] && grep -q "building .fmat materials failed" "$latest"; then
+    echo "MATERIAL BUILD FAILED (stale shaders would ship):" >&2
+    grep -A3 "materials failed" "$latest" >&2
+    exit 1
+  fi
+}
+
 build() {
   local mode=$1
   rm -rf build/app
@@ -24,10 +37,12 @@ build() {
 }
 if [[ $kind == release || $kind == both ]]; then
   build release
+  check_materials
   cp build/app/outputs/flutter-apk/app-release.apk "$root/releases/lantern-$tag-release.apk"
 fi
 if [[ $kind == debug || $kind == both ]]; then
   build debug
+  check_materials
   rm -f "$root/releases/lantern-$tag-debug.apk.part-"*
   split -b 90M -d -a 2 build/app/outputs/flutter-apk/app-debug.apk "$root/releases/lantern-$tag-debug.apk.part-"
 fi

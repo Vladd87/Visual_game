@@ -6,7 +6,6 @@ material {
   shading_model: lit,
   blending: opaque,
   culling: back,
-  effects_depth: true,
   environment_lighting: false,
   parameters: [
     { type: sampler2d, name: normal_tex, hint: default_normal },
