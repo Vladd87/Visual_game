@@ -149,26 +149,25 @@ class GameScene {
       ..metallicFactor = 0
       ..roughnessFactor = 0.85
       ..emissiveFactor = vm.Vector4(1.0, 0.48, 0.14, 1)
-      ..emissiveStrength = 0.9;
+      ..emissiveStrength = 1.6;
     _lantern = Node(name: 'lantern');
     final body = Node(name: 'lanternBody', mesh: Mesh(CuboidGeometry(vm.Vector3(0.07, 0.07, 0.07)), _paper));
     body.position = vm.Vector3(0, 0.03, 0);
     body.shadowCastingMode = ShadowCastingMode.off;
     _lantern.add(body);
-    // Wooden base under the paper (M4 v4): the candle stands on it, so the
-    // bed right below is in its shadow and the paper, not a hot spot under
-    // it, is the brightest thing in the frame (ref01's dark base; critics,
-    // round 12). It casts the lantern light's shadow downward.
+    // A small wooden candle holder under the flame (M4 v5): a soft
+    // darkening right under the lantern instead of a hot spot. Round 13's
+    // full-width base cast a hard black hole beside the lantern (critics).
     final baseMat = PhysicallyBasedMaterial()
       ..baseColorFactor = vm.Vector4(0.06, 0.04, 0.025, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.8;
-    final base = Node(name: 'lanternBase', mesh: Mesh(CuboidGeometry(vm.Vector3(0.078, 0.01, 0.078)), baseMat));
-    base.position = vm.Vector3(0, -0.004, 0);
+    final base = Node(name: 'lanternBase', mesh: Mesh(CuboidGeometry(vm.Vector3(0.04, 0.01, 0.04)), baseMat));
+    base.position = vm.Vector3(0, 0.012, 0);
     _lantern.add(base);
     // Glow in the damp air around the flame (refs 01, 03): a faint additive
     // halo that dissolves where it meets the bed or banks.
-    _halo = Sprite(texture: _haloTexture(), width: 0.5, height: 0.5, blendMode: SpriteBlendMode.additive);
+    _halo = Sprite(texture: _haloTexture(), width: 0.7, height: 0.7, blendMode: SpriteBlendMode.additive);
     _halo.material.softDepthFade = 0.05;
     _lantern.add(Node(name: 'lanternHalo', mesh: _halo.mesh)
       ..position = vm.Vector3(0, 0.035, 0)
@@ -453,9 +452,12 @@ class GameScene {
     );
     final flicker = 0.92 + 0.05 * math.sin(realTime * 13.0) + 0.03 * math.sin(realTime * 29.0 + 1.3);
     final f = w.flame;
-    _lanternLight.intensity = 0.17 + 0.78 * f * flicker;
-    _paper.emissiveStrength = 0.08 + 0.9 * f * flicker;
-    _halo.color = vm.Vector4(1.0, 0.5, 0.18, 1.0) * (0.02 + 0.09 * f * flicker);
+    // The paper far brighter than the scene (as a candle dominates ref02), so
+    // its mirror image and glints read on the water at this steep view
+    // (Fresnel ~3 %); the light it casts slightly lower again (bank stripes).
+    _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
+    _paper.emissiveStrength = 0.1 + 1.6 * f * flicker;
+    _halo.color = vm.Vector4(1.0, 0.5, 0.18, 1.0) * (0.03 + 0.18 * f * flicker);
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
     for (final m in [_waterMat, _groundMat]) {
