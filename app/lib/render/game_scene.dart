@@ -52,7 +52,9 @@ class GameScene {
   // Candle behind paper: deep amber (ref02 paper about 248/170/95, ref10
   // about 248/214/124), not the near-white a hotter emitter turns into under
   // AgX (M4 v3).
-  static final vm.Vector3 lanternColor = vm.Vector3(1.0, 0.52, 0.2);
+  // M4 v6: deeper toward the candle amber of ref02 (its lit water is about
+  // 90/40/19); the paler 1.0/0.52/0.2 spilled cream-yellow onto the banks.
+  static final vm.Vector3 lanternColor = vm.Vector3(1.0, 0.42, 0.13);
 
   static const int maxLeaves = 48;
 
@@ -125,8 +127,8 @@ class GameScene {
         ? null
         : DirectionalLight(
             direction: vm.Vector3(0.8, -0.5, 0.3)..normalize(),
-            color: vm.Vector3(0.45, 0.58, 1.0),
-            intensity: 0.06,
+            color: vm.Vector3(0.32, 0.48, 1.0),
+            intensity: _tune('skyi', 0.09),
             castsShadow: false,
           );
     scene.antiAliasingMode = AntiAliasingMode.taa;
@@ -148,7 +150,7 @@ class GameScene {
       ..baseColorFactor = vm.Vector4(0.9, 0.55, 0.25, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.85
-      ..emissiveFactor = vm.Vector4(1.0, 0.48, 0.14, 1)
+      ..emissiveFactor = vm.Vector4(1.0, 0.44, 0.12, 1)
       ..emissiveStrength = 1.6;
     _lantern = Node(name: 'lantern');
     final body = Node(name: 'lanternBody', mesh: Mesh(CuboidGeometry(vm.Vector3(0.07, 0.07, 0.07)), _paper));
@@ -245,7 +247,8 @@ class GameScene {
     // bed sees only part of the sky (occluded diffuse), while the upward
     // reflection sees it unobstructed. Until M4 adds real occlusion, this
     // ratio stands in for it.
-    _waterMat!.parameters.setFloat('sky_scale', 1.3939 * envIntensity * 1.6);
+    _waterMat!.parameters.setFloat('sky_scale', 1.3939 * skyLevel);
+    _waterMat!.parameters.setFloat('treeline', _tune('tree', 0.68));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -279,7 +282,20 @@ class GameScene {
     await Diagnostics.checkpoint('assets loaded');
   }
 
-  static const double envIntensity = 0.25;
+  /// Diffuse sky fill (image-based light) on banks, rocks and bed. M4 v6:
+  /// 0.25 -> 0.19, so the canopy-shaded banks sit darker than the open sky
+  /// the water mirrors (critics: "lit by a flat grey fill, not by a sky").
+  static final double envIntensity = _tune('env', 0.19);
+
+  /// Radiance of the open sky the water reflects, in the same units as
+  /// [envIntensity]. The stream's surface sees the open sky gap above the
+  /// channel, which the banks see only partly. Was 0.25 x 1.6 = 0.4 (M4 v6).
+  static final double skyLevel = _tune('skylvl', 0.8);
+
+  /// Browser tuning only: a query parameter overrides a look constant, so
+  /// variants can be captured from one web build. Android has no query.
+  static double _tune(String key, double fallback) =>
+      double.tryParse(Uri.base.queryParameters[key] ?? '') ?? fallback;
 
   /// Device bring-up: one flat quad over [m]'s extent at the water level,
   /// with both windings, in place of the water mesh.
@@ -457,7 +473,7 @@ class GameScene {
     // (Fresnel ~3 %); the light it casts slightly lower again (bank stripes).
     _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
     _paper.emissiveStrength = 0.1 + 1.6 * f * flicker;
-    _halo.color = vm.Vector4(1.0, 0.5, 0.18, 1.0) * (0.03 + 0.18 * f * flicker);
+    _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * (0.03 + 0.18 * f * flicker);
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
     for (final m in [_waterMat, _groundMat]) {

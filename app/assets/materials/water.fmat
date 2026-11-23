@@ -39,6 +39,9 @@ material {
     { type: float, name: refraction, default: 1.4 },
     { type: float, name: foam_amount, default: 1.0 },
     { type: float, name: reflection, default: 1.0 },
+    // Mean elevation (rad) of the treeline seen in the reflection; the
+    // texture varies it by +-0.19 rad with azimuth.
+    { type: float, name: treeline, default: 0.81 },
   ],
 }
 
@@ -82,7 +85,7 @@ fragment {
     // a uniform sheen.
     vec2 cu = vec2(az * 2.0, el * 3.0);
     float clumps = texture(normal_tex, cu * 0.37).b * 0.6 + texture(normal_tex, cu * 1.3 + 0.2).a * 0.4;
-    float line = 0.62 + 0.38 * texture(normal_tex, vec2(az * 0.9, 0.31)).b;  // treeline height, rad
+    float line = material_params.treeline + 0.38 * (texture(normal_tex, vec2(az * 0.9, 0.31)).b - 0.5);  // treeline height, rad
     float gap = smoothstep(line - 0.18, line + 0.1, el + (clumps - 0.5) * 0.35);
     vec3 foliage = vec3(0.010, 0.013, 0.010) * material_params.sky_scale;
     return mix(foliage, sky, gap);
