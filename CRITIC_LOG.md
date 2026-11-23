@@ -35,6 +35,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-12 | lighting/fog v3 (panel) | 3.22 | 3.41 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 11: **+0.45** (critics +0.41 / +0.50). New best; lighting alone 3.75 vs 3.25 |
 | round-13 | lighting/fog v4 (panel) | 3.56 | 3.56 | 3.56 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 12: **−0.11** (critics +0.38 / −0.59). Rejected; round 12 stays the best. 1st sub-0.3 round in M4 |
 | round-14 | lighting/fog v5 (panel) | 3.25 | 3.33 | 3.29 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 12: **+0.44** (critics +0.38 / +0.50). New best; lighting alone 3.5 vs 3.0 (both critics). Resets the sub-0.3 count |
+| round-15 | lighting/fog v6 (panel) | 3.44 | 3.31 | 3.38 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 14: **+0.36** (critics +0.22 / +0.50). New best; lighting alone 4.0 vs 3.5 (both critics) |
 
 ## Round 1: water v1
 
@@ -583,3 +584,47 @@ The captures and this panel are browser-only.
 - **Blue-hour sky in the water.** The sky gaps in the reflection get brighter and bluer, so open water reads lighter than the banks where it faces the sky. The treeline mask stays, to avoid round 4's uniform veil. This is sky brightness, a lighting parameter; the water shader's structure is unchanged.
 - **Saturated amber light.** The lantern's light colour moves toward the candle amber of ref02. The body stays the brightest thing in frame.
 - **Blue in the darks.** The skylight gets a cooler, deeper blue, so shadowed banks read blue-hour rather than grey. Black levels are kept.
+
+## Round 15: lighting and fog v6 (M4)
+
+**What changed** (built on round 14, judged against it):
+- **Reflection balance.** The water reflects an open blue-hour sky at twice its old level (0.8 against 0.4). It sees that sky through a leaf layer 2.5 m above the stream (half cover) and past a crisp treeline. Ripples move the reflected ray across those edges, so the surface breaks into sky gaps and leaf shadows (ref10).
+  - A browser test without the leaves gave a uniform blue veil over the near water (round 4's failure), so the leaves are what makes this work.
+- **Darker fill.** The canopy-shaded diffuse fill on banks, rocks and bed went from 0.25 to 0.19.
+- **Skylight.** Bluer and slightly stronger: colour (0.32, 0.48, 1.0), intensity 0.09.
+- **Lantern colour.** Light (1.0, 0.42, 0.13), paper (1.0, 0.44, 0.12); both were paler.
+- **Browser tuning.** Look constants now read query parameters, so variants come from one web build. Android ignores them.
+
+**Panel** (each critic compared this round with `captures/round-14` side by side, order flipped)
+
+| Critic | Round 15 (new) | Round 14 (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.28 | 3.06 | +0.22 | 4 vs 3.5 |
+| b (new = Y) | 3.47 | 2.97 | +0.50 | 4 vs 3.5 |
+
+- **Gain +0.36**, critic spread 0.28. **Round 15 is the new best.** It is M4's sixth round, so two remain (rounds 16 and 17).
+- Absolute score 3.38 (inner 3.44, cover 3.31); lowest shot 2.75.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 98–99 %. It read pair 3's "perfect concentric ripple rings" as a render tell.
+- Tokens: 179k + 171k for the panel, 73k for the A/B critic.
+
+**What the critics agree on**
+- **Why the new round wins: the water now has a surface.** Sky sheen, ripples and flow detail replace "the bed as if through air" and "dry gravel".
+- **The new blacks are deeper.** In critic b's measurements the darkest 5 % fell from about 12–15 to 8–11 out of 255. Critic a found the old round "lifted" by 0.015–0.02.
+- **What limits the gain: the ripples now visibly look procedural.** The sky gaps reveal the ripple texture's structure:
+  - fingerprint swirls (shots 1, 2, 3, 6, 7)
+  - brushed-metal streaks (shot 4 and the covers of 2 and 6)
+  - evenly spaced concentric rings across the pool in shot 8
+  - critic a takes back X's advantage entirely in shot 4 and on cover 8
+- **The water still has no glitter path.** It reflects the lantern only as a small blob at its base, with no broken column of glints (ref02).
+
+**Top giveaways (both critics):**
+1. Procedural ripple patterns and no glitter path (+1.0 to +1.5).
+2. The lantern is a featureless glowing box (+0.5 to +1.5).
+3. Flat, tiled bank carpet.
+4. **A sourceless blue fill with no true blacks.** Measured against the references, the fraction of pixels below 0.03 is 33 % (ref05) and 66 % (ref10), against about 2 % here. The lantern lights the bank lips as long, evenly lit strips instead of falling off fast (ref10, ref02). There is no grain.
+5. Card leaves and sprite fireflies.
+
+**Changes for round 16 (M4 v7, built on round 15):**
+- **Ripples without patterns.** The reflection's ripple slopes come from more scales, mixed so no single pattern dominates. This removes the visible rings, whorls and brushed streaks while keeping the broken sky gaps.
+- **Deeper blacks.** Less canopy-shaded fill, so frames away from the lantern fall toward black, as in ref10. The water's sky gaps stay as they are, so the surface reads against darker banks.
+- **Faster falloff.** The lantern light drops off faster with distance, so the banks show a bright spot near the lantern rather than long, evenly lit strips.
