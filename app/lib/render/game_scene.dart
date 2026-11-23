@@ -206,7 +206,7 @@ class GameScene {
     scene.add(_lantern);
 
     if (Uri.base.queryParameters['norain'] != '1') {
-      _rain = RainEffect(texture: _haloTexture(), rate: _tune('rainrate', 900));
+      _rain = RainEffect(rate: _tune('rainrate', 900), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 1.0));
       scene.add(_rain!.node
         ..shadowCastingMode = ShadowCastingMode.off
         ..frustumCulled = false);

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter_scene/scene.dart';
 import 'package:vector_math/vector_math.dart' as vm;
@@ -11,8 +12,8 @@ import 'package:vector_math/vector_math.dart' as vm;
 /// nothing in the dark. The emitter box follows the view along the stream;
 /// particles live in its local space.
 class RainEffect {
-  RainEffect({required Texture2D texture, this.rate = 900})
-      : _module = _LanternLitRain() {
+  RainEffect({this.rate = 900, double size = 1.0, double glow = 1.0})
+      : _module = _LanternLitRain(glow) {
     final system = ParticleSystem(
       maxParticles: 640,
       // A slab of air over the water around the lantern: wide enough for the
@@ -25,13 +26,15 @@ class RainEffect {
       spawner: Spawner(rate: rate),
       lifetime: const UniformFloat(0.12, 0.3),
       startSpeed: const UniformFloat(4.2, 5.6),
-      // Drop diameter (m): a millimetre or two, so streaks are hair-thin.
-      startSize: const UniformFloat(0.0011, 0.0019),
+      // Streak width (m). A drop is 1-2 mm, but motion blur and defocus at a
+      // 5 m focus distance widen its streak to a few millimetres (refs 01,
+      // 03); hair-thin streaks also vanish under TAA.
+      startSize: UniformFloat(0.003 * size, 0.005 * size),
       modules: [_module],
       seed: 5,
       prewarm: 0.4,
     );
-    final material = SpriteMaterial(colorTexture: texture)
+    final material = SpriteMaterial(colorTexture: _streakTexture())
       ..blendMode = SpriteBlendMode.additive
       ..softDepthFade = 0.02;
     emitter = ParticleEmitterComponent(system: system, material: material)
@@ -62,7 +65,29 @@ class RainEffect {
 
 /// Colours each drop by the light reaching it, with a fade in and out over
 /// its short life so streaks do not pop.
+/// A soft streak: Gaussian across (u), even along (v) with soft ends.
+Texture2D _streakTexture() {
+  const n = 32;
+  final px = Uint8List(n * n * 4);
+  for (var y = 0; y < n; y++) {
+    for (var x = 0; x < n; x++) {
+      final dx = (x + 0.5) / n * 2 - 1, dy = (y + 0.5) / n * 2 - 1;
+      final across = math.exp(-dx * dx * 5.0) * (1 - dx.abs()).clamp(0.0, 1.0);
+      final along = 1.0 - ((dy.abs() - 0.55) / 0.45).clamp(0.0, 1.0);
+      final b = (255 * across * along * along).round().clamp(0, 255);
+      final o = (y * n + x) * 4;
+      px[o] = b;
+      px[o + 1] = b;
+      px[o + 2] = b;
+      px[o + 3] = b;
+    }
+  }
+  return Texture2D.fromPixels(px, n, n, content: TextureContent.color);
+}
+
 class _LanternLitRain extends ParticleModule {
+  _LanternLitRain(this.glow);
+  final double glow;
   final vm.Vector3 lanternLocal = vm.Vector3.zero();
   final vm.Vector3 light = vm.Vector3.zero();
   final vm.Vector3 sky = vm.Vector3.zero();
@@ -88,7 +113,7 @@ class _LanternLitRain extends ParticleModule {
       // Same falloff as the lit materials' lantern term, scaled for a drop:
       // water refracts and reflects the light toward the camera (forward
       // scatter), so a drop near the light glints well above a matte surface.
-      final k = 0.05 / (r2 + 0.004) * w * w;
+      final k = glow * 0.05 / (r2 + 0.004) * w * w;
       final life = s.lifetime[i] > 0 ? s.age[i] / s.lifetime[i] : 1.0;
       final env = math.min(1.0, math.min(life / 0.2, (1.0 - life) / 0.2)).clamp(0.0, 1.0);
       s.colorR[i] = (light.x * k + sky.x) * env;
