@@ -156,6 +156,62 @@ class Diagnostics {
     }
   }
 
+  /// Waits until [n] more frames have been drawn.
+  static Future<void> frames(int n) async {
+    for (var i = 0; i < n; i++) {
+      await SchedulerBinding.instance.endOfFrame;
+      SchedulerBinding.instance.scheduleFrame();
+    }
+  }
+
+  /// Samples a frame's luma (every 7th pixel), or null.
+  static Future<List<double>?> _lumaSamples(ui.Image? img) async {
+    if (img == null) return null;
+    final bytes = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (bytes == null) return null;
+    final px = bytes.buffer.asUint8List();
+    final out = <double>[];
+    for (var i = 0; i + 3 < px.length; i += 4 * 7) {
+      out.add((px[i] * 2 + px[i + 1] * 5 + px[i + 2]) / 8);
+    }
+    return out;
+  }
+
+  /// Device bring-up: switches each effect off in turn and measures how much
+  /// the 3D frame changes (mean absolute luma difference, 0-255). An effect
+  /// that changes the frame in the browser but not on the phone is not
+  /// working on the phone. [frame] returns the latest 3D frame.
+  static Future<String> effectsProbe(Map<String, void Function(bool on)> toggles, ui.Image? Function() frame) async {
+    const settle = 16; // TAA history needs a few frames to converge
+    visibleStep.value = 'effects';
+    await frames(settle);
+    final base = await _lumaSamples(frame());
+    if (base == null) return 'FX: no 3D frame';
+    final mean = base.reduce((a, b) => a + b) / base.length;
+    final parts = <String>['mean ${mean.toStringAsFixed(1)}'];
+    for (final e in toggles.entries) {
+      visibleStep.value = 'effects: ${e.key} off';
+      e.value(false);
+      await frames(settle);
+      final off = await _lumaSamples(frame());
+      e.value(true);
+      if (off == null || off.length != base.length) {
+        parts.add('${e.key} ?');
+      } else {
+        var d = 0.0, signed = 0.0;
+        for (var i = 0; i < base.length; i++) {
+          d += (base[i] - off[i]).abs();
+          signed += base[i] - off[i];
+        }
+        parts.add('${e.key} ${(d / base.length).toStringAsFixed(2)}${signed >= 0 ? '+' : '-'}');
+      }
+      await frames(settle);
+    }
+    final line = 'FX: ${parts.join(' · ')}';
+    debugPrint('LANTERN_FX $line');
+    return line;
+  }
+
   /// One line for the launcher's history: every probe of this run and a verdict.
   static void recordSummary(String verdict) {
     final head = auto ? 'RUN $autoLabel [$modeName]' : '[$modeName]';

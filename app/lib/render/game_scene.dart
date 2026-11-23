@@ -54,6 +54,34 @@ class GameScene {
 
   static const int maxLeaves = 48;
 
+  final List<PlanarReflectorComponent> _reflectors = [];
+
+  /// Device bring-up: switches each effect off and back on, so the effects
+  /// probe can measure what each contributes on the phone and in the browser.
+  Map<String, void Function(bool on)> get effectToggles {
+    final sky = scene.directionalLight;
+    final aa = scene.antiAliasingMode;
+    final waters = _chunks.where((n) => n.name.startsWith('water_')).toList();
+    return {
+      'bloom': (on) => scene.postProcess.bloom.enabled = on,
+      'fog': (on) => scene.fog.enabled = on,
+      'ao': (on) => scene.ambientOcclusion.enabled = on,
+      'taa': (on) => scene.antiAliasingMode = on ? aa : AntiAliasingMode.fxaa,
+      'shadow': (on) => _lanternLight.castsShadow = on,
+      'sky light': (on) => scene.directionalLight = on ? sky : null,
+      'reflection': (on) {
+        for (final r in _reflectors) {
+          r.enabled = on;
+        }
+      },
+      'water': (on) {
+        for (final n in waters) {
+          n.visible = on;
+        }
+      },
+    };
+  }
+
   /// One-time setup of everything that does not depend on the course.
   void buildStatic() {
     if (_staticBuilt) return;
@@ -251,6 +279,7 @@ class GameScene {
       scene.remove(n);
     }
     _chunks.clear();
+    _reflectors.clear();
     for (final n in _rockNodes) {
       scene.remove(n);
     }
@@ -280,7 +309,9 @@ class GameScene {
         ..shadowCastingMode = ShadowCastingMode.off;
       if (Uri.base.queryParameters['noreflect'] != '1' && !Diagnostics.noEffects) {
         // One shared mirror capture for every water chunk (they are co-planar).
-        water.addComponent(PlanarReflectorComponent(resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002));
+        final reflector = PlanarReflectorComponent(resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002);
+        _reflectors.add(reflector);
+        water.addComponent(reflector);
       }
       scene.add(ground);
       if (Uri.base.queryParameters['nowater'] != '1') scene.add(water);

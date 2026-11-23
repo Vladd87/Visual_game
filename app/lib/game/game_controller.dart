@@ -11,6 +11,7 @@ import 'package:flutter_scene/scene.dart';
 import '../platform/platform_bridge.dart';
 import '../render/camera_rig.dart';
 import '../render/game_scene.dart';
+import '../render/present.dart' show latestSceneFrame;
 import '../render/quality_governor.dart';
 import '../sim/vec2.dart';
 import '../sim/world.dart';
@@ -66,7 +67,11 @@ class GameController extends ChangeNotifier {
 
   Future<void> _boot() async {
     Diagnostics.step('settings');
-    Diagnostics.applyLaunchFlags(await platform.launchFlags());
+    Diagnostics.applyLaunchFlags({
+      ...await platform.launchFlags(),
+      // Browser bring-up: ?steps=1 runs the same checks (effects probe).
+      if (Uri.base.queryParameters['steps'] == '1') 'stepByStep': true,
+    });
     if (Diagnostics.auto) Diagnostics.autoLabel = await platform.autoLabel() ?? '';
     // Bring-up on new hardware: which 2D primitives render (logged).
     if (Diagnostics.stepByStep && !Diagnostics.auto) platform.recordRun('=== mode: ${Diagnostics.modeName}');
@@ -138,8 +143,14 @@ class GameController extends ChangeNotifier {
     await stage(UiStage.cardNoStretch, 'card no stretch');
     await stage(UiStage.loadingLook, 'loading look');
     await stage(UiStage.full, 'title again', ms: 1200);
+    var fx = '';
+    if (!Diagnostics.no3d && !Diagnostics.noScene && !Diagnostics.noEffects) {
+      Diagnostics.uiStage.value = UiStage.noCard;
+      fx = await Diagnostics.effectsProbe(gameScene.effectToggles, latestSceneFrame);
+      Diagnostics.uiStage.value = UiStage.full;
+    }
     Diagnostics.visibleStep.value = 'done';
-    Diagnostics.recordSummary('loading ${loading >= 5 ? 'shows' : 'BLACK'}; ${results.join(', ')}');
+    Diagnostics.recordSummary('loading ${loading >= 5 ? 'shows' : 'BLACK'}; ${results.join(', ')}${fx.isEmpty ? '' : '\n  $fx'}');
     if (Diagnostics.auto) platform.nextRun();
   }
 

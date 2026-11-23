@@ -37,6 +37,9 @@ class ScenePresenter extends StatefulWidget {
 }
 
 class _ScenePresenterState extends State<ScenePresenter> {
+  /// Device bring-up: the last 3D frame drawn, for the effects probe.
+  static ui.Image? latestFrame;
+
   static ui.FragmentProgram? _program;
   RenderTexture? _rt;
   final ValueNotifier<int> _frame = ValueNotifier(0);
@@ -87,6 +90,9 @@ class _ScenePresenterState extends State<ScenePresenter> {
   }
 }
 
+/// Device bring-up: the last 3D frame the presenter drew (null before the first).
+ui.Image? latestSceneFrame() => _ScenePresenterState.latestFrame;
+
 class _UpscalePainter extends CustomPainter {
   _UpscalePainter(this.rt, this.program, this.tick, this.dpr, this.sharpen) : super(repaint: tick);
 
@@ -108,6 +114,7 @@ class _UpscalePainter extends CustomPainter {
       Diagnostics.step('first 3D paint');
     }
     final img = tex.asImage();
+    _ScenePresenterState.latestFrame = img;
     // Bring-up on new hardware: log what the 3D target actually contains.
     if (++_paints == 30) probe3dImage(img);
     final shader = program.fragmentShader()
