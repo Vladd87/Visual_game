@@ -113,7 +113,9 @@ class GameScene {
 
     // Lantern: paper cube with a warm shadow-casting point light inside.
     _paper = PhysicallyBasedMaterial()
-      ..baseColorFactor = vm.Vector4(0.95, 0.86, 0.7, 1)
+      // Amber paper: the candle's light seen through it (ref02), so the lit
+      // faces stay amber instead of tone-mapping to cream.
+      ..baseColorFactor = vm.Vector4(0.9, 0.55, 0.25, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.85
       ..emissiveFactor = vm.Vector4(1.0, 0.5, 0.17, 1)
@@ -132,7 +134,10 @@ class GameScene {
       // the bank slopes facing the lantern still caught a bright rim.
       range: 1.0,
       castsShadow: Uri.base.queryParameters['noshadow'] != '1' && !Diagnostics.noEffects,
-      radius: 0.045, // a 7 cm paper lantern, not a point: soft shadows, broad glints
+      // A flame-sized source inside the 7 cm lantern: soft shadows, broad
+      // glints, but inside the paper (a larger sphere lit the lantern's own
+      // outside faces near-white).
+      radius: 0.03,
       shadowSoftness: 5.0,
       shadowNear: 0.02,
       shadowMapResolution: 512,
