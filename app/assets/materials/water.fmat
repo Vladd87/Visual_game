@@ -36,7 +36,7 @@ material {
     { type: vec3, name: absorption, default: [5.0, 6.0, 10.0] },
     { type: vec3, name: murk, default: [0.06, 0.055, 0.035] },
     { type: float, name: normal_strength, default: 1.0 },
-    { type: float, name: refraction, default: 2.5 },
+    { type: float, name: refraction, default: 1.4 },
     { type: float, name: foam_amount, default: 1.0 },
     { type: float, name: reflection, default: 1.0 },
   ],
@@ -139,7 +139,13 @@ fragment {
     float reach = min(thick0, 0.4);
     vec2 base = ProjectWorldOffsetToScreenUv(tFlat * reach) - GetScreenUv();
     vec2 rip = ProjectWorldOffsetToScreenUv(tRip * reach) - GetScreenUv() - base;
-    vec2 off = base + rip * material_params.refraction;
+    // The ripple part is amplified for visibility but capped: past ~0.6 %
+    // of the screen it dragged bed texture (and the lit rocks, on the phone)
+    // into radial smears around the lantern (critics; device screenshots).
+    rip *= material_params.refraction;
+    float ripLen = length(rip);
+    rip *= min(1.0, 0.006 / max(ripLen, 1e-5));
+    vec2 off = base + rip;
     float sceneD = GetSceneDepth(off);
     float d0 = fragDepth + thick0;
     // Never sample across an object's edge: back off when the depth jumps.
