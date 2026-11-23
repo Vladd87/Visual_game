@@ -39,7 +39,7 @@ class Diagnostics {
   static bool stepByStep = false;
 
   /// Labels of the Android-side presentation modes (set by the launcher).
-  static bool surfaceOnTop = false;
+  static bool opaqueSurface = false;
   static bool textureView = false;
 
   static void applyLaunchFlags(Map<String, bool> f) {
@@ -48,7 +48,7 @@ class Diagnostics {
     if (f['no3d'] == true) no3d = true;
     if (f['noScene'] == true) noScene = true;
     if (f['stepByStep'] == true) stepByStep = true;
-    if (f['surfaceOnTop'] == true) surfaceOnTop = true;
+    if (f['opaqueSurface'] == true) opaqueSurface = true;
     if (f['textureView'] == true) textureView = true;
     if (stepByStep) SchedulerBinding.instance.addTimingsCallback(_countFrames);
   }
@@ -58,7 +58,7 @@ class Diagnostics {
         if (noEffects) 'no effects',
         if (no3d) 'no 3D',
         if (noScene) 'no scene',
-        if (surfaceOnTop) 'surface on top',
+        if (opaqueSurface) 'old opaque surface',
         if (textureView) 'texture view',
       ].join(', ');
 

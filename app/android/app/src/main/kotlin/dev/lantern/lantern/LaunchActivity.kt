@@ -41,15 +41,15 @@ class LaunchActivity : Activity() {
     }
 
     /**
-     * [mode]: null, or one of MainActivity's EXTRA_* diagnostic flags. Every
-     * test-build launch runs step by step (bright banner, screen read-back).
+     * [mode]: null, or one of MainActivity's EXTRA_* diagnostic flags.
+     * [steps]: step-by-step bring-up run (bright banner, screen read-back).
      */
-    private fun startGame(mode: String?) {
+    private fun startGame(mode: String?, steps: Boolean = true) {
         CrashReport.killGameProcesses(this)
         CrashReport.clearStep(this)
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        intent.putExtra(MainActivity.EXTRA_STEP_BY_STEP, true)
+        if (steps) intent.putExtra(MainActivity.EXTRA_STEP_BY_STEP, true)
         if (mode != null) intent.putExtra(mode, true)
         startActivity(intent)
         finish()
@@ -68,7 +68,7 @@ class LaunchActivity : Activity() {
             textSize = 20f
         })
         root.addView(TextView(this).apply {
-            text = "Each mode starts with a yellow banner at the bottom (step name and a frame counter). Try each button once: watch when the screen turns black and note the last step you saw, then close the game, come back here and tap the next button. When all four are done, tap Copy and paste the text."
+            text = "Play starts the game. The test buttons run step by step with a yellow banner and read back the screen; after a test, come back here and tap Copy to send the report."
             setTextColor(Color.rgb(200, 200, 200))
             textSize = 13f
             setPadding(0, pad / 2, 0, pad / 2)
@@ -92,8 +92,8 @@ class LaunchActivity : Activity() {
             }
         })
         row1.addView(Button(this).apply {
-            text = "1 Start game"
-            setOnClickListener { startGame(null) }
+            text = "Play"
+            setOnClickListener { startGame(null, steps = false) }
         })
         row1.addView(Button(this).apply {
             text = "Clear runs"
@@ -106,9 +106,9 @@ class LaunchActivity : Activity() {
         root.addView(row1)
         val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         for ((label, flag) in listOf(
-            "2 Surface on top" to MainActivity.EXTRA_SURFACE_ON_TOP,
-            "3 Texture view" to MainActivity.EXTRA_TEXTURE_VIEW,
-            "4 No scene" to MainActivity.EXTRA_NO_SCENE,
+            "Step test" to null,
+            "Old surface" to MainActivity.EXTRA_OPAQUE_SURFACE,
+            "Texture view" to MainActivity.EXTRA_TEXTURE_VIEW,
         )) {
             row2.addView(Button(this).apply {
                 text = label
