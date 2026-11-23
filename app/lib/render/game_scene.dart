@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart' show decodeImageFromList;
@@ -31,6 +32,7 @@ class GameScene {
   late final Node _lanternLightNode;
   late final PointLight _lanternLight;
   late final PhysicallyBasedMaterial _paper;
+  late final Sprite _halo;
   bool _staticBuilt = false;
   PreprocessedMaterial? _waterMat;
   PreprocessedMaterial? _groundMat;
@@ -146,13 +148,31 @@ class GameScene {
       ..baseColorFactor = vm.Vector4(0.9, 0.55, 0.25, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.85
-      ..emissiveFactor = vm.Vector4(1.0, 0.5, 0.17, 1)
-      ..emissiveStrength = 0.6;
+      ..emissiveFactor = vm.Vector4(1.0, 0.48, 0.14, 1)
+      ..emissiveStrength = 0.9;
     _lantern = Node(name: 'lantern');
     final body = Node(name: 'lanternBody', mesh: Mesh(CuboidGeometry(vm.Vector3(0.07, 0.07, 0.07)), _paper));
     body.position = vm.Vector3(0, 0.03, 0);
     body.shadowCastingMode = ShadowCastingMode.off;
     _lantern.add(body);
+    // Wooden base under the paper (M4 v4): the candle stands on it, so the
+    // bed right below is in its shadow and the paper, not a hot spot under
+    // it, is the brightest thing in the frame (ref01's dark base; critics,
+    // round 12). It casts the lantern light's shadow downward.
+    final baseMat = PhysicallyBasedMaterial()
+      ..baseColorFactor = vm.Vector4(0.06, 0.04, 0.025, 1)
+      ..metallicFactor = 0
+      ..roughnessFactor = 0.8;
+    final base = Node(name: 'lanternBase', mesh: Mesh(CuboidGeometry(vm.Vector3(0.078, 0.01, 0.078)), baseMat));
+    base.position = vm.Vector3(0, -0.004, 0);
+    _lantern.add(base);
+    // Glow in the damp air around the flame (refs 01, 03): a faint additive
+    // halo that dissolves where it meets the bed or banks.
+    _halo = Sprite(texture: _haloTexture(), width: 0.5, height: 0.5, blendMode: SpriteBlendMode.additive);
+    _halo.material.softDepthFade = 0.05;
+    _lantern.add(Node(name: 'lanternHalo', mesh: _halo.mesh)
+      ..position = vm.Vector3(0, 0.035, 0)
+      ..shadowCastingMode = ShadowCastingMode.off);
     _lanternLight = PointLight(
       color: lanternColor,
       intensity: 1.4,
@@ -166,7 +186,9 @@ class GameScene {
       // glints, but inside the paper (a larger sphere lit the lantern's own
       // outside faces near-white).
       radius: 0.03,
-      shadowSoftness: 5.0,
+      // Wide penumbra: the bank lip and rocks cast soft-edged shade, not the
+      // hard bright stripes critics flagged (round 12).
+      shadowSoftness: 11.0,
       shadowNear: 0.02,
       shadowMapResolution: 512,
     );
@@ -259,6 +281,27 @@ class GameScene {
   }
 
   static const double envIntensity = 0.25;
+
+  /// Soft radial falloff for the lantern halo (premultiplied, white).
+  static Texture2D _haloTexture() {
+    const n = 64;
+    final px = Uint8List(n * n * 4);
+    for (var y = 0; y < n; y++) {
+      for (var x = 0; x < n; x++) {
+        final dx = (x + 0.5) / n * 2 - 1, dy = (y + 0.5) / n * 2 - 1;
+        final r = math.sqrt(dx * dx + dy * dy);
+        // A bright core falling off into a long, faint tail; zero at the edge.
+        final v = (math.exp(-r * r * 9) * 0.7 + math.exp(-r * 3.2) * 0.3) * (1 - r).clamp(0.0, 1.0);
+        final b = (255 * v).round().clamp(0, 255);
+        final o = (y * n + x) * 4;
+        px[o] = b;
+        px[o + 1] = b;
+        px[o + 2] = b;
+        px[o + 3] = b;
+      }
+    }
+    return Texture2D.fromPixels(px, n, n, content: TextureContent.color);
+  }
 
   static Future<Texture2D> _loadTexture(String path,
       {bool mipmaps = true, TextureContent content = TextureContent.data}) async {
@@ -391,8 +434,9 @@ class GameScene {
     );
     final flicker = 0.92 + 0.05 * math.sin(realTime * 13.0) + 0.03 * math.sin(realTime * 29.0 + 1.3);
     final f = w.flame;
-    _lanternLight.intensity = 0.2 + 0.9 * f * flicker;
-    _paper.emissiveStrength = 0.05 + 0.6 * f * flicker;
+    _lanternLight.intensity = 0.17 + 0.78 * f * flicker;
+    _paper.emissiveStrength = 0.08 + 0.9 * f * flicker;
+    _halo.color = vm.Vector4(1.0, 0.5, 0.18, 1.0) * (0.02 + 0.09 * f * flicker);
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
     for (final m in [_waterMat, _groundMat]) {
