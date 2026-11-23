@@ -12,14 +12,16 @@ import 'package:vector_math/vector_math.dart' as vm;
 /// nothing in the dark. The emitter box follows the view along the stream;
 /// particles live in its local space.
 class RainEffect {
-  RainEffect({this.rate = 900, double size = 1.0, double glow = 1.0})
+  RainEffect({this.rate = 3000, double size = 1.0, double glow = 1.0, double stretch = 0.024})
       : _module = _LanternLitRain(glow) {
     final system = ParticleSystem(
-      maxParticles: 640,
-      // A slab of air over the water around the lantern: wide enough for the
-      // cover and inner framings (about 1.7 m of stream in view).
+      maxParticles: 1024,
+      // Air over the water around the lantern. Only drops the lantern lights
+      // show at dusk, so the drops are concentrated where its light reaches
+      // (about 230 per cubic metre, light rain) instead of spread thinly over
+      // the whole view.
       shape: BoxEmitterShape(
-        halfExtents: vm.Vector3(1.1, 0.7, 1.4),
+        halfExtents: vm.Vector3(0.75, 0.55, 0.75),
         // A light breeze leans the rain a little across and down the stream.
         direction: vm.Vector3(0.06, -1.0, -0.04),
       ),
@@ -39,8 +41,9 @@ class RainEffect {
       ..softDepthFade = 0.02;
     emitter = ParticleEmitterComponent(system: system, material: material)
       ..facing = BillboardFacing.velocityStretched
-      // Streak length per m/s of fall: about 1/60 s of motion blur.
-      ..velocityStretch = 0.014;
+      // Streak length per m/s of fall: about 1/40 s of motion blur, a dusk
+      // exposure (refs 01, 03).
+      ..velocityStretch = stretch;
     node = Node(name: 'rain')..addComponent(emitter);
   }
 
@@ -55,12 +58,28 @@ class RainEffect {
       required double range, required vm.Vector3 sky}) {
     // The slab's base sits just above the water: drops vanish as they reach it
     // (the impact rings are drawn by the water shader).
-    node.localTransform = vm.Matrix4.translation(vm.Vector3(focus.x, 0.72, focus.z));
-    _module.lanternLocal.setValues(lanternPos.x - focus.x, lanternPos.y - 0.72, lanternPos.z - focus.z);
+    node.localTransform = vm.Matrix4.translation(vm.Vector3(focus.x, _baseY, focus.z));
+    _module.lanternLocal.setValues(lanternPos.x - focus.x, lanternPos.y - _baseY, lanternPos.z - focus.z);
     _module.light.setFrom(lanternLight);
     _module.range2 = range * range;
     _module.sky.setFrom(sky);
+    if (_debug && (_calls++ % 30) == 0) {
+      final st = emitter.system.storage;
+      final i = st.aliveCount ~/ 2;
+      // ignore: avoid_print
+      print('LANTERN_RAIN alive=${st.aliveCount} visible=${node.visible} '
+          '${st.aliveCount > 0 ? 'p=(${st.posX[i].toStringAsFixed(2)},${st.posY[i].toStringAsFixed(2)},${st.posZ[i].toStringAsFixed(2)}) '
+              'c=(${st.colorR[i].toStringAsFixed(3)},${st.colorA[i].toStringAsFixed(2)}) size=${st.size[i].toStringAsFixed(4)} '
+              'v=${st.velY[i].toStringAsFixed(2)}' : ''} lantern=${_module.lanternLocal}');
+    }
   }
+
+  /// Height of the slab's centre: its base sits just above the water.
+  static const double _baseY = 0.57;
+
+  static final bool _debug = Uri.base.queryParameters['raindebug'] != null;
+  static final bool _force = Uri.base.queryParameters['raindebug'] == '2';
+  int _calls = 0;
 }
 
 /// Colours each drop by the light reaching it, with a fade in and out over
@@ -96,9 +115,9 @@ class _LanternLitRain extends ParticleModule {
   @override
   void update(ParticleStorage s, double dt) {
     for (var i = 0; i < s.aliveCount; i++) {
-      // Below the water surface (local y -0.72): invisible (the system
-      // retires it at the end of its life).
-      if (s.posY[i] < -0.72) {
+      // Below the water surface: invisible (the system retires it at the end
+      // of its life).
+      if (s.posY[i] < -RainEffect._baseY) {
         s.colorR[i] = 0;
         s.colorG[i] = 0;
         s.colorB[i] = 0;
@@ -113,9 +132,16 @@ class _LanternLitRain extends ParticleModule {
       // Same falloff as the lit materials' lantern term, scaled for a drop:
       // water refracts and reflects the light toward the camera (forward
       // scatter), so a drop near the light glints well above a matte surface.
-      final k = glow * 0.05 / (r2 + 0.004) * w * w;
+      final k = glow * 0.12 / (r2 + 0.004) * w * w;
       final life = s.lifetime[i] > 0 ? s.age[i] / s.lifetime[i] : 1.0;
       final env = math.min(1.0, math.min(life / 0.2, (1.0 - life) / 0.2)).clamp(0.0, 1.0);
+      if (RainEffect._force) {
+        s.colorR[i] = 2;
+        s.colorG[i] = 2;
+        s.colorB[i] = 2;
+        s.colorA[i] = 1;
+        continue;
+      }
       s.colorR[i] = (light.x * k + sky.x) * env;
       s.colorG[i] = (light.y * k + sky.y) * env;
       s.colorB[i] = (light.z * k + sky.z) * env;

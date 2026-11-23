@@ -206,7 +206,8 @@ class GameScene {
     scene.add(_lantern);
 
     if (Uri.base.queryParameters['norain'] != '1') {
-      _rain = RainEffect(rate: _tune('rainrate', 900), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 1.0));
+      _rain = RainEffect(rate: _tune('rainrate', 3000), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 1.0),
+          stretch: _tune('rainstretch', 0.024));
       scene.add(_rain!.node
         ..shadowCastingMode = ShadowCastingMode.off
         ..frustumCulled = false);
@@ -507,7 +508,7 @@ class GameScene {
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
     _rain?.update(
-      focus: vm.Vector3(pose.pos.x, 0, -pose.pos.y),
+      focus: vm.Vector3(lp.x, 0, lp.z),
       lanternPos: lp,
       lanternLight: ll,
       range: lanternRange,
