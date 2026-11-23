@@ -181,7 +181,7 @@ class GameScene {
       // (refs 02, 03). The engine's falloff is inverse-square windowed to the
       // range, so the range is what bounds the pool. 1.0 m (M4 v3): at 1.3 m
       // the bank slopes facing the lantern still caught a bright rim.
-      range: 1.0,
+      range: lanternRange,
       castsShadow: Uri.base.queryParameters['noshadow'] != '1' && !Diagnostics.noEffects,
       // A flame-sized source inside the 7 cm lantern: soft shadows, broad
       // glints, but inside the paper (a larger sphere lit the lantern's own
@@ -251,6 +251,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('treeline', _tune('tree', 0.9));
     _waterMat!.parameters.setFloat('treeline_soft', _tune('tsoft', 0.08));
     _waterMat!.parameters.setFloat('canopy_cover', _tune('canopy', 0.5));
+    _waterMat!.parameters.setFloat('sky_broad', _tune('skybroad', 0.3));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -287,12 +288,17 @@ class GameScene {
   /// Diffuse sky fill (image-based light) on banks, rocks and bed. M4 v6:
   /// 0.25 -> 0.19, so the canopy-shaded banks sit darker than the open sky
   /// the water mirrors (critics: "lit by a flat grey fill, not by a sky").
-  static final double envIntensity = _tune('env', 0.19);
+  static final double envIntensity = _tune('env', 0.13);
 
   /// Radiance of the open sky the water reflects, in the same units as
   /// [envIntensity]. The stream's surface sees the open sky gap above the
-  /// channel, which the banks see only partly. Was 0.25 x 1.6 = 0.4 (M4 v6).
+  /// channel, which the banks see only partly. Was 0.25 x 1.6 = 0.4; 1.2 from M4 v6.
   static final double skyLevel = _tune('skylvl', 1.2);
+
+  /// Reach of the lantern's light (m). M4 v7: 1.0 -> 0.65, so the banks show
+  /// a hot spot near the lantern that dies quickly (refs 02, 10) instead of
+  /// long, evenly lit strips.
+  static final double lanternRange = _tune('lrange', 0.65);
 
   /// Browser tuning only: a query parameter overrides a look constant, so
   /// variants can be captured from one web build. Android has no query.
@@ -482,6 +488,7 @@ class GameScene {
       if (m == null) continue;
       m.parameters.setVec3('lantern_pos', lp);
       m.parameters.setVec3('lantern_light', ll);
+      m.parameters.setFloat('lantern_range', lanternRange);
     }
 
     // Fireflies: hover, blink; collected ones spiral up into the lantern and fade.

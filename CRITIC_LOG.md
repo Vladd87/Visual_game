@@ -588,7 +588,7 @@ The captures and this panel are browser-only.
 ## Round 15: lighting and fog v6 (M4)
 
 **What changed** (built on round 14, judged against it):
-- **Reflection balance.** The water reflects an open blue-hour sky at twice its old level (0.8 against 0.4). It sees that sky through a leaf layer 2.5 m above the stream (half cover) and past a crisp treeline. Ripples move the reflected ray across those edges, so the surface breaks into sky gaps and leaf shadows (ref10).
+- **Reflection balance.** The water reflects an open blue-hour sky at three times its old level (1.2 against 0.4; an earlier version of this entry said 0.8, the value of a browser test). It sees that sky through a leaf layer 2.5 m above the stream (half cover) and past a crisp treeline. Ripples move the reflected ray across those edges, so the surface breaks into sky gaps and leaf shadows (ref10).
   - A browser test without the leaves gave a uniform blue veil over the near water (round 4's failure), so the leaves are what makes this work.
 - **Darker fill.** The canopy-shaded diffuse fill on banks, rocks and bed went from 0.25 to 0.19.
 - **Skylight.** Bluer and slightly stronger: colour (0.32, 0.48, 1.0), intensity 0.09.

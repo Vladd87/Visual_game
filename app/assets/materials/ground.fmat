@@ -25,6 +25,7 @@ material {
     { type: sampler2d, name: data_tex, hint: default_black },
     { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
     { type: vec3, name: lantern_light, default: [1.0, 0.52, 0.2] },
+    { type: float, name: lantern_range, default: 1.0 },
     { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
     { type: float, name: caustic_strength, default: 1.0 },
     { type: float, name: damp, default: 0.35 },
@@ -88,7 +89,7 @@ fragment {
   vec3 LanternIrradiance(highp vec3 p) {
     highp vec3 d = material_params.lantern_pos - p;
     float r2 = dot(d, d);
-    float window = clamp(1.0 - r2, 0.0, 1.0); // the lantern light's 1.0 m range
+    float window = clamp(1.0 - r2 / (material_params.lantern_range * material_params.lantern_range), 0.0, 1.0);  // the lantern light's range
     return material_params.lantern_light * (0.012 / (r2 + 0.0025)) * window * window;
   }
 
