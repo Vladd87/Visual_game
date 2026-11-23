@@ -37,6 +37,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-14 | lighting/fog v5 (panel) | 3.25 | 3.33 | 3.29 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 12: **+0.44** (critics +0.38 / +0.50). New best; lighting alone 3.5 vs 3.0 (both critics). Resets the sub-0.3 count |
 | round-15 | lighting/fog v6 (panel) | 3.44 | 3.31 | 3.38 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 14: **+0.36** (critics +0.22 / +0.50). New best; lighting alone 4.0 vs 3.5 (both critics) |
 | round-16 | lighting/fog v7 (panel) | 3.41 | 3.44 | 3.42 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 15: **−0.31** (critics −0.50 / −0.12). Rejected; round 15 stays the best. 1st sub-0.3 round since round 14 |
+| round-17 | lighting/fog v8 (panel) | 3.75 | 3.86 | 3.80 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 15: **+0.05** (critics +0.50 / −0.41). New best by the ratchet (gain above zero), within noise. 2nd sub-0.3 round in a row and M4's 8th round → **M4 stops at round 17** |
 
 ## Round 1: water v1
 
@@ -671,3 +672,52 @@ The captures and this panel are browser-only.
 - **Lantern reach 0.65 m.** Both critics preferred it.
 - **Sky reflection: 60 % of the broad tilt.** Half-way between round 15 (rings) and round 16 (veil). The leaf edges stay round 16's slightly softer ones, so fewer contour lines show.
 - **Halation.** Bloom intensity 0.12 → 0.18, so the lantern glows into the damp air (critics in rounds 14 and 16: "never enters the air as mist, scatter or halation"; ref03).
+
+## Round 17: lighting and fog v8 (M4), the last M4 round
+
+**What changed** (built on round 15, judged against it):
+- Lantern reach 1.0 m → 0.65 m.
+- The sky/leaf reflection takes 60 % of the broad wave tilt, with slightly softer leaf edges.
+- Bloom intensity 0.12 → 0.18.
+
+**Panel** (each critic compared this round with `captures/round-15` side by side, order flipped)
+
+| Critic | Round 17 (new) | Round 15 (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.09 | 3.59 | +0.50 | 4 vs 3.5 |
+| b (new = X) | 3.52 | 3.92 | −0.41 | 3.5 vs 4 |
+
+- **Gain +0.05**, with a critic spread of 0.91. By the ratchet rule (any gain above zero) round 17 is the new best, but the result is within noise: the critics flatly disagree.
+- Absolute score 3.80 (inner 3.75, cover 3.86); lowest shot 3.25.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 98–99 %.
+- Tokens: 172k + 186k for the panel, 74k for the A/B critic.
+
+**The disagreement is about one thing: how far the lantern's light reaches.**
+- **Critic a (for round 17's 0.65 m):** "A candle in paper is a weak source whose light dies off within about a lantern-width or two" (ref01). Round 15 "behaves like a large-radius point light", and its orange spreads so the frame "looks graded rather than lit".
+- **Critic b (for round 15's 1.0 m):** surfaces facing a bright source should all catch some of its light (ref10's ceiling, ref11). Round 17's pool "reads like a game light radius". It also found the stronger bloom a uniform haze that washes out the pebble contact shadows, while ref10's lantern has "essentially no bloom".
+- **Across rounds 16 and 17, three of the four critic opinions favoured the shorter reach.**
+
+## M4 lighting and fog: summary
+
+M4 stops at round 17 under the stop rules: two consecutive rounds under +0.3 (rounds 16 and 17), and its eighth round.
+
+| | Round 10 (M4 v1) | Round 17 (M4 final) |
+|---|---|---|
+| Panel gains along the way | +0.83 over M3 | +0.38, +0.45, (−0.11), +0.44, +0.36, (−0.31), +0.05 |
+| Lighting score, new set | 4.5 vs 3 (M3) | 4 vs 3.5 (critic a); critic b preferred round 15, 4 vs 3.5 |
+
+The paired gains compound to roughly **+2.4 over M3's final version** in total, though gains measured on different panels don't add exactly. Absolute scores drift between panels (3.3–4.1), so the paired gains are the honest measure.
+
+**What M4 achieved:**
+- A blue-hour fill with deeper blacks.
+- An amber paper lantern as the light that dominates the scene, falling off quickly.
+- A water surface that reflects a sky gap through overhanging leaves.
+- Bloom used as halation.
+- On the phone: the black-screen fix, precision fixes, water drawn at all, and the depth test that stops water drawing over the banks.
+
+**What critics still rank highest:**
+1. **Flat, stamped banks.** Now the top giveaway for both round-17 critics: no blades or clumps; this is M6 vegetation.
+2. **The lantern is a uniform glowing cube** (M7 lantern).
+3. **The water has no glints and still shows procedural ripple swirls or rings.** It also has no rain rings (M5 rain).
+4. **A flat, directionless ambient with no mist** (M5 rain and M8 post).
+5. **Card leaves and dot fireflies** (M7).
