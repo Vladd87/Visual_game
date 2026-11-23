@@ -11,6 +11,7 @@ import '../sim/vec2.dart';
 import '../sim/world.dart';
 import '../game/diagnostics.dart';
 import 'rock_assets.dart';
+import 'rain.dart';
 import 'rock_layout.dart';
 import 'surface_pack.dart';
 import 'terrain.dart';
@@ -60,6 +61,9 @@ class GameScene {
 
   final List<PlanarReflectorComponent> _reflectors = [];
 
+  // M5 rain: lantern-lit streaks (null with ?norain=1).
+  RainEffect? _rain;
+
   /// Device bring-up: switches each effect off and back on, so the effects
   /// probe can measure what each contributes on the phone and in the browser.
   Map<String, void Function(bool on)> get effectToggles {
@@ -68,6 +72,7 @@ class GameScene {
     final waters = _chunks.where((n) => n.name.startsWith('water_')).toList();
     return {
       'bloom': (on) => scene.postProcess.bloom.enabled = on,
+      'rain': (on) => _rain?.node.visible = on,
       'fog': (on) => scene.fog.enabled = on,
       'ao': (on) => scene.ambientOcclusion.enabled = on,
       'taa': (on) => scene.antiAliasingMode = on ? aa : AntiAliasingMode.fxaa,
@@ -200,6 +205,13 @@ class GameScene {
     _lantern.add(_lanternLightNode);
     scene.add(_lantern);
 
+    if (Uri.base.queryParameters['norain'] != '1') {
+      _rain = RainEffect(texture: _haloTexture(), rate: _tune('rainrate', 900));
+      scene.add(_rain!.node
+        ..shadowCastingMode = ShadowCastingMode.off
+        ..frustumCulled = false);
+    }
+
     // Fireflies: tiny emissive spheres, instanced.
     final fireflyMat = UnlitMaterial()..baseColorFactor = vm.Vector4(3.2, 4.0, 1.1, 1);
     _fireflyMesh = InstancedMesh(geometry: SphereGeometry(radius: 0.0065, segments: 8, rings: 5), material: fireflyMat);
@@ -255,6 +267,8 @@ class GameScene {
     _waterMat!.parameters.setFloat('canopy_cover', _tune('canopy', 0.5));
     _waterMat!.parameters.setFloat('sky_broad', _tune('skybroad', 0.6));
     _waterMat!.parameters.setFloat('canopy_scale', _tune('cscale', 1.0));
+    // M5: light rain on the water (rings and splashes).
+    _waterMat!.parameters.setFloat('rain', _tune('rain', 1.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -487,6 +501,13 @@ class GameScene {
     _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * (0.03 + 0.18 * f * flicker);
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
+    _rain?.update(
+      focus: vm.Vector3(pose.pos.x, 0, -pose.pos.y),
+      lanternPos: lp,
+      lanternLight: ll,
+      range: lanternRange,
+      sky: vm.Vector3(0.0035, 0.0045, 0.008),
+    );
     for (final m in [_waterMat, _groundMat]) {
       if (m == null) continue;
       m.parameters.setVec3('lantern_pos', lp);
