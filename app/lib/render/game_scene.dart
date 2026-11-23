@@ -47,15 +47,21 @@ class GameScene {
   // rock shadows on the bed, which read as black holes.)
   static final vm.Vector3 ambient = vm.Vector3(0.012, 0.016, 0.03);
 
+  // Candle behind paper: deep amber (ref02 paper about 248/170/95, ref10
+  // about 248/214/124), not the near-white a hotter emitter turns into under
+  // AgX (M4 v3).
+  static final vm.Vector3 lanternColor = vm.Vector3(1.0, 0.52, 0.2);
+
   static const int maxLeaves = 48;
 
   /// One-time setup of everything that does not depend on the course.
   void buildStatic() {
     if (_staticBuilt) return;
     _staticBuilt = true;
-    // M4 lighting: blue hour under a treeline. No sun or moon, so no
-    // directional light: the open sky overhead (image-based) is a cool, dim
-    // ambient and the lantern is the key light (refs 02, 05, 11).
+    // M4 lighting: blue hour under a treeline. No sun or moon: the open sky
+    // overhead (image-based) is a cool, dim ambient, a faint shadowless sky
+    // light from the open side of the valley gives it direction, and the
+    // lantern is the key light (refs 02, 05, 07, 11).
     scene.environmentSettings = EnvironmentSettings(
       toneMapping: ToneMappingMode.agx,
       exposure: 1.6,
@@ -64,7 +70,7 @@ class GameScene {
       // rather than lifting the blacks into a veil.
       fogEnabled: Uri.base.queryParameters['nofog'] != '1',
       fogMode: FogMode.exponential,
-      fogColor: vm.Vector3(0.012, 0.016, 0.03),
+      fogColor: vm.Vector3(0.007, 0.010, 0.02),
       fogDensity: 0.25,
       fogHeight: 0.0,
       fogHeightFalloff: 3.0,
@@ -75,8 +81,24 @@ class GameScene {
       ambientOcclusionRadius: 0.08,
       ambientOcclusionIntensity: 1.0,
       ambientOcclusionHalfResolution: true,
+      // Damp air: the lantern (and fireflies) glow into a wide, faint halo
+      // (refs 01, 03). Only emitters pass the threshold.
+      bloomEnabled: Uri.base.queryParameters['nobloom'] != '1',
+      bloomThreshold: 0.8,
+      bloomIntensity: 0.12,
+      bloomScatter: 0.85,
     );
-    scene.directionalLight = null;
+    // Blue-hour skylight from the open, left side of the valley: cool, faint
+    // and shadowless, so stones read lit on one side and darker on the other
+    // instead of the flat all-round fill critics called directionless.
+    scene.directionalLight = Uri.base.queryParameters['nosky'] == '1'
+        ? null
+        : DirectionalLight(
+            direction: vm.Vector3(0.8, -0.5, 0.3)..normalize(),
+            color: vm.Vector3(0.45, 0.58, 1.0),
+            intensity: 0.06,
+            castsShadow: false,
+          );
     scene.antiAliasingMode = AntiAliasingMode.taa;
     if (Uri.base.queryParameters['nofit'] == '1') scene.fitNearPlane = false;
     if (Diagnostics.noEffects) {
@@ -94,20 +116,21 @@ class GameScene {
       ..baseColorFactor = vm.Vector4(0.95, 0.86, 0.7, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.85
-      ..emissiveFactor = vm.Vector4(1.0, 0.62, 0.3, 1)
-      ..emissiveStrength = 3.0;
+      ..emissiveFactor = vm.Vector4(1.0, 0.5, 0.17, 1)
+      ..emissiveStrength = 1.2;
     _lantern = Node(name: 'lantern');
     final body = Node(name: 'lanternBody', mesh: Mesh(CuboidGeometry(vm.Vector3(0.07, 0.07, 0.07)), _paper));
     body.position = vm.Vector3(0, 0.03, 0);
     body.shadowCastingMode = ShadowCastingMode.off;
     _lantern.add(body);
     _lanternLight = PointLight(
-      color: vm.Vector3(1.0, 0.6, 0.28),
+      color: lanternColor,
       intensity: 1.4,
       // A candle in paper: its light should die within about a metre
       // (refs 02, 03). The engine's falloff is inverse-square windowed to the
-      // range, so the range is what bounds the pool.
-      range: 1.3,
+      // range, so the range is what bounds the pool. 1.0 m (M4 v3): at 1.3 m
+      // the bank slopes facing the lantern still caught a bright rim.
+      range: 1.0,
       castsShadow: Uri.base.queryParameters['noshadow'] != '1' && !Diagnostics.noEffects,
       radius: 0.045, // a 7 cm paper lantern, not a point: soft shadows, broad glints
       shadowSoftness: 5.0,
@@ -332,9 +355,9 @@ class GameScene {
     final flicker = 0.92 + 0.05 * math.sin(realTime * 13.0) + 0.03 * math.sin(realTime * 29.0 + 1.3);
     final f = w.flame;
     _lanternLight.intensity = 0.2 + 0.9 * f * flicker;
-    _paper.emissiveStrength = 0.3 + 4.0 * f * flicker;
+    _paper.emissiveStrength = 0.1 + 1.2 * f * flicker;
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
-    final ll = vm.Vector3(1.0, 0.6, 0.28) * _lanternLight.intensity;
+    final ll = lanternColor * _lanternLight.intensity;
     for (final m in [_waterMat, _groundMat]) {
       if (m == null) continue;
       m.parameters.setVec3('lantern_pos', lp);

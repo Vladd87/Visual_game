@@ -27,7 +27,7 @@ material {
     { type: sampler2d, name: sky_tex, hint: default_black },
     { type: float, name: sky_scale, default: 1.0 },
     { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
-    { type: vec3, name: lantern_light, default: [1.0, 0.6, 0.28] },
+    { type: vec3, name: lantern_light, default: [1.0, 0.52, 0.2] },
     { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
     { type: vec3, name: absorption, default: [5.0, 6.0, 10.0] },
     { type: vec3, name: murk, default: [0.06, 0.055, 0.035] },
@@ -84,7 +84,7 @@ fragment {
   vec3 LanternIrradiance(vec3 p) {
     vec3 d = material_params.lantern_pos - p;
     float r2 = dot(d, d);
-    float window = clamp(1.0 - r2 / 1.69, 0.0, 1.0); // the lantern light's 1.3 m range
+    float window = clamp(1.0 - r2, 0.0, 1.0); // the lantern light's 1.0 m range
     return material_params.lantern_light * (0.012 / (r2 + 0.0025)) * window * window;
   }
 
