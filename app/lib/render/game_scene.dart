@@ -214,7 +214,8 @@ class GameScene {
     await Diagnostics.checkpoint('materials');
     _waterNormal = await _loadTexture('assets/textures/water_normal.png');
     _sky = await _loadTexture('assets/textures/sky_blue.png', mipmaps: false);
-    _waterMat = await loadFmatMaterial('assets/materials/water.fmat');
+    final wv = Diagnostics.waterVariant;
+    _waterMat = await loadFmatMaterial(wv > 0 ? 'assets/materials/bringup/water_v$wv.fmat' : 'assets/materials/water.fmat');
     _groundMat = await loadFmatMaterial('assets/materials/ground.fmat');
     _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
     _waterMat!.parameters.setTexture('sky_tex', _sky!.gpuTexture, sampler: _sky!.sampledSampler);

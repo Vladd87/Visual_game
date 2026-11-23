@@ -127,6 +127,16 @@ class PlatformBridge {
     }
   }
 
+  /// Bring-up: which water material variant to load (0 = the real one).
+  Future<int> waterVariant() async {
+    if (!available) return 0;
+    try {
+      return await _methods.invokeMethod<int>('waterVariant') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   /// Bring-up auto test: hand over to the next run (the launcher restarts
   /// the game in the next mode).
   void nextRun() {

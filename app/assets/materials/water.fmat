@@ -164,7 +164,7 @@ fragment {
 
     // --- foam ----------------------------------------------------------------------
     // Streaks: long along the flow, narrow across it, advected downstream.
-    vec2 fq = vec2(dot(p, dir) - speed * t, dot(p, perp));
+    highp vec2 fq = vec2(dot(p, dir) - speed * t, dot(p, perp));
     float s1 = texture(normal_tex, fq * vec2(1.8, 3.6)).b;
     float s2 = texture(normal_tex, fq * vec2(3.6, 7.2) + 0.37).b;
     float blobs = texture(normal_tex, fq * 4.0 + 0.71).a;
@@ -180,8 +180,8 @@ fragment {
     float fp0 = fract(t / fcycle);
     float fp1 = fract(t / fcycle + 0.5);
     float fw0 = 1.0 - abs(fp0 * 2.0 - 1.0);
-    vec2 fqa = vec2(dot(p, dir) - speed * fp0 * fcycle, dot(p, perp)) * vec2(9.0, 10.0);
-    vec2 fqb = vec2(dot(p, dir) - speed * fp1 * fcycle, dot(p, perp)) * vec2(9.0, 10.0) + 0.43;
+    highp vec2 fqa = vec2(dot(p, dir) - speed * fp0 * fcycle, dot(p, perp)) * vec2(9.0, 10.0);
+    highp vec2 fqb = vec2(dot(p, dir) - speed * fp1 * fcycle, dot(p, perp)) * vec2(9.0, 10.0) + 0.43;
     float fa = texture(normal_tex, fqa).a;
     float fb = texture(normal_tex, fqb).a;
     float density = clamp(0.12 + vc.b * 1.4, 0.0, 1.0) * smoothstep(0.02, 0.12, speed);

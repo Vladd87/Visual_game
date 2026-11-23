@@ -45,8 +45,8 @@ class LaunchActivity : Activity() {
          */
         private val AUTO_MODES: List<Pair<String, List<String>>> = listOf(
             "default" to emptyList(),
-        )
-        private const val AUTO_ROUNDS = 3
+        ) + (1..6).map { "water v$it" to listOf("${MainActivity.EXTRA_WATER_VARIANT}=$it") }
+        private const val AUTO_ROUNDS = 1
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +89,11 @@ class LaunchActivity : Activity() {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         if (steps) intent.putExtra(MainActivity.EXTRA_STEP_BY_STEP, true)
-        for (f in flags) intent.putExtra(f, true)
+        for (f in flags) {
+            // "key=n" is an int extra, a bare key a boolean flag.
+            val eq = f.indexOf('=')
+            if (eq > 0) intent.putExtra(f.substring(0, eq), f.substring(eq + 1).toInt()) else intent.putExtra(f, true)
+        }
         if (auto != null) intent.putExtra(MainActivity.EXTRA_AUTO, auto)
         startActivity(intent)
         finish()
@@ -108,7 +112,7 @@ class LaunchActivity : Activity() {
             textSize = 20f
         })
         root.addView(TextView(this).apply {
-            text = "Play starts the game. Auto test runs 3 short launches by itself (about 1 minute): just watch, don't touch, and when this menu comes back, tap Copy and paste the report. Each run shows a yellow banner with its number."
+            text = "Play starts the game. Auto test runs 7 short launches by itself (about 3 minutes): just watch, don't touch, and when this menu comes back, tap Copy and paste the report. Each run shows a yellow banner with its number."
             setTextColor(Color.rgb(200, 200, 200))
             textSize = 13f
             setPadding(0, pad / 2, 0, pad / 2)

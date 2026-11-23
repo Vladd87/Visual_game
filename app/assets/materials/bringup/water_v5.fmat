@@ -1,0 +1,37 @@
+// Device bring-up (test build 13): water material variant 5, alpha + planar reflection.
+// Bright blue on purpose: whether it draws on the phone is unmistakable.
+// Same parameters as water.fmat so the game can bind them unchanged.
+material {
+  name: "WaterProbe5",
+  shading_model: lit,
+  blending: alpha,
+  culling: back,
+  effects_depth: true,
+  environment_lighting: false,
+  engine_inputs: [ planar_reflection ],
+  parameters: [
+    { type: sampler2d, name: normal_tex, hint: default_normal },
+    { type: sampler2d, name: sky_tex, hint: default_black },
+    { type: float, name: sky_scale, default: 1.0 },
+    { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
+    { type: vec3, name: lantern_light, default: [1.0, 0.52, 0.2] },
+    { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
+    { type: vec3, name: absorption, default: [5.0, 6.0, 10.0] },
+    { type: vec3, name: murk, default: [0.06, 0.055, 0.035] },
+    { type: float, name: normal_strength, default: 1.0 },
+    { type: float, name: refraction, default: 2.5 },
+    { type: float, name: foam_amount, default: 1.0 },
+    { type: float, name: reflection, default: 1.0 },
+  ],
+}
+
+fragment {
+  void Surface(inout MaterialInputs material) {
+    vec3 e = vec3(0.0, 0.4, 0.8) + 0.001 * texture(planar_reflection, vec2(0.5)).rgb;
+    material.base_color = vec4(0.0, 0.0, 0.0, 1.0);
+    material.metallic = 0.0;
+    material.roughness = 1.0;
+    material.emissive = e;
+    material.occlusion = 1.0;
+  }
+}

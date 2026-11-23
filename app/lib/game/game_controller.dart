@@ -73,6 +73,7 @@ class GameController extends ChangeNotifier {
       if (Uri.base.queryParameters['steps'] == '1') 'stepByStep': true,
     });
     if (Diagnostics.auto) Diagnostics.autoLabel = await platform.autoLabel() ?? '';
+    Diagnostics.waterVariant = int.tryParse(Uri.base.queryParameters['water'] ?? '') ?? await platform.waterVariant();
     // Bring-up on new hardware: which 2D primitives render (logged).
     if (Diagnostics.stepByStep && !Diagnostics.auto) platform.recordRun('=== mode: ${Diagnostics.modeName}');
     if (platform.available || Uri.base.queryParameters['probe'] == '1') {
@@ -146,7 +147,10 @@ class GameController extends ChangeNotifier {
     var fx = '';
     if (!Diagnostics.no3d && !Diagnostics.noScene && !Diagnostics.noEffects) {
       Diagnostics.uiStage.value = UiStage.noCard;
-      fx = await Diagnostics.effectsProbe(gameScene.effectToggles, latestSceneFrame);
+      final toggles = gameScene.effectToggles;
+      // Water variant runs only need to know whether the water draws.
+      if (Diagnostics.waterVariant > 0) toggles.removeWhere((k, _) => k != 'water');
+      fx = await Diagnostics.effectsProbe(toggles, latestSceneFrame);
       Diagnostics.uiStage.value = UiStage.full;
     }
     Diagnostics.visibleStep.value = 'done';

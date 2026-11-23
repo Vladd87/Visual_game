@@ -38,6 +38,8 @@ class MainActivity : FlutterActivity() {
         const val EXTRA_SLOW_STEPS = "lantern.slow_steps"
         /** Bring-up: part of the launcher's automatic test series ("run k/n"). */
         const val EXTRA_AUTO = "lantern.auto"
+        /** Bring-up: water material variant (0 = the real one). */
+        const val EXTRA_WATER_VARIANT = "lantern.water_variant"
     }
 
     private fun flag(name: String) = intent?.getBooleanExtra(name, false) == true
@@ -111,6 +113,7 @@ class MainActivity : FlutterActivity() {
                     "slowSteps" to flag(EXTRA_SLOW_STEPS),
                     "auto" to (intent?.getStringExtra(EXTRA_AUTO) != null)))
                 "autoLabel" -> result.success(intent?.getStringExtra(EXTRA_AUTO))
+                "waterVariant" -> result.success(intent?.getIntExtra(EXTRA_WATER_VARIANT, 0) ?: 0)
                 "nextRun" -> {
                     nextRun()
                     result.success(null)

@@ -55,6 +55,11 @@ class Diagnostics {
   static bool auto = false;
   static String autoLabel = '';
 
+  /// Bring-up: 0 = the real water material, k = bring-up variant k
+  /// (assets/materials/bringup/water_vk.fmat), to find which material
+  /// feature fails on the phone's GPU.
+  static int waterVariant = 0;
+
   /// Bring-up experiment: the 3D view is taken off screen while this is set.
   static final ValueNotifier<bool> hide3d = ValueNotifier(false);
 
@@ -84,6 +89,7 @@ class Diagnostics {
         if (noScene) 'no scene',
         if (textureView) 'texture view',
         if (slowSteps) 'slow load',
+        if (waterVariant > 0) 'water v$waterVariant',
       ].join(', ');
 
   static String get modeName => modeLabel.isEmpty ? 'default' : modeLabel;
