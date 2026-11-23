@@ -248,7 +248,8 @@ class GameScene {
     // reflection sees it unobstructed. Until M4 adds real occlusion, this
     // ratio stands in for it.
     _waterMat!.parameters.setFloat('sky_scale', 1.3939 * skyLevel);
-    _waterMat!.parameters.setFloat('treeline', _tune('tree', 0.68));
+    _waterMat!.parameters.setFloat('treeline', _tune('tree', 0.9));
+    _waterMat!.parameters.setFloat('treeline_soft', _tune('tsoft', 0.08));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -290,7 +291,7 @@ class GameScene {
   /// Radiance of the open sky the water reflects, in the same units as
   /// [envIntensity]. The stream's surface sees the open sky gap above the
   /// channel, which the banks see only partly. Was 0.25 x 1.6 = 0.4 (M4 v6).
-  static final double skyLevel = _tune('skylvl', 0.8);
+  static final double skyLevel = _tune('skylvl', 1.2);
 
   /// Browser tuning only: a query parameter overrides a look constant, so
   /// variants can be captured from one web build. Android has no query.
