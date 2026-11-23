@@ -31,6 +31,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-8 | stone/moss v3 | 2.50 | 2.44 | 2.47 | 2 | 0/4 | −0.59 (1st sub-0.3 round for M3). Stone 3/10: projected moss caps read as "lawn on rocks", stretched rock texels, blurred black bank edge |
 | round-9 | stone/moss v4 (panel) | 3.22 | 3.03 | 3.12 | 2.5 | 0/4 | Paired panel vs round 7: **−0.56** (critics −0.56 / −0.56). v4 rejected; **M3 stops at v2** |
 | round-10 | lighting/fog v1 (panel) | 3.69 | 3.91 | 3.80 | 3.5 | 0/4 (A/B-only critic) | Panel vs M3 final: **+0.83** (critics +0.91 / +0.75). New best; lighting alone 4.5 vs 3 |
+| round-11 | lighting/fog v2 (panel) | 3.25 | 3.38 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 10: **+0.38** (critics +0.38 / +0.38). New best; lighting alone 4.25 vs 3.75 |
 
 ## Round 1: water v1
 
@@ -406,3 +407,49 @@ Both critics also point out that the v2 moss is brown-olive (R above G, about 54
 - No specular on submerged ground.
 - A small sky fill so shadows on the bed aren't black.
 - Slightly denser dark mist, so contrast drops with distance.
+
+## Round 11: lighting and fog v2 (M4)
+
+**What changed** (the round-10 list):
+- Lantern light range 3 m → 1.3 m, keeping the near pool; softer shadow.
+- No specular on submerged ground or rocks.
+- A small sky fill in the water, so shadows on the bed are not black.
+- Slightly denser dark mist, so contrast drops with distance.
+
+**Panel** (each critic compared this round with `captures/round-10` side by side, order flipped)
+
+| Critic | Round 11 (new) | Round 10 (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.28 | 2.91 | +0.38 | 4.5 vs 4 |
+| b (new = Y) | 3.34 | 2.97 | +0.38 | 4 vs 3.5 |
+
+- **Gain +0.38** (critic spread 0.00), so **this round becomes the best** and M4 continues.
+- Absolute score 3.31 (inner 3.25, cover 3.38; worst shot 3.0). This is lower than round 10's 3.80 although both critics prefer round 11 in the same sitting. The absolute level drifts from panel to panel (calibration), which is why the ratchet uses only the paired difference.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 97–99 %. It named the glowing white box lantern, flat card leaves and sprite fireflies.
+- Tokens: 179k + 179k for the panel, 72k for the A/B critic.
+
+**What both critics credit:**
+- The lantern pool is tight: the bed and water fall to the ambient level away from it, as in ref02 and ref06.
+- The far water is cooler (about 24/23/28 against 32/28/29), which keeps the warm-against-cool contrast of a dusk photo.
+- The gravel-like highlights on submerged pebbles are gone.
+
+**What they flag as remaining lighting problems:**
+1. **The ambient is flat and directionless.** It reads as a darkened daytime render, not blue-hour skylight. The blacks are lifted (darkest 1 % at 7–13/255) and grain-free.
+2. **No glow in the damp air** around the lantern: only a tight bloom (refs 01, 03).
+3. **The key light is near-white.** The lantern core measures about 250/244/230. A paper lantern stays amber (ref02 paper about 248/170/95, ref10 about 248/214/124).
+4. **The banks still catch a bright rim** of lantern light about a metre away, sometimes brighter than the water beside the lantern.
+5. **The mist over the water reads as an even veil** with no ripple structure (critic a counts it against round 11, critic b in its favour).
+
+**Other giveaways, for later stages:**
+- the water has no surface: no sky reflection, ripples or glitter (M7 glints)
+- the lantern is a featureless box (M7)
+- flat tiled grass (M6)
+- card leaves and dot fireflies (M6, M7)
+- no grain or depth of field (M8 post)
+
+**Changes for round 12 (M4 v3):**
+- An amber key: amber light colour and an amber core instead of near-white.
+- A soft glow around the lantern in the damp air.
+- A directional blue-hour fill (brighter from the sky side), with the uniform ambient term lowered so the blacks go deeper.
+- Less lantern spill on bank slopes about a metre away.
+
