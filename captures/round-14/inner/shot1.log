@@ -1,0 +1,20 @@
+[debug] Injecting <script> tag. Using callback.
+[log] LANTERN_STEP settings
+[log] LANTERN_STEP gpu
+[warning] [.WebGL-0x2efc037b3c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warning] [.WebGL-0x2efc037b3c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warning] [.WebGL-0x2efc037b3c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warning] [.WebGL-0x2efc037b3c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+[log] LANTERN_STEP scene
+[log] LANTERN_STEP materials
+[log] LANTERN_STEP textures
+[log] LANTERN_STEP rocks
+[log] LANTERN_STEP environment
+[log] LANTERN_STEP assets loaded
+[log] LANTERN_STEP course
+[log] LANTERN_STEP frames
+[log] LANTERN_STEP frame 1
+[log] LANTERN_STEP first 3D paint
+[log] LANTERN_STEP frame 10
+[log] LANTERN_3D 790x876 meanLuma=31.3 litPct=98.8
+[log] LANTERN_STEP ready
