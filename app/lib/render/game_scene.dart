@@ -252,6 +252,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('treeline_soft', _tune('tsoft', 0.08));
     _waterMat!.parameters.setFloat('canopy_cover', _tune('canopy', 0.5));
     _waterMat!.parameters.setFloat('sky_broad', _tune('skybroad', 0.3));
+    _waterMat!.parameters.setFloat('canopy_scale', _tune('cscale', 2.2));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');

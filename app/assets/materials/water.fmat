@@ -52,6 +52,8 @@ material {
     { type: float, name: canopy_height, default: 2.5 },
     // How much of the broad wave tilt reaches the sky/leaf reflection.
     { type: float, name: sky_broad, default: 1.0 },
+    // Leaf-cluster frequency multiplier (1 = clusters about 1-2 m across).
+    { type: float, name: canopy_scale, default: 1.0 },
   ],
 }
 
@@ -103,7 +105,8 @@ fragment {
     // ripple-dependent, so the steep near water breaks into sky gaps and
     // leaf shadows too (ref10) instead of one uniform sheen.
     highp vec2 cp = wp.xz + r.xz / max(r.y, 0.25) * material_params.canopy_height;
-    float leaves = texture(normal_tex, cp * 0.23 + 0.17).b * 0.65 + texture(normal_tex, cp * 0.71 + 0.41).a * 0.35;
+    highp vec2 cs = cp * material_params.canopy_scale;
+    float leaves = texture(normal_tex, cs * 0.23 + 0.17).b * 0.65 + texture(normal_tex, cs * 0.71 + 0.41).a * 0.35;
     float thr = mix(0.85, 0.2, material_params.canopy_cover);  // leaves spans ~0.3-0.72
     gap *= 1.0 - smoothstep(thr - 0.06, thr + 0.06, leaves) * smoothstep(0.3, 0.6, r.y);
     vec3 foliage = vec3(0.010, 0.013, 0.010) * material_params.sky_scale;
