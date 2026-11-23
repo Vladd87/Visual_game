@@ -235,6 +235,10 @@ fragment {
       float nearWater = 1.0 - smoothstep(0.0, 0.035, above);
       float soak = max(mudW * (1.0 - smoothstep(0.0, 0.05, above)), nearWater * 0.85);
       col *= mix(1.0, 0.62, soak);
+      // The damp margin: ground within a hand's width of the stream stays
+      // wet and darker (M4 v4), which also tames the lantern's spill on the
+      // bank slopes beside the water (critics, round 12).
+      col *= mix(1.0, 0.72, 1.0 - smoothstep(0.0, 0.14, above));
       float puddle = mudW * soak * (1.0 - smoothstep(0.3, 0.42, arh.b));
       rough = mix(rough, 0.25, soak);
       rough = mix(rough, 0.04, puddle);
