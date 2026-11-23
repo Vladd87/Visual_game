@@ -137,7 +137,13 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     final stage = Diagnostics.uiStage.value;
     final page = Scaffold(
       backgroundColor: const Color(0xFF07090B),
-      body: Stack(children: [
+      // StackFit.expand: the page always fills the screen. With the default
+      // loose fit a Stack takes the size of its non-positioned children; on
+      // the title screen the only one was the (empty, zero-size) diagnostics
+      // panel, so the Stack was 0 x 0 and its overflow clip hid every layer:
+      // the black screen on the phone (test build 9). The capture harness
+      // has no diagnostics panel, so it never showed there.
+      body: Stack(fit: StackFit.expand, children: [
         if (!loading)
           Positioned.fromRect(
             rect: layout.game,
@@ -169,7 +175,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           ),
         if (!loading && c.capture == null && !stage.hideCard) ..._overlays(layout),
         if (loading || stage == UiStage.loadingLook) _Loading(text: c.loadingText),
-        if (c.capture == null) const _DiagnosticsPanel(),
+        if (c.capture == null) _DiagnosticsPanel(),
         if (Diagnostics.stepByStep) const Positioned(left: 0, right: 0, bottom: 0, child: _BringUpBanner()),
       ]),
     );
@@ -499,7 +505,10 @@ class _FlexPanel extends StatelessWidget {
 
 /// Shows a crashed previous launch or an error, so a screenshot reports it.
 class _DiagnosticsPanel extends StatefulWidget {
-  const _DiagnosticsPanel();
+  // Not const: rebuilt with the page, since its text depends on launch flags
+  // that arrive after the first frame.
+  // ignore: prefer_const_constructors_in_immutables
+  _DiagnosticsPanel();
 
   @override
   State<_DiagnosticsPanel> createState() => _DiagnosticsPanelState();

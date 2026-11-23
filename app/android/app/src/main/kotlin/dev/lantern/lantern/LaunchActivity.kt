@@ -40,9 +40,8 @@ class LaunchActivity : Activity() {
 
         /**
          * The automatic test series: each setup [AUTO_ROUNDS] times,
-         * interleaved. Test build 8 showed the setup does not matter (18 of 18
-         * black), so build 9 repeats the default one, which now takes the
-         * title screen apart piece by piece within each run.
+         * interleaved. Each run takes the title screen apart piece by piece
+         * and reads the screen back (device bring-up).
          */
         private val AUTO_MODES: List<Pair<String, List<String>>> = listOf(
             "default" to emptyList(),
@@ -155,7 +154,6 @@ class LaunchActivity : Activity() {
             }
         })
         for ((label, flag) in listOf(
-            "Old surface" to MainActivity.EXTRA_OPAQUE_SURFACE,
             "Texture view" to MainActivity.EXTRA_TEXTURE_VIEW,
         )) {
             row2.addView(Button(this).apply {

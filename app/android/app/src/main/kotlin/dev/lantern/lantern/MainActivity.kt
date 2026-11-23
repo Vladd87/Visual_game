@@ -11,7 +11,6 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.RenderMode
-import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
@@ -33,8 +32,6 @@ class MainActivity : FlutterActivity() {
         const val EXTRA_NO_3D = "lantern.no_3d"
         const val EXTRA_NO_SCENE = "lantern.no_scene"
         const val EXTRA_STEP_BY_STEP = "lantern.step_by_step"
-        /** The old opaque (RGB 565) Flutter surface below the window, for comparison. */
-        const val EXTRA_OPAQUE_SURFACE = "lantern.opaque_surface"
         /** Flutter renders into a TextureView drawn by Android's own renderer. */
         const val EXTRA_TEXTURE_VIEW = "lantern.texture_view"
         /** Bring-up: hold each loading step and read the screen back at it. */
@@ -45,20 +42,12 @@ class MainActivity : FlutterActivity() {
 
     private fun flag(name: String) = intent?.getBooleanExtra(name, false) == true
 
-    // Flutter's surface is always the 32-bit, translucent kind, composited on
-    // top of the window (TransparencyMode.transparent: setZOrderOnTop and
-    // PixelFormat.TRANSLUCENT). The default opaque SurfaceView is RGB 565; on
-    // the target phone (Adreno 840) every frame Impeller presented into it
-    // from the title screen on came out black, while the same frames in a
-    // 32-bit surface are correct (device read-back, test build 6). The game
-    // paints an opaque background itself, so nothing shows through.
-    // EXTRA_OPAQUE_SURFACE brings the old surface back for comparison;
-    // texture mode swaps the SurfaceView for a TextureView.
+    // Flutter's default surface (an opaque SurfaceView below the window).
+    // Test builds 6-8 tried a translucent surface on top and a TextureView;
+    // neither mattered: the black screen was a layout bug (game_page.dart).
+    // The texture view stays as a bring-up option.
     override fun getRenderMode(): RenderMode =
         if (flag(EXTRA_TEXTURE_VIEW)) RenderMode.texture else RenderMode.surface
-
-    override fun getTransparencyMode(): TransparencyMode =
-        if (flag(EXTRA_OPAQUE_SURFACE)) TransparencyMode.opaque else TransparencyMode.transparent
 
     // Lazy, not lateinit: FlutterActivity calls configureFlutterEngine() from
     // inside super.onCreate(), which registers these as channel handlers. With
@@ -118,7 +107,6 @@ class MainActivity : FlutterActivity() {
                     "no3d" to intent.getBooleanExtra(EXTRA_NO_3D, false),
                     "noScene" to flag(EXTRA_NO_SCENE),
                     "stepByStep" to flag(EXTRA_STEP_BY_STEP),
-                    "opaqueSurface" to flag(EXTRA_OPAQUE_SURFACE),
                     "textureView" to flag(EXTRA_TEXTURE_VIEW),
                     "slowSteps" to flag(EXTRA_SLOW_STEPS),
                     "auto" to (intent?.getStringExtra(EXTRA_AUTO) != null)))

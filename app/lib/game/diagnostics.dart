@@ -43,7 +43,6 @@ class Diagnostics {
   static bool stepByStep = false;
 
   /// Labels of the Android-side presentation modes (set by the launcher).
-  static bool opaqueSurface = false;
   static bool textureView = false;
 
   /// Bring-up: hold each loading step for 1.2 s and read the screen back at
@@ -72,7 +71,6 @@ class Diagnostics {
     if (f['no3d'] == true) no3d = true;
     if (f['noScene'] == true) noScene = true;
     if (f['stepByStep'] == true) stepByStep = true;
-    if (f['opaqueSurface'] == true) opaqueSurface = true;
     if (f['slowSteps'] == true) slowSteps = true;
     if (f['auto'] == true) auto = true;
     if (f['textureView'] == true) textureView = true;
@@ -84,7 +82,6 @@ class Diagnostics {
         if (noEffects) 'no effects',
         if (no3d) 'no 3D',
         if (noScene) 'no scene',
-        if (opaqueSurface) 'old opaque surface',
         if (textureView) 'texture view',
         if (slowSteps) 'slow load',
       ].join(', ');
