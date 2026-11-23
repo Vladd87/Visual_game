@@ -1,5 +1,9 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart' show GlobalKey;
 
 import '../platform/platform_bridge.dart';
 import 'boot_journal_stub.dart' if (dart.library.io) 'boot_journal_io.dart' as journal;
@@ -54,6 +58,13 @@ class Diagnostics {
 
   /// Bring-up experiment: the 3D view is taken off screen while this is set.
   static final ValueNotifier<bool> hide3d = ValueNotifier(false);
+
+  /// Bring-up experiment: which pieces of the title screen are shown.
+  static final ValueNotifier<UiStage> uiStage = ValueNotifier(UiStage.full);
+
+  /// Bring-up: the whole game page, rendered offscreen by [probe] for
+  /// comparison with what the screen shows.
+  static final GlobalKey rootKey = GlobalKey();
 
   static void applyLaunchFlags(Map<String, bool> f) {
     if (f['plainMaterials'] == true) safeRender = true;
@@ -117,9 +128,35 @@ class Diagnostics {
     debugPrint('LANTERN_CHECK $line');
     final m = RegExp(r'(?:surface|texture)=L=[\d.]+ A=\d+ lit=(\d+)%').firstMatch(pix ?? '');
     final lit = m == null ? -1 : int.parse(m.group(1)!);
-    _summary.add('$name ${lit < 0 ? '?' : '$lit%'}');
-    if (!auto) PlatformBridge.instance.recordRun(line);
+    final off = await _offscreenLit();
+    debugPrint('LANTERN_CHECK $name offscreen=${off < 0 ? '?' : '$off%'}');
+    _summary.add('$name ${lit < 0 ? '?' : '$lit%'}${off < 0 ? '' : ' (off $off%)'}');
+    if (!auto) PlatformBridge.instance.recordRun('$line offscreen=$off%');
     return lit;
+  }
+
+  /// The same page rendered offscreen (Picture.toImage path): share of lit
+  /// pixels, -1 if not available.
+  static Future<int> _offscreenLit() async {
+    try {
+      final ro = rootKey.currentContext?.findRenderObject();
+      if (ro is! RenderRepaintBoundary) return -1;
+      final img = await ro.toImage(pixelRatio: 0.15);
+      final bytes = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+      img.dispose();
+      if (bytes == null) return -1;
+      final px = bytes.buffer.asUint8List();
+      var lit = 0, n = 0;
+      for (var i = 0; i + 3 < px.length; i += 4) {
+        final l = (px[i] * 2 + px[i + 1] * 5 + px[i + 2]) >> 3;
+        if (l > 8) lit++;
+        n++;
+      }
+      return n == 0 ? -1 : 100 * lit ~/ n;
+    } catch (e) {
+      debugPrint('LANTERN_CHECK offscreen error $e');
+      return -1;
+    }
   }
 
   /// One line for the launcher's history: every probe of this run and a verdict.
@@ -174,4 +211,21 @@ class Diagnostics {
     if (parts.isEmpty) return null;
     return '${parts.join('\n\n')}\n\nA screenshot of this is enough to report it.';
   }
+}
+
+/// Bring-up: title-screen variants, to find which piece blanks the screen.
+enum UiStage {
+  full('title'),
+  noCard('no card'),
+  noGame('no 3D'),
+  bannerOnly('banner only'),
+  plainCard('plain card'),
+  cardNoStretch('card, no stretch'),
+  loadingLook('loading look');
+
+  const UiStage(this.label);
+  final String label;
+
+  bool get hideGame => this != full && this != noCard;
+  bool get hideCard => this == noCard || this == bannerOnly || this == loadingLook;
 }

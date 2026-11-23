@@ -118,22 +118,28 @@ class GameController extends ChangeNotifier {
     if (Diagnostics.stepByStep) unawaited(_afterBootChecks());
   }
 
-  /// Device bring-up: what the title screen actually shows. Then the 3D view
-  /// is taken off screen and put back: if the screen is black only while the
-  /// 3D view is up, drawing it is what blanks the frame; if it stays black,
-  /// presentation itself is broken.
+  /// Device bring-up: what the title screen actually shows, then the same
+  /// screen piece by piece (see [UiStage]): the first variant that shows
+  /// again names the piece that blanks the screen. The offscreen render of
+  /// each variant tells "only on-screen drawing fails" from "it never draws".
   Future<void> _afterBootChecks() async {
     final loading = Diagnostics.lastLoadingLit;
-    final t1 = await Diagnostics.probe('title 1', wait: const Duration(milliseconds: 1500));
-    final t2 = await Diagnostics.probe('title 2', wait: const Duration(milliseconds: 1500));
-    Diagnostics.hide3d.value = true;
-    final hidden = await Diagnostics.probe('3D hidden', wait: const Duration(milliseconds: 800));
-    Diagnostics.hide3d.value = false;
-    final back = await Diagnostics.probe('3D back', wait: const Duration(milliseconds: 1500));
-    String v(int lit, int threshold) => lit < 0 ? '?' : (lit >= threshold ? 'shows' : 'BLACK');
-    final verdict = 'loading ${v(loading, 5)}, title ${v(t1, 50)}/${v(t2, 50)}, 3D hidden ${v(hidden, 5)}, 3D back ${v(back, 50)}';
+    final results = <String>[];
+    Future<void> stage(UiStage s, String name, {int ms = 900}) async {
+      Diagnostics.uiStage.value = s;
+      final lit = await Diagnostics.probe(name, wait: Duration(milliseconds: ms));
+      results.add('$name ${lit < 0 ? '?' : (lit >= 5 ? 'shows' : 'BLACK')}');
+    }
+    await stage(UiStage.full, 'title', ms: 1500);
+    await stage(UiStage.noCard, 'no card');
+    await stage(UiStage.noGame, 'no 3D');
+    await stage(UiStage.bannerOnly, 'banner only');
+    await stage(UiStage.plainCard, 'plain card');
+    await stage(UiStage.cardNoStretch, 'card no stretch');
+    await stage(UiStage.loadingLook, 'loading look');
+    await stage(UiStage.full, 'title again', ms: 1200);
     Diagnostics.visibleStep.value = 'done';
-    Diagnostics.recordSummary(verdict);
+    Diagnostics.recordSummary('loading ${loading >= 5 ? 'shows' : 'BLACK'}; ${results.join(', ')}');
     if (Diagnostics.auto) platform.nextRun();
   }
 

@@ -39,16 +39,13 @@ class LaunchActivity : Activity() {
         const val EXTRA_AUTO_NEXT = "lantern.auto_next"
 
         /**
-         * The automatic test series: each setup three times, interleaved so
-         * that order and warm-up effects do not line up with one setup.
+         * The automatic test series: each setup [AUTO_ROUNDS] times,
+         * interleaved. Test build 8 showed the setup does not matter (18 of 18
+         * black), so build 9 repeats the default one, which now takes the
+         * title screen apart piece by piece within each run.
          */
         private val AUTO_MODES: List<Pair<String, List<String>>> = listOf(
             "default" to emptyList(),
-            "old surface" to listOf(MainActivity.EXTRA_OPAQUE_SURFACE),
-            "texture view" to listOf(MainActivity.EXTRA_TEXTURE_VIEW),
-            "no 3D view" to listOf(MainActivity.EXTRA_NO_3D),
-            "direct 3D" to listOf(MainActivity.EXTRA_NO_EFFECTS),
-            "slow load" to listOf(MainActivity.EXTRA_SLOW_STEPS),
         )
         private const val AUTO_ROUNDS = 3
     }
@@ -112,7 +109,7 @@ class LaunchActivity : Activity() {
             textSize = 20f
         })
         root.addView(TextView(this).apply {
-            text = "Play starts the game. Auto test runs 18 short launches by itself (about 5 minutes, six setups three times each): just watch, don't touch, and when this menu comes back, tap Copy and paste the report. Each run shows a yellow banner with its number."
+            text = "Play starts the game. Auto test runs 3 short launches by itself (about 1 minute): just watch, don't touch, and when this menu comes back, tap Copy and paste the report. Each run shows a yellow banner with its number."
             setTextColor(Color.rgb(200, 200, 200))
             textSize = 13f
             setPadding(0, pad / 2, 0, pad / 2)

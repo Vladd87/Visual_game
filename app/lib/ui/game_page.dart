@@ -44,6 +44,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     c.governor.addListener(_changed);
     c.settings.addListener(_changed);
     Diagnostics.hide3d.addListener(_changed);
+    Diagnostics.uiStage.addListener(_changed);
     unawaited(c.boot());
   }
 
@@ -54,6 +55,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     c.governor.removeListener(_changed);
     c.settings.removeListener(_changed);
     Diagnostics.hide3d.removeListener(_changed);
+    Diagnostics.uiStage.removeListener(_changed);
     super.dispose();
   }
 
@@ -132,7 +134,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       SchedulerBinding.instance.addPostFrameCallback((_) => c.setViewport(layout.viewport));
     }
     final loading = c.phase == AppPhase.loading;
-    return Scaffold(
+    final stage = Diagnostics.uiStage.value;
+    final page = Scaffold(
       backgroundColor: const Color(0xFF07090B),
       body: Stack(children: [
         if (!loading)
@@ -144,7 +147,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
               onPointerMove: _move,
               onPointerUp: _up,
               onPointerCancel: _up,
-              child: Diagnostics.no3d || Diagnostics.noScene || Diagnostics.hide3d.value
+              child: Diagnostics.no3d || Diagnostics.noScene || Diagnostics.hide3d.value || stage.hideGame
                   ? const ColoredBox(
                       color: Color(0xFF0B0E12),
                       child: Center(child: Text('3D view off (diagnostic mode)', style: TextStyle(color: Color(0xFF8A9099)))),
@@ -164,12 +167,14 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                         ),
             ),
           ),
-        if (!loading && c.capture == null) ..._overlays(layout),
-        if (loading) _Loading(text: c.loadingText),
+        if (!loading && c.capture == null && !stage.hideCard) ..._overlays(layout),
+        if (loading || stage == UiStage.loadingLook) _Loading(text: c.loadingText),
         if (c.capture == null) const _DiagnosticsPanel(),
         if (Diagnostics.stepByStep) const Positioned(left: 0, right: 0, bottom: 0, child: _BringUpBanner()),
       ]),
     );
+    // Bring-up: a repaint boundary the probe can render offscreen.
+    return Diagnostics.stepByStep ? RepaintBoundary(key: Diagnostics.rootKey, child: page) : page;
   }
 
   List<Widget> _overlays(GameLayout layout) {
@@ -294,13 +299,9 @@ class _Card extends StatelessWidget {
   const _Card({required this.children});
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) => Center(
-        child: SingleChildScrollView(
-          // No clip: on the target phone's Adreno driver an Impeller pipeline
-          // fails to compile at startup, and any on-screen frame that clips
-          // came out entirely black (device bring-up, see CRITIC_LOG/PLAN).
-          clipBehavior: Clip.none,
-          child: Container(
+  Widget build(BuildContext context) {
+    final stage = Diagnostics.uiStage.value;
+    final box = Container(
             constraints: const BoxConstraints(maxWidth: 320),
             padding: const EdgeInsets.fromLTRB(26, 24, 26, 20),
             decoration: BoxDecoration(
@@ -309,9 +310,22 @@ class _Card extends StatelessWidget {
               border: Border.all(color: const Color(0x22E9E2D6)),
             ),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
-          ),
-        ),
-      );
+          );
+    // Bring-up variants: no scroll view at all, or a scroll view without
+    // Android's stretch overscroll effect.
+    if (stage == UiStage.plainCard) return Center(child: box);
+    final scroll = SingleChildScrollView(clipBehavior: Clip.none, child: box);
+    if (stage == UiStage.cardNoStretch) {
+      return Center(child: ScrollConfiguration(behavior: const _NoOverscroll(), child: scroll));
+    }
+    return Center(child: scroll);
+  }
+}
+
+class _NoOverscroll extends ScrollBehavior {
+  const _NoOverscroll();
+  @override
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) => child;
 }
 
 class _Btn extends StatelessWidget {
