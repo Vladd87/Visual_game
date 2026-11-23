@@ -206,7 +206,9 @@ class GameScene {
     _lantern.add(_lanternLightNode);
     scene.add(_lantern);
 
-    if (Uri.base.queryParameters['norain'] != '1') {
+    // Falling streaks are off (round 18: they read as an overlay; a dusk
+    // photo shows rain on the water, not in the air). ?rainstreaks=1 for tests.
+    if (Uri.base.queryParameters['rainstreaks'] == '1') {
       _rain = RainEffect(rate: _tune('rainrate', 3000), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 3.0),
           stretch: _tune('rainstretch', 0.024));
       scene.add(_rain!.node
