@@ -58,6 +58,12 @@ function serve(root, port) {
       res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
       fs.createReadStream(file).pipe(res);
     });
+    // A random port can be taken (another harness running): try the next.
+    let tries = 0;
+    server.on('error', (e) => {
+      if (e.code !== 'EADDRINUSE' || ++tries > 20) throw e;
+      server.listen(++port, '127.0.0.1');
+    });
     server.listen(port, '127.0.0.1', () => resolve(server));
   });
 }
@@ -92,8 +98,8 @@ async function lumaStats(page, buf) {
   const scale = parseFloat(arg('scale', '0.5'));
   const frames = arg('frames', '90');
   const root = path.resolve(__dirname, '../../app/build/web');
-  const port = 8700 + Math.floor(Math.random() * 200);
-  const server = await serve(root, port);
+  const server = await serve(root, 8700 + Math.floor(Math.random() * 200));
+  const port = server.address().port;
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const report = [];
   let failures = 0;
