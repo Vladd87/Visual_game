@@ -40,12 +40,16 @@ class LaunchActivity : Activity() {
         showMenu(CrashReport.build(this))
     }
 
-    /** [mode]: null, or one of MainActivity's EXTRA_* diagnostic flags. */
+    /**
+     * [mode]: null, or one of MainActivity's EXTRA_* diagnostic flags. Every
+     * test-build launch runs step by step (bright banner, screen read-back).
+     */
     private fun startGame(mode: String?) {
         CrashReport.killGameProcesses(this)
         CrashReport.clearStep(this)
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        intent.putExtra(MainActivity.EXTRA_STEP_BY_STEP, true)
         if (mode != null) intent.putExtra(mode, true)
         startActivity(intent)
         finish()
@@ -64,7 +68,7 @@ class LaunchActivity : Activity() {
             textSize = 20f
         })
         root.addView(TextView(this).apply {
-            text = "If the game shows a black screen, close it, open Lantern again, tap Copy and paste the text to the developer. Then try the test modes and say which ones show something."
+            text = "Each mode starts with a yellow banner at the bottom (step name and a frame counter). Try each button once: watch when the screen turns black and note the last step you saw, then close the game, come back here and tap the next button. When all four are done, tap Copy and paste the text."
             setTextColor(Color.rgb(200, 200, 200))
             textSize = 13f
             setPadding(0, pad / 2, 0, pad / 2)
@@ -88,15 +92,23 @@ class LaunchActivity : Activity() {
             }
         })
         row1.addView(Button(this).apply {
-            text = "Start game"
+            text = "1 Start game"
             setOnClickListener { startGame(null) }
+        })
+        row1.addView(Button(this).apply {
+            text = "Clear runs"
+            textSize = 11f
+            setOnClickListener {
+                CrashReport.clearRuns(this@LaunchActivity)
+                showMenu(CrashReport.build(this@LaunchActivity))
+            }
         })
         root.addView(row1)
         val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         for ((label, flag) in listOf(
-            "Plain materials" to MainActivity.EXTRA_PLAIN_MATERIALS,
-            "No effects" to MainActivity.EXTRA_NO_EFFECTS,
-            "No 3D" to MainActivity.EXTRA_NO_3D,
+            "2 Surface on top" to MainActivity.EXTRA_SURFACE_ON_TOP,
+            "3 Texture view" to MainActivity.EXTRA_TEXTURE_VIEW,
+            "4 No scene" to MainActivity.EXTRA_NO_SCENE,
         )) {
             row2.addView(Button(this).apply {
                 text = label
@@ -119,6 +131,26 @@ object CrashReport {
         try {
             val stamp = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date())
             stepFile(ctx).writeText("$step\n${Process.myPid()}\n$stamp\n")
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun runsFile(ctx: Context) = File(ctx.filesDir, "runs.txt")
+
+    /** Appends one line to the history of test runs (kept across launches). */
+    fun recordRun(ctx: Context, line: String) {
+        try {
+            val stamp = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date())
+            val f = runsFile(ctx)
+            val old = if (f.exists()) f.readLines().takeLast(150) else emptyList()
+            f.writeText((old + "$stamp $line").joinToString("\n") + "\n")
+        } catch (_: Throwable) {
+        }
+    }
+
+    fun clearRuns(ctx: Context) {
+        try {
+            runsFile(ctx).delete()
         } catch (_: Throwable) {
         }
     }
@@ -198,6 +230,11 @@ object CrashReport {
                 }
             } catch (_: Throwable) {
             }
+        }
+        val runs = try { runsFile(ctx).readLines() } catch (_: Throwable) { emptyList() }
+        if (runs.isNotEmpty()) {
+            sb.append("\n--- test runs (screen read-back at each step: window = Android window, surface/texture = Flutter) ---\n")
+            sb.append(runs.joinToString("\n")).append('\n')
         }
         sb.append("\n--- log of the last game run")
         sb.append(if (pid != null) " (pid $pid) ---\n" else " ---\n")

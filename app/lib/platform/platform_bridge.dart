@@ -106,6 +106,23 @@ class PlatformBridge {
     _methods.invokeMethod('bootStep', {'step': step}).catchError((_) => null);
   }
 
+  /// Device bring-up: reads back what the phone shows (Flutter's surface and
+  /// the window) and returns a one-line summary.
+  Future<String?> screenProbe(String step) async {
+    if (!available) return null;
+    try {
+      return await _methods.invokeMethod<String>('screenProbe', {'step': step});
+    } catch (e) {
+      return 'probe error $e';
+    }
+  }
+
+  /// Appends a line to the launcher's history of test runs.
+  void recordRun(String line) {
+    if (!available) return;
+    _methods.invokeMethod('recordRun', {'line': line}).catchError((_) => null);
+  }
+
   Future<String?> perfLogDir() async {
     if (!available) return null;
     try {

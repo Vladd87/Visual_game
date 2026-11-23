@@ -7,6 +7,8 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.RenderMode
+import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
@@ -26,7 +28,24 @@ class MainActivity : FlutterActivity() {
         const val EXTRA_PLAIN_MATERIALS = "lantern.plain_materials"
         const val EXTRA_NO_EFFECTS = "lantern.no_effects"
         const val EXTRA_NO_3D = "lantern.no_3d"
+        const val EXTRA_NO_SCENE = "lantern.no_scene"
+        const val EXTRA_STEP_BY_STEP = "lantern.step_by_step"
+        /** Flutter's surface composited above the window instead of below it. */
+        const val EXTRA_SURFACE_ON_TOP = "lantern.surface_on_top"
+        /** Flutter renders into a TextureView drawn by Android's own renderer. */
+        const val EXTRA_TEXTURE_VIEW = "lantern.texture_view"
     }
+
+    private fun flag(name: String) = intent?.getBooleanExtra(name, false) == true
+
+    // Bring-up presentation modes. Transparent makes FlutterSurfaceView sit
+    // on top of the window (setZOrderOnTop) so nothing drawn by the window can
+    // cover it; texture mode swaps the SurfaceView for a TextureView.
+    override fun getRenderMode(): RenderMode =
+        if (flag(EXTRA_TEXTURE_VIEW)) RenderMode.texture else super.getRenderMode()
+
+    override fun getTransparencyMode(): TransparencyMode =
+        if (flag(EXTRA_SURFACE_ON_TOP)) TransparencyMode.transparent else super.getTransparencyMode()
 
     // Lazy, not lateinit: FlutterActivity calls configureFlutterEngine() from
     // inside super.onCreate(), which registers these as channel handlers. With
@@ -64,7 +83,19 @@ class MainActivity : FlutterActivity() {
                 "launchFlags" -> result.success(mapOf(
                     "plainMaterials" to intent.getBooleanExtra(EXTRA_PLAIN_MATERIALS, false),
                     "noEffects" to intent.getBooleanExtra(EXTRA_NO_EFFECTS, false),
-                    "no3d" to intent.getBooleanExtra(EXTRA_NO_3D, false)))
+                    "no3d" to intent.getBooleanExtra(EXTRA_NO_3D, false),
+                    "noScene" to flag(EXTRA_NO_SCENE),
+                    "stepByStep" to flag(EXTRA_STEP_BY_STEP),
+                    "surfaceOnTop" to flag(EXTRA_SURFACE_ON_TOP),
+                    "textureView" to flag(EXTRA_TEXTURE_VIEW)))
+                "screenProbe" -> {
+                    val step = call.argument<String>("step") ?: "?"
+                    ScreenProbe.run(this, step, step == "title screen 1") { line -> result.success(line) }
+                }
+                "recordRun" -> {
+                    CrashReport.recordRun(this, call.argument<String>("line") ?: "")
+                    result.success(null)
+                }
                 "bootStep" -> {
                     CrashReport.recordStep(this, call.argument<String>("step") ?: "?")
                     result.success(null)

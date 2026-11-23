@@ -68,6 +68,7 @@ class GameController extends ChangeNotifier {
     Diagnostics.step('settings');
     Diagnostics.applyLaunchFlags(await platform.launchFlags());
     // Bring-up on new hardware: which 2D primitives render (logged).
+    if (Diagnostics.stepByStep) platform.recordRun('=== mode: ${Diagnostics.modeLabel.isEmpty ? 'normal' : Diagnostics.modeLabel}');
     if (platform.available || Uri.base.queryParameters['probe'] == '1') {
       Diagnostics.step('render probe');
       await runRenderProbe();
@@ -77,22 +78,26 @@ class GameController extends ChangeNotifier {
     governor.adaptive = capture == null;
     loadingText = 'loading the stream';
     notifyListeners();
-    Diagnostics.step('gpu');
-    await Scene.initializeStaticResources();
-    await Scene.preload();
-    Diagnostics.step('scene');
-    scene = Scene();
-    gameScene = GameScene(scene)..buildStatic();
-    loadingText = 'filling the stream';
-    notifyListeners();
-    await gameScene.loadAssets();
+    if (!Diagnostics.noScene) {
+      await Diagnostics.checkpoint('gpu');
+      await Scene.initializeStaticResources();
+      await Scene.preload();
+      await Diagnostics.checkpoint('scene');
+      scene = Scene();
+      gameScene = GameScene(scene)..buildStatic();
+      loadingText = 'filling the stream';
+      notifyListeners();
+      await gameScene.loadAssets();
+    } else {
+      await Diagnostics.checkpoint('no scene');
+    }
     platform.start();
     platform.enableTilt(settings.control == ControlMode.tilt);
     unawaited(platform.setRefreshRate(settings.performance120 ? 120 : 60));
     governor.targetHz = settings.performance120 ? 120 : 60;
     SchedulerBinding.instance.addTimingsCallback(_onTimings);
 
-    Diagnostics.step('course');
+    await Diagnostics.checkpoint('course');
     final cap = capture;
     if (cap != null) {
       final w = World(cap.seed);
@@ -105,8 +110,19 @@ class GameController extends ChangeNotifier {
     }
     Diagnostics.step('frames');
     // With the 3D view off nothing ticks, so the UI drawing is the success.
-    if (Diagnostics.no3d) Diagnostics.step('ready');
+    if (Diagnostics.no3d || Diagnostics.noScene) Diagnostics.step('ready');
     notifyListeners();
+    if (Diagnostics.stepByStep) unawaited(_afterBootChecks());
+  }
+
+  /// Device bring-up: what the title screen actually shows, a few times.
+  Future<void> _afterBootChecks() async {
+    for (var i = 1; i <= 3; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      await Diagnostics.checkpoint('title screen $i');
+    }
+    Diagnostics.visibleStep.value = 'done';
+    platform.recordRun('end of checks');
   }
 
   int _newSeed() => DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
@@ -114,7 +130,7 @@ class GameController extends ChangeNotifier {
   void _install(World w) {
     world = w;
     _clock = WorldClock(w);
-    gameScene.buildCourse(w);
+    if (!Diagnostics.noScene) gameScene.buildCourse(w);
     rig.snapTo(w.lantern.pos);
   }
 

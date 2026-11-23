@@ -151,11 +151,11 @@ class GameScene {
     if (Diagnostics.safeRender) {
       // The previous launch died while setting up rendering: plain PBR
       // materials and greybox rocks, so the game at least runs.
-      Diagnostics.step('environment');
+      await Diagnostics.checkpoint('environment');
       await scene.loadEnvironment('assets/env/blue_hour_forest.hdr', showSkybox: false, intensity: envIntensity, maxWidth: 1024);
       return;
     }
-    Diagnostics.step('materials');
+    await Diagnostics.checkpoint('materials');
     _waterNormal = await _loadTexture('assets/textures/water_normal.png');
     _sky = await _loadTexture('assets/textures/sky_blue.png', mipmaps: false);
     _waterMat = await loadFmatMaterial('assets/materials/water.fmat');
@@ -170,7 +170,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('sky_scale', 1.3939 * envIntensity * 1.6);
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
-    Diagnostics.step('textures');
+    await Diagnostics.checkpoint('textures');
     final data = await buildGroundData();
     _bind(_groundMat!, 'data_tex', data);
     // Banks: forest ground, moss cushions and waterline mud (all CC0,
@@ -180,7 +180,7 @@ class GameScene {
     _bind(_groundMat!, 's_t2', atlas.t2);
     // Rocks: two scanned sets, one material per texture set; moss caps come
     // from the bank atlas.
-    Diagnostics.step('rocks');
+    await Diagnostics.checkpoint('rocks');
     _rockScans = await loadRockScans();
     for (final set in ['rock_moss_set_01', 'rock_moss_set_02']) {
       final m = await loadFmatMaterial('assets/materials/rock.fmat');
@@ -196,8 +196,9 @@ class GameScene {
     }
     // Blue hour (Poly Haven aarfontein_dawn) behind a forest treeline, baked by
     // tools/bake/bake_env.py.
-    Diagnostics.step('environment');
+    await Diagnostics.checkpoint('environment');
     await scene.loadEnvironment('assets/env/blue_hour_forest.hdr', showSkybox: false, intensity: envIntensity, maxWidth: 1024);
+    await Diagnostics.checkpoint('assets loaded');
   }
 
   static const double envIntensity = 0.25;

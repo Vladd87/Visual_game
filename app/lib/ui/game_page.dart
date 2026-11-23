@@ -142,7 +142,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
               onPointerMove: _move,
               onPointerUp: _up,
               onPointerCancel: _up,
-              child: Diagnostics.no3d
+              child: Diagnostics.no3d || Diagnostics.noScene
                   ? const ColoredBox(
                       color: Color(0xFF0B0E12),
                       child: Center(child: Text('3D view off (diagnostic mode)', style: TextStyle(color: Color(0xFF8A9099)))),
@@ -165,6 +165,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         if (!loading && c.capture == null) ..._overlays(layout),
         if (loading) _Loading(text: c.loadingText),
         if (c.capture == null) const _DiagnosticsPanel(),
+        if (Diagnostics.stepByStep) const Positioned(left: 0, right: 0, bottom: 0, child: _BringUpBanner()),
       ]),
     );
   }
@@ -524,4 +525,57 @@ class _DiagnosticsPanelState extends State<_DiagnosticsPanel> {
           );
         },
       );
+}
+
+/// Device bring-up banner: bright, with the current boot step, a frame
+/// counter and a moving block, so a glance shows whether the screen is still
+/// being updated (and at which step it stopped).
+class _BringUpBanner extends StatefulWidget {
+  const _BringUpBanner();
+
+  @override
+  State<_BringUpBanner> createState() => _BringUpBannerState();
+}
+
+class _BringUpBannerState extends State<_BringUpBanner> with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  int _frames = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker((_) => setState(() => _frames++))..start();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const ink = TextStyle(color: Color(0xFF000000), fontSize: 20, fontWeight: FontWeight.w600);
+    final mode = Diagnostics.modeLabel.isEmpty ? 'normal' : Diagnostics.modeLabel;
+    return Container(
+      height: 150,
+      color: const Color(0xFFFFD54F),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        ValueListenableBuilder<String>(
+          valueListenable: Diagnostics.visibleStep,
+          builder: (context, step, _) => Text('STEP: $step', style: ink),
+        ),
+        Text('frame $_frames   ($mode)', style: ink.copyWith(fontSize: 16, fontWeight: FontWeight.w400)),
+        const Spacer(),
+        LayoutBuilder(builder: (context, c) {
+          final x = (c.maxWidth - 40) * (0.5 + 0.5 * math.sin(_frames / 20));
+          return SizedBox(
+            height: 24,
+            child: Stack(children: [Positioned(left: x, top: 0, child: Container(width: 40, height: 24, color: const Color(0xFF000000)))]),
+          );
+        }),
+      ]),
+    );
+  }
 }
