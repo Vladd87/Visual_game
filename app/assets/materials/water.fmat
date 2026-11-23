@@ -39,15 +39,18 @@ material {
 }
 
 fragment {
-  vec2 SampleSlope(vec2 uv) {
+  // Precision: world positions, texture coordinates built from them, and
+  // time are highp; the phone runs materials at medium (16-bit) precision
+  // otherwise, which quantises them into visible steps (see ground.fmat).
+  vec2 SampleSlope(highp vec2 uv) {
     return texture(normal_tex, uv).rg * 2.0 - 1.0;
   }
 
   // Ripple slope at world xz, stretched along the flow and advected with it.
-  vec2 RippleSlope(vec2 p, vec2 dir, float speed, float t, float scale,
+  vec2 RippleSlope(highp vec2 p, vec2 dir, float speed, highp float t, float scale,
                    float stretch, float seed) {
     vec2 perp = vec2(-dir.y, dir.x);
-    vec2 q = vec2(dot(p, dir), dot(p, perp));
+    highp vec2 q = vec2(dot(p, dir), dot(p, perp));
     const float cycle = 1.8;
     float ph0 = fract(t / cycle);
     float ph1 = fract(t / cycle + 0.5);
@@ -81,18 +84,18 @@ fragment {
     return mix(foliage, sky, gap);
   }
 
-  vec3 LanternIrradiance(vec3 p) {
-    vec3 d = material_params.lantern_pos - p;
+  vec3 LanternIrradiance(highp vec3 p) {
+    highp vec3 d = material_params.lantern_pos - p;
     float r2 = dot(d, d);
     float window = clamp(1.0 - r2, 0.0, 1.0); // the lantern light's 1.0 m range
     return material_params.lantern_light * (0.012 / (r2 + 0.0025)) * window * window;
   }
 
   // Planar reflection sampled at a ripple-displaced world point.
-  vec4 Mirror(vec3 wp, vec2 slope) {
+  vec4 Mirror(highp vec3 wp, vec2 slope) {
     if (planar_reflection_info.params.x < 0.5) return vec4(0.0);
-    vec3 q = wp + vec3(slope.x, 0.0, slope.y) * 0.035;
-    vec4 clip = planar_reflection_info.view_projection * vec4(q, 1.0);
+    highp vec3 q = wp + vec3(slope.x, 0.0, slope.y) * 0.035;
+    highp vec4 clip = planar_reflection_info.view_projection * vec4(q, 1.0);
     if (clip.w <= 0.0) return vec4(0.0);
     vec2 uv = vec2(0.5 + 0.5 * clip.x / clip.w, 0.5 - 0.5 * clip.y / clip.w);
     uv = clamp(uv, vec2(0.001), vec2(0.999));
@@ -107,9 +110,9 @@ fragment {
     vec2 dir = speed > 1e-4 ? flowW / speed : vec2(0.0, -1.0);
     vec2 perp = vec2(-dir.y, dir.x);
     float turb = vc.a;
-    float t = GetTime();
+    highp float t = mod(GetTime(), 3600.0);
     highp vec3 wp = GetWorldPosition();
-    vec2 p = wp.xz;
+    highp vec2 p = wp.xz;
 
     // --- normals -------------------------------------------------------------
     float stretch = 1.0 + 0.9 * clamp(speed / 0.25, 0.0, 1.0);

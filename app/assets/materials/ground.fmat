@@ -32,14 +32,21 @@ material {
 }
 
 fragment {
-  vec2 Hash22(vec2 p) {
-    vec3 a = fract(p.xyx * vec3(123.34, 234.34, 345.65));
+  // Precision: the materials compile at medium (often 16-bit) precision on
+  // the phone, where 16-bit floats step by 2.0 at 2048. Anything carrying a
+  // world position, a cell id or time is highp, and hash inputs are wrapped
+  // to a small range; at medium precision the pebble bed collapsed into a
+  // regular lattice on the target phone (first device screenshot).
+  vec2 Hash22(highp vec2 p) {
+    p = mod(p, 289.0);
+    highp vec3 a = fract(p.xyx * vec3(123.34, 234.34, 345.65));
     a += dot(a, a + 34.45);
     return fract(vec2(a.x * a.y, a.y * a.z));
   }
 
-  float Hash12(vec2 p) {
-    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  float Hash12(highp vec2 p) {
+    p = mod(p, 289.0);
+    highp vec3 p3 = fract(vec3(p.xyx) * 0.1031);
     p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
   }
@@ -48,8 +55,8 @@ fragment {
   // radius around a jittered centre (not Voronoi tiles, which read as paving).
   // Returns stone coverage, the offset to the winning centre (in cell units),
   // that stone's radius and id.
-  float Pebbles(vec2 p, out vec2 toCenter, out float radius, out vec2 cellId) {
-    vec2 i = floor(p);
+  float Pebbles(highp vec2 p, out vec2 toCenter, out float radius, out highp vec2 cellId) {
+    highp vec2 i = floor(p);
     vec2 f = fract(p);
     float best = 0.0;
     toCenter = vec2(1.0);
@@ -78,8 +85,8 @@ fragment {
     return best;
   }
 
-  vec3 LanternIrradiance(vec3 p) {
-    vec3 d = material_params.lantern_pos - p;
+  vec3 LanternIrradiance(highp vec3 p) {
+    highp vec3 d = material_params.lantern_pos - p;
     float r2 = dot(d, d);
     float window = clamp(1.0 - r2, 0.0, 1.0); // the lantern light's 1.0 m range
     return material_params.lantern_light * (0.012 / (r2 + 0.0025)) * window * window;
@@ -149,8 +156,8 @@ fragment {
   void Surface(inout MaterialInputs material) {
     vec4 vc = GetVertexColor();
     highp vec3 wp = GetWorldPosition();
-    float t = GetTime();
-    vec2 p = wp.xz;
+    highp float t = mod(GetTime(), 3600.0);
+    highp vec2 p = wp.xz;
     float mound = vc.r;
     float out_d = vc.g;
     float contact = vc.b;
@@ -245,15 +252,18 @@ fragment {
       // Patches: cobble-rich areas vs silty gravel (low-frequency mask).
       float patchy = smoothstep(0.35, 0.75, texture(data_tex, p * 0.35 + 0.17).r * 2.0);
       patchy = max(patchy, mound);
-      vec2 tc, id;
+      vec2 tc;
+      highp vec2 id;
       float rad;
       float stone = Pebbles(p * 22.0 + vec2(17.3, -4.1), tc, rad, id);
-      vec2 tc2, id2;
+      vec2 tc2;
+      highp vec2 id2;
       float rad2;
       float pebble = Pebbles(p * 55.0, tc2, rad2, id2) * 0.85;
       stone *= mix(0.55, 1.0, patchy);
       // Sparse big cobbles (8-14 cm) in the cobble-rich patches.
-      vec2 tc3, id3;
+      vec2 tc3;
+      highp vec2 id3;
       float rad3;
       float cobble = Pebbles(p * 9.0 + vec2(-3.7, 8.2), tc3, rad3, id3);
       cobble *= step(0.45, Hash12(id3 + 1.3)) * smoothstep(0.3, 0.7, patchy);
@@ -302,8 +312,8 @@ fragment {
     material.specular = mix(1.0, 0.06, under);
     if (under > 0.0) {
       // Two caustic layers drifting downstream (-Z) at different scales/speeds.
-      vec2 u1 = p * 3.0 + vec2(0.012, 0.05) * t;
-      vec2 u2 = p * 2.4 * mat2(0.8, -0.6, 0.6, 0.8) + vec2(-0.02, 0.07) * t;
+      highp vec2 u1 = p * 3.0 + vec2(0.012, 0.05) * t;
+      highp vec2 u2 = p * 2.4 * mat2(0.8, -0.6, 0.6, 0.8) + vec2(-0.02, 0.07) * t;
       // Geometric mean of two layers: crisp bright filaments where they cross.
       vec3 c;
       c.r = sqrt(Caustic(u1 + 0.0012) * Caustic(u2 + 0.0012));
