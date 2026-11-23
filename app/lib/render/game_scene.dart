@@ -273,6 +273,10 @@ class GameScene {
     _waterMat!.parameters.setFloat('canopy_scale', _tune('cscale', 1.0));
     // M5: light rain on the water (rings and splashes).
     _waterMat!.parameters.setFloat('rain', _tune('rain', 2.0));
+    // In rain the sheltered stream's wind ripples are small next to the
+    // drop rings (M5 v2): at full strength their flow-stretched pattern read
+    // as painted swirls and concentric arcs (critics, rounds 15-18).
+    _waterMat!.parameters.setFloat('normal_strength', _tune('nstr', 0.5));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
