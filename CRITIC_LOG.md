@@ -32,6 +32,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-9 | stone/moss v4 (panel) | 3.22 | 3.03 | 3.12 | 2.5 | 0/4 | Paired panel vs round 7: **−0.56** (critics −0.56 / −0.56). v4 rejected; **M3 stops at v2** |
 | round-10 | lighting/fog v1 (panel) | 3.69 | 3.91 | 3.80 | 3.5 | 0/4 (A/B-only critic) | Panel vs M3 final: **+0.83** (critics +0.91 / +0.75). New best; lighting alone 4.5 vs 3 |
 | round-11 | lighting/fog v2 (panel) | 3.25 | 3.38 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 10: **+0.38** (critics +0.38 / +0.38). New best; lighting alone 4.25 vs 3.75 |
+| round-12 | lighting/fog v3 (panel) | 3.22 | 3.41 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 11: **+0.45** (critics +0.41 / +0.50). New best; lighting alone 3.75 vs 3.25 |
 
 ## Round 1: water v1
 
@@ -452,4 +453,56 @@ Both critics also point out that the v2 moss is brown-olive (R above G, about 54
 - A soft glow around the lantern in the damp air.
 - A directional blue-hour fill (brighter from the sky side), with the uniform ambient term lowered so the blacks go deeper.
 - Less lantern spill on bank slopes about a metre away.
+
+## Round 12: lighting and fog v3 (M4)
+
+**What changed:**
+- **Lantern colour:** amber light and paper; the emission is cut so tone mapping no longer bleaches it white. The light source now sits inside the paper; a larger sphere had lit the lantern's own outer faces.
+- **Glow in the air:** low, wide bloom that only emitters pass.
+- **Sky light:** a faint, cool, shadowless directional light from the open side of the valley.
+- **Darker blacks:** a darker mist colour, and banks 25 % darker (rain-damp ground).
+- **Reach:** lantern range 1.3 m → 1.0 m, in the engine light and in the custom shaders.
+
+Cover shots 7 and 8 were captured in a second run from the same web build, after the first run hit its one-hour limit; the CPU was shared with device-bring-up browser tests.
+
+**Panel** (each critic compared this round with `captures/round-11` side by side, order flipped)
+
+| Critic | Round 12 (new) | Round 11 (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.19 | 2.78 | +0.41 | 3.5 vs 3 |
+| b (new = Y) | 3.44 | 2.94 | +0.50 | 4 vs 3.5 |
+
+- **Gain +0.45** (critic spread 0.09), so **this round becomes the best** and M4 continues (round 3 of at most 8).
+- Absolute score 3.31 (inner 3.22, cover 3.41; worst shot 3.0).
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 98–99 %. It named the cube lantern, tiled moss, card leaves, and missing water optics (caustics, reflections broken by stones).
+- Tokens: 196k + 183k for the panel, 72k for the A/B critic.
+
+**What both critics credit:**
+- The lantern is no longer a clipped white box with a black outline. It is unclipped and warm: luma about 178, matching the paper in ref02.
+- The surround is 12–14 % darker, so the single warm source dominates (refs 02, 05, 10, 11).
+- The pool is warmer: red minus blue is 75–83 against 64–70, a stronger warm/cool split.
+
+**What both flag as remaining lighting problems:**
+1. **Hard-edged bright stripes on the bank slopes.** In shot 2 the lit bank is about 2.5 times as bright as the bed beside the lantern. A candle in paper barely lights a bank a few lantern-widths away (refs 01, 10).
+2. **The cube is dimmer than its own hot spot:** about 178 against 235–249 directly beneath it, so it reads as a box on a lamp. A real lantern has an opaque base, so the bed right under it is shaded and the paper is the brightest thing in frame (ref01's darker base).
+3. **Flat, directionless ambient and no visible glow in the air** around the light.
+
+**Other giveaways, for later stages:**
+- the stream reads as dry gravel, with no surface, glints or sky sheen (water; see the device note below)
+- the cube lantern itself (M7)
+- tiled grass (M6)
+- card leaves and disc fireflies (M6, M7)
+
+**Device note.** The first frames from the phone (test builds 10 to 12) found three problems the browser captures do not show:
+- the pebble bed rendered as a regular lattice (16-bit shader precision; fixed);
+- the water is not drawn at all on the phone: the effects probe measured about 1.4 luma change when the water is hidden, against 9.4 in the browser (being bisected in test build 13);
+- the glow may be weaker.
+
+The captures and this panel are browser-only.
+
+**Changes for round 13 (M4 v4):**
+- An opaque, dark base under the lantern that casts a shadow down: no hot spot beneath it, and the paper becomes the brightest thing.
+- Lantern core slightly brighter, still amber.
+- Softer, weaker bank spill: wider shadow penumbra, lower light intensity on the slopes.
+- A faint glow around the lantern in the damp air.
 
