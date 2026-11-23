@@ -38,6 +38,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-15 | lighting/fog v6 (panel) | 3.44 | 3.31 | 3.38 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 14: **+0.36** (critics +0.22 / +0.50). New best; lighting alone 4.0 vs 3.5 (both critics) |
 | round-16 | lighting/fog v7 (panel) | 3.41 | 3.44 | 3.42 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 15: **−0.31** (critics −0.50 / −0.12). Rejected; round 15 stays the best. 1st sub-0.3 round since round 14 |
 | round-17 | lighting/fog v8 (panel) | 3.75 | 3.86 | 3.80 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 15: **+0.05** (critics +0.50 / −0.41). New best by the ratchet (gain above zero), within noise. 2nd sub-0.3 round in a row and M4's 8th round → **M4 stops at round 17** |
+| round-18 | rain v1 (panel) | 3.56 | 3.84 | 3.70 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **−0.34** (critics −0.44 / −0.25). Rejected; round 17 stays the best. Rain alone 3.0 / 3.5 vs 2.0 (no rain). 1st sub-0.3 round in M5 |
 
 ## Round 1: water v1
 
@@ -721,3 +722,36 @@ The paired gains compound to roughly **+2.4 over M3's final version** in total, 
 3. **The water has no glints and still shows procedural ripple swirls or rings.** It also has no rain rings (M5 rain).
 4. **A flat, directionless ambient with no mist** (M5 rain and M8 post).
 5. **Card leaves and dot fireflies** (M7).
+
+## Round 18: rain v1 (M5), rejected
+
+**What changed** (built on round 17, the M4 final, judged against it):
+- **Streaks.** Rain streaks as particles. About 600 drops sit in a slab around the lantern and are lit by it; each glints like a small lens within 1 m. A faint share of sky light reaches them too. Streaks are about 1/40 s of motion. The game clock drives them, so captures freeze them like a photo.
+- **Rain rings on the water.** Three offset cell layers, one drop per cell per 0.8–1.7 s. Each ring is a 1 cm crest train growing at 11 cm/s. A splash glint shows at impact. Slopes are doubled.
+- **Wet banks and rocks.** Damp 0.35 → 0.7, and bare stone is glossier.
+
+**Panel** (each critic compared this round with `captures/round-17` side by side, order flipped). `System` here scores the rain and wetness alone.
+
+| Critic | Round 18 (new) | Round 17 (best) | Difference | Rain and wetness, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.62 | 4.06 | −0.44 | 3 vs 2 |
+| b (new = Y) | 3.78 | 4.03 | −0.25 | 3.5 vs 2 |
+
+- **Gain −0.34**, critic spread 0.19. **Rejected: round 17 stays the best.** This is M5's first round under 0.3; if the next is under 0.3 too, M5 stops at round 17, with no rain.
+- Absolute score 3.70; lowest shot 3.25.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 97–98 %. It named "evenly spaced, perfectly straight rain streaks" of identical length and angle.
+- Tokens: 193k + 184k for the panel, 73k for the A/B critic.
+
+**Where the critics agree:**
+- **The streaks read as an overlay, and they cost more than they add.** Both critics measured the same thing: every streak is about 1 px wide, the same length, the same lean and in sharp focus. Spread evenly up to a third of the frame from the lantern, they are "a field of streaks over the scene", not rain recorded by a lens.
+  - A camera this steep would see drops foreshortened and converging toward the point straight below it.
+  - Drops near the lens would be wide, soft smears.
+  - Critic a: "Real rainy-evening photos often show no streaks at all" (ref05: puddles and wet sheen everywhere, no streaks). Ref03 shows rain only through what it does to the water.
+  - Near the lantern the streaks lay "an orange, hairy halo" over the lit cobbles, with dark ticks over the bright water.
+- **The water should carry the rain, and it barely reacts.** Both critics barely found the rings: "the water does not react to it". Ref03 shows "the dense field of small overlapping impact rings and splash crowns". The large ripple swirls are still there and still read as painted.
+- **Wetness:** critic b preferred the new round's wet glints along the lantern-lit bank edges and rocks. It measured them 15–25 levels brighter, following the edges as on wet stone (refs 07, 01, 04), and found the darker banks right. Critic a saw the banks darker but "no wet sheen" and was neutral.
+
+**Changes for round 19 (rain v2, built on round 17):**
+- **No streaks.** The particle code stays but is off by default.
+- **Rings and crowns carry the rain.** A dense field of small overlapping rings: four cell layers of 7–14 cm, crests 6 mm apart, about three times as many rings at once. Splash crowns catch the lantern's light strongly near it: a crown is a small vertical sheet of water facing every way, so it glints where a flat surface cannot.
+- **Wetness is kept:** damp 0.7 and glossier bare stone.
