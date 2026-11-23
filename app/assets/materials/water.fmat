@@ -164,8 +164,14 @@ fragment {
 
     // --- refraction ------------------------------------------------------------
     vec3 v = GetViewDirection();  // toward the camera
-    float fragDepth = GetFragmentViewDepth();
-    float thick0 = max(GetSceneDepth(vec2(0.0)) - fragDepth, 0.0);
+    highp float fragDepth = GetFragmentViewDepth();
+    highp float sceneHere = GetSceneDepth(vec2(0.0));
+    // Never draw over something that stands in front of the water. On the
+    // phone (test17) the surface showed over low bank grass next to the
+    // stream, in straight-edged sheets following the water mesh's margin,
+    // which the depth test should have hidden. Test depth here too.
+    if (sceneHere < fragDepth - 0.004) discard;
+    float thick0 = max(sceneHere - fragDepth, 0.0);
     // Physical bend over the measured depth, plus an amplified ripple-only part
     // (amplifying the flat bend too would overshoot past object edges).
     vec3 tFlat = refract(-v, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);
@@ -180,8 +186,8 @@ fragment {
     float ripLen = length(rip);
     rip *= min(1.0, 0.006 / max(ripLen, 1e-5));
     vec2 off = base + rip;
-    float sceneD = GetSceneDepth(off);
-    float d0 = fragDepth + thick0;
+    highp float sceneD = GetSceneDepth(off);
+    highp float d0 = fragDepth + thick0;
     // Never sample across an object's edge: back off when the depth jumps.
     if (sceneD < fragDepth || abs(sceneD - d0) > 0.03 + thick0 * 0.5) {
       off *= 0.4;

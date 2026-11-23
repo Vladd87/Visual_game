@@ -9,3 +9,4 @@ Current ones go in `captures/device/`, which the critic packet includes.
   shader computed world positions, cell ids and hashes at medium (16-bit)
   precision, which the browser captures never show. Fixed in test build 11
   (highp for coordinates, ids and time; hash inputs wrapped).
+- `test15-cover-run-{a,b,c}.jpg`: test build 15, cover screen, mid-run (round-14 lighting candidate). First frames with the water drawn on the phone.

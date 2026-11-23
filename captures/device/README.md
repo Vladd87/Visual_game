@@ -9,6 +9,10 @@ They are **left out of the paired round panels** (new vs best, X/Y blind):
 they show only the newest build, so they would tell a critic which set is
 new and tilt the comparison.
 
-- `test15-cover-run-{a,b,c}.jpg`: test build 15, cover screen, mid-run
-  (round-14 lighting candidate). First frames with the water drawn on the
-  phone (see PLAN.md decisions: no `environment_lighting: false`).
+- `test17-inner-run-{a,b}.jpg`: test build 17, inner screen, mid-run
+  (round-15 lighting, the best so far). The water reads as a surface on the
+  phone (sky gaps through leaves). Run b shows a device-only bug: the water
+  surface drawn over low bank grass beside the stream, in straight-edged
+  sheets along the water mesh's margin. Build 18 adds a depth test in the
+  water shader for it.
+- Older device shots are in `../device-history/`.
