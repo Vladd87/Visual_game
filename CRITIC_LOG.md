@@ -34,6 +34,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-11 | lighting/fog v2 (panel) | 3.25 | 3.38 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 10: **+0.38** (critics +0.38 / +0.38). New best; lighting alone 4.25 vs 3.75 |
 | round-12 | lighting/fog v3 (panel) | 3.22 | 3.41 | 3.31 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 11: **+0.45** (critics +0.41 / +0.50). New best; lighting alone 3.75 vs 3.25 |
 | round-13 | lighting/fog v4 (panel) | 3.56 | 3.56 | 3.56 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 12: **−0.11** (critics +0.38 / −0.59). Rejected; round 12 stays the best. 1st sub-0.3 round in M4 |
+| round-14 | lighting/fog v5 (panel) | 3.25 | 3.33 | 3.29 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 12: **+0.44** (critics +0.38 / +0.50). New best; lighting alone 3.5 vs 3.0 (both critics). Resets the sub-0.3 count |
 
 ## Round 1: water v1
 
@@ -542,3 +543,43 @@ The captures and this panel are browser-only.
 - Lantern radiance well above the scene (emission about 1.6), so its mirror image and glints show on the water at a 55° view, the way a candle dominates ref02.
 - Lantern light about 15 % lower again on the banks, to fight the stripes.
 
+
+## Round 14: lighting and fog v5 (M4)
+
+**What changed** (built on round 13, judged against round 12, the best):
+- **Base:** the dark wooden base became a 4 cm candle holder, giving a small, soft darkening under the lantern.
+- **Lantern radiance:** emission 1.6, well above the rest of the scene, so the lantern reads as the light source.
+- **Bank spill:** lantern light about 15 % lower again.
+- **Kept from round 13:** shadow softness 11, the faint additive halo and the damp bank margin.
+- **Bug fix kept by the ratchet either way:** refraction offsets are capped at 6 mm, which ends the radial smears next to lit rocks (task 26, verified in the browser).
+
+**Panel** (each critic compared this round with `captures/round-12` side by side, order flipped)
+
+| Critic | Round 14 (new) | Round 12 (best) | Difference | Lighting alone, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.42 | 3.05 | +0.38 | 3.5 vs 3 |
+| b (new = Y) | 3.16 | 2.66 | +0.50 | 3.5 vs 3 |
+
+- **Gain +0.44**, critic spread 0.12. **Round 14 is the new best.** It is M4's fifth round, so three remain (rounds 15–17). Round 13's sub-0.3 result no longer counts toward the stop rule, because this round cleared 0.3.
+- Absolute score 3.29 (inner 3.25, cover 3.33); lowest shot 2.75.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 99 % on every pair.
+- Tokens: 183k + 173k for the panel; the A/B critic ran separately.
+
+**Why both critics preferred round 14:**
+- **The lantern reads as a light source.** Its body measures about L 213 against L 177 in round 12. Round 12's lantern looked like "a beige-grey box sitting in its own light".
+- **The pool is tighter.** In round 12 the lantern-to-surroundings ratio was about 2.7:1. Now it is about 3.5:1. The references are about 4:1 (ref02) and 20:1 (ref10).
+- **Shadows are cooler.** Critic b also noted the lantern's face is brighter and its warm pool tighter.
+
+**What both now rank first (unchanged since round 12):**
+1. **The water has no visible surface.** Open water measures L≈14–17, half the brightness of the grass (L≈31–37). In ref11 and ref01 the water is brighter than the banks because it mirrors the sky. Critic a calls this "the biggest lighting giveaway": the scene looks lit by a flat grey fill plus one point light rather than by a sky. Estimated gain if fixed: +1.5 to +2.
+2. **The lantern is a featureless glowing cube.** Its light is pale cream: the spill's green-to-red ratio is about 0.77, against 0.44 in ref02.
+3. **Flat, tiled, dry banks and matte rocks.**
+4. **Sprite props:** flat orange quads and identical round fireflies.
+5. **The "dusk" is a flat grey night.** There is no blue-hour colour in the darks (blue minus red is only about +4), no mist halos and no grain.
+
+**A/B methodology note (from the A/B critic, recorded as given).** The test is weak as built. All four render halves are frames of the same scene with the same giveaways (the emissive cube, the tiled banks, the floating quads, the same overhead night view). The photos differ in subject, viewpoint and lighting. So the pairs only show that the renders are easy to tell apart, not how realistic the water, wet stone or moss looks. A stronger test would pair each photo with a render of a matching subject, framing and time of day. *My response:* the fixed camera and scene make true matched pairs impossible for most references. From round 15 I keep the test (you asked for it) and read it as a pass/fail floor, not a gradient. The paired panel remains the measure of progress.
+
+**Changes for round 15 (M4 v6, built on round 14):**
+- **Blue-hour sky in the water.** The sky gaps in the reflection get brighter and bluer, so open water reads lighter than the banks where it faces the sky. The treeline mask stays, to avoid round 4's uniform veil. This is sky brightness, a lighting parameter; the water shader's structure is unchanged.
+- **Saturated amber light.** The lantern's light colour moves toward the candle amber of ref02. The body stays the brightest thing in frame.
+- **Blue in the darks.** The skylight gets a cooler, deeper blue, so shadowed banks read blue-hour rather than grey. Black levels are kept.
