@@ -40,6 +40,9 @@ class MainActivity : FlutterActivity() {
         const val EXTRA_AUTO = "lantern.auto"
         /** Bring-up: water material variant (0 = the real one). */
         const val EXTRA_WATER_VARIANT = "lantern.water_variant"
+        const val EXTRA_NO_REFLECT = "lantern.no_reflect"
+        const val EXTRA_WATER_QUAD = "lantern.water_quad"
+        const val EXTRA_WATER_NO_COLORS = "lantern.water_no_colors"
     }
 
     private fun flag(name: String) = intent?.getBooleanExtra(name, false) == true
@@ -111,6 +114,9 @@ class MainActivity : FlutterActivity() {
                     "stepByStep" to flag(EXTRA_STEP_BY_STEP),
                     "textureView" to flag(EXTRA_TEXTURE_VIEW),
                     "slowSteps" to flag(EXTRA_SLOW_STEPS),
+                    "noReflect" to flag(EXTRA_NO_REFLECT),
+                    "waterQuad" to flag(EXTRA_WATER_QUAD),
+                    "waterNoColors" to flag(EXTRA_WATER_NO_COLORS),
                     "auto" to (intent?.getStringExtra(EXTRA_AUTO) != null)))
                 "autoLabel" -> result.success(intent?.getStringExtra(EXTRA_AUTO))
                 "waterVariant" -> result.success(intent?.getIntExtra(EXTRA_WATER_VARIANT, 0) ?: 0)

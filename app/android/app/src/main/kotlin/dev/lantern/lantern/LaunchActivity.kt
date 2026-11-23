@@ -43,9 +43,19 @@ class LaunchActivity : Activity() {
          * interleaved. Each run takes the title screen apart piece by piece
          * and reads the screen back (device bring-up).
          */
-        private val AUTO_MODES: List<Pair<String, List<String>>> = listOf(
-            "default" to emptyList<String>(),
-        ) + (1..6).map { "water v$it" to listOf("${MainActivity.EXTRA_WATER_VARIANT}=$it") }
+        private val AUTO_MODES: List<Pair<String, List<String>>> = run {
+            val v1 = "${MainActivity.EXTRA_WATER_VARIANT}=1"
+            val ground = "${MainActivity.EXTRA_WATER_VARIANT}=9"
+            val noRefl = MainActivity.EXTRA_NO_REFLECT
+            listOf(
+                "default" to emptyList<String>(),
+                "no reflector" to listOf(noRefl),
+                "blue, no reflector" to listOf(v1, noRefl),
+                "ground material, no reflector" to listOf(ground, noRefl),
+                "blue quad, no reflector" to listOf(v1, MainActivity.EXTRA_WATER_QUAD, noRefl),
+                "blue, no colours, no reflector" to listOf(v1, MainActivity.EXTRA_WATER_NO_COLORS, noRefl),
+            )
+        }
         private const val AUTO_ROUNDS = 1
     }
 
@@ -112,7 +122,7 @@ class LaunchActivity : Activity() {
             textSize = 20f
         })
         root.addView(TextView(this).apply {
-            text = "Play starts the game. Auto test runs 7 short launches by itself (about 3 minutes): just watch, don't touch, and when this menu comes back, tap Copy and paste the report. Each run shows a yellow banner with its number."
+            text = "Play starts the game. Auto test runs 6 short launches by itself (about 2 minutes): just watch, don't touch, and when this menu comes back, tap Copy and paste the report. Each run shows a yellow banner with its number."
             setTextColor(Color.rgb(200, 200, 200))
             textSize = 13f
             setPadding(0, pad / 2, 0, pad / 2)

@@ -237,7 +237,7 @@ class GameScene {
     _waterNormal = await _loadTexture('assets/textures/water_normal.png');
     _sky = await _loadTexture('assets/textures/sky_blue.png', mipmaps: false);
     final wv = Diagnostics.waterVariant;
-    _waterMat = await loadFmatMaterial(wv > 0 ? 'assets/materials/bringup/water_v$wv.fmat' : 'assets/materials/water.fmat');
+    _waterMat = await loadFmatMaterial(wv > 0 && wv < 9 ? 'assets/materials/bringup/water_v$wv.fmat' : 'assets/materials/water.fmat');
     _groundMat = await loadFmatMaterial('assets/materials/ground.fmat');
     _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
     _waterMat!.parameters.setTexture('sky_tex', _sky!.gpuTexture, sampler: _sky!.sampledSampler);
@@ -281,6 +281,22 @@ class GameScene {
   }
 
   static const double envIntensity = 0.25;
+
+  /// Device bring-up: one flat quad over [m]'s extent at the water level,
+  /// with both windings, in place of the water mesh.
+  static MeshArrays _bringUpQuad(MeshArrays m) {
+    var x0 = double.infinity, x1 = -double.infinity, z0 = double.infinity, z1 = -double.infinity;
+    for (var i = 0; i < m.positions.length; i += 3) {
+      x0 = math.min(x0, m.positions[i]);
+      x1 = math.max(x1, m.positions[i]);
+      z0 = math.min(z0, m.positions[i + 2]);
+      z1 = math.max(z1, m.positions[i + 2]);
+    }
+    final pos = Float32List.fromList([x0, 0.001, z0, x1, 0.001, z0, x1, 0.001, z1, x0, 0.001, z1]);
+    final nrm = Float32List.fromList([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    final col = Float32List.fromList(List.filled(16, 0.5));
+    return MeshArrays(pos, nrm, col, [0, 1, 2, 0, 2, 3, 0, 2, 1, 0, 3, 2]);
+  }
 
   /// Soft radial falloff for the lantern halo (premultiplied, white).
   static Texture2D _haloTexture() {
@@ -345,13 +361,16 @@ class GameScene {
         name: 'ground_${d0.toStringAsFixed(0)}',
         mesh: Mesh(MeshGeometry.fromArrays(positions: g.positions, normals: g.normals, colors: g.colors, texCoords: g.texCoords, indices: g.indices), groundMat),
       )..shadowStatic = true;
-      final w = buildWaterChunk(c, world.flow, d0, d1);
+      final w = Diagnostics.waterQuad ? _bringUpQuad(buildWaterChunk(c, world.flow, d0, d1)) : buildWaterChunk(c, world.flow, d0, d1);
       final water = Node(
         name: 'water_${d0.toStringAsFixed(0)}',
-        mesh: Mesh(MeshGeometry.fromArrays(positions: w.positions, normals: w.normals, colors: w.colors, indices: w.indices), waterMat),
+        mesh: Mesh(
+            MeshGeometry.fromArrays(
+                positions: w.positions, normals: w.normals, colors: Diagnostics.waterNoColors ? null : w.colors, indices: w.indices),
+            Diagnostics.waterVariant == 9 ? groundMat : waterMat),
       )
         ..shadowCastingMode = ShadowCastingMode.off;
-      if (Uri.base.queryParameters['noreflect'] != '1' && !Diagnostics.noEffects) {
+      if (Uri.base.queryParameters['noreflect'] != '1' && !Diagnostics.noEffects && !Diagnostics.noReflect) {
         // One shared mirror capture for every water chunk (they are co-planar).
         final reflector = PlanarReflectorComponent(resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002);
         _reflectors.add(reflector);

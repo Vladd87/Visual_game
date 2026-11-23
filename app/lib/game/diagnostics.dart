@@ -60,6 +60,12 @@ class Diagnostics {
   /// feature fails on the phone's GPU.
   static int waterVariant = 0;
 
+  /// Bring-up: the water without its planar reflection component; drawn as a
+  /// plain quad per chunk; without vertex colours.
+  static bool noReflect = false;
+  static bool waterQuad = false;
+  static bool waterNoColors = false;
+
   /// Bring-up experiment: the 3D view is taken off screen while this is set.
   static final ValueNotifier<bool> hide3d = ValueNotifier(false);
 
@@ -77,6 +83,9 @@ class Diagnostics {
     if (f['noScene'] == true) noScene = true;
     if (f['stepByStep'] == true) stepByStep = true;
     if (f['slowSteps'] == true) slowSteps = true;
+    if (f['noReflect'] == true) noReflect = true;
+    if (f['waterQuad'] == true) waterQuad = true;
+    if (f['waterNoColors'] == true) waterNoColors = true;
     if (f['auto'] == true) auto = true;
     if (f['textureView'] == true) textureView = true;
     if (stepByStep) SchedulerBinding.instance.addTimingsCallback(_countFrames);
@@ -89,7 +98,10 @@ class Diagnostics {
         if (noScene) 'no scene',
         if (textureView) 'texture view',
         if (slowSteps) 'slow load',
-        if (waterVariant > 0) 'water v$waterVariant',
+        if (waterVariant > 0) waterVariant == 9 ? 'water as ground' : 'water v$waterVariant',
+        if (noReflect) 'no reflector',
+        if (waterQuad) 'quad',
+        if (waterNoColors) 'no colours',
       ].join(', ');
 
   static String get modeName => modeLabel.isEmpty ? 'default' : modeLabel;
