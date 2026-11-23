@@ -148,10 +148,10 @@ fragment {
       float R = life * 0.11;                         // ring front, about 11 cm/s
       float w = 0.005 + life * 0.012;                // the wave packet widens
       float x = r - R;
-      // A short train of crests behind the front, 8 mm apart.
+      // A short train of crests behind the front, 1 cm apart.
       float env = exp(-(x * x) / (w * w)) * step(x, w * 0.6);
-      float amp = 0.32 * exp(-life * 3.5) * (1.0 - smoothstep(maxR * 0.55, maxR, R));
-      float s = -sin(x * 785.4) * env * amp;         // 2 pi / 8 mm
+      float amp = 0.32 * exp(-life * 2.5) * (1.0 - smoothstep(maxR * 0.55, maxR, R));
+      float s = -sin(x * 628.3) * env * amp;         // 2 pi / 1 cm
       acc.xy += d / max(r, 1e-4) * s;
       // Splash: the crown catches light for a few frames after impact.
       acc.z += (1.0 - smoothstep(0.0015, 0.004, r)) * (1.0 - smoothstep(0.0, 0.07, life));

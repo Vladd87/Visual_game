@@ -63,6 +63,7 @@ class GameScene {
 
   // M5 rain: lantern-lit streaks (null with ?norain=1).
   RainEffect? _rain;
+  double? _lastRealTime;
 
   /// Device bring-up: switches each effect off and back on, so the effects
   /// probe can measure what each contributes on the phone and in the browser.
@@ -206,7 +207,7 @@ class GameScene {
     scene.add(_lantern);
 
     if (Uri.base.queryParameters['norain'] != '1') {
-      _rain = RainEffect(rate: _tune('rainrate', 3000), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 1.0),
+      _rain = RainEffect(rate: _tune('rainrate', 3000), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 3.0),
           stretch: _tune('rainstretch', 0.024));
       scene.add(_rain!.node
         ..shadowCastingMode = ShadowCastingMode.off
@@ -269,7 +270,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('sky_broad', _tune('skybroad', 0.6));
     _waterMat!.parameters.setFloat('canopy_scale', _tune('cscale', 1.0));
     // M5: light rain on the water (rings and splashes).
-    _waterMat!.parameters.setFloat('rain', _tune('rain', 1.0));
+    _waterMat!.parameters.setFloat('rain', _tune('rain', 2.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -507,12 +508,16 @@ class GameScene {
     _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * (0.03 + 0.18 * f * flicker);
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
+    final rainDt = _lastRealTime == null ? 0.0 : (realTime - _lastRealTime!).clamp(0.0, 0.1);
+    _lastRealTime = realTime;
     _rain?.update(
+      dt: rainDt,
       focus: vm.Vector3(lp.x, 0, lp.z),
       lanternPos: lp,
       lanternLight: ll,
       range: lanternRange,
-      sky: vm.Vector3(0.0035, 0.0045, 0.008),
+      // Dusk sky light caught by the drops: barely there against the dark.
+      sky: vm.Vector3(0.010, 0.013, 0.024),
     );
     for (final m in [_waterMat, _groundMat]) {
       if (m == null) continue;
