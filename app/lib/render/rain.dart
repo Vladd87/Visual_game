@@ -27,11 +27,13 @@ class RainEffect {
       ),
       spawner: Spawner(rate: rate),
       lifetime: const UniformFloat(0.12, 0.3),
-      startSpeed: const UniformFloat(4.2, 5.6),
+      // Fall speed grows with drop size (small drops about 3 m/s, large ones
+      // 6 m/s), so streak lengths differ.
+      startSpeed: const UniformFloat(3.0, 6.0),
       // Streak width (m). A drop is 1-2 mm, but motion blur and defocus at a
       // 5 m focus distance widen its streak to a few millimetres (refs 01,
       // 03); hair-thin streaks also vanish under TAA.
-      startSize: UniformFloat(0.004 * size, 0.006 * size),
+      startSize: UniformFloat(0.002 * size, 0.006 * size),
       modules: [_module],
       seed: 5,
       prewarm: 0.4,
@@ -64,10 +66,9 @@ class RainEffect {
     node.localTransform = vm.Matrix4.translation(vm.Vector3(focus.x, _baseY, focus.z));
     _module.lanternLocal.setValues(lanternPos.x - focus.x, lanternPos.y - _baseY, lanternPos.z - focus.z);
     _module.light.setFrom(lanternLight);
-    // A drop is a tiny lens: it glints with the lantern's light a little
-    // beyond the reach that lights the ground.
-    final r = math.max(range, 1.0);
-    _module.range2 = r * r;
+    // Drops show only inside the lantern's light (round 18: glints out to
+    // 1 m spread streaks a third of the frame away).
+    _module.range2 = range * range;
     _module.sky.setFrom(sky);
     if (dt > 0) emitter.system.step(dt);
     // Recolour every frame, also when the rain is frozen (capture).

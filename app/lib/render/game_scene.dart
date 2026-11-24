@@ -206,9 +206,9 @@ class GameScene {
     _lantern.add(_lanternLightNode);
     scene.add(_lantern);
 
-    // Falling streaks are off (round 18: they read as an overlay; a dusk
-    // photo shows rain on the water, not in the air). ?rainstreaks=1 for tests.
-    if (Uri.base.queryParameters['rainstreaks'] == '1') {
+    // Falling streaks only where the lantern lights them (M5 v3; round 18's
+    // streaks reached a third of the frame and read as an overlay).
+    if (Uri.base.queryParameters['rainstreaks'] != '0') {
       _rain = RainEffect(rate: _tune('rainrate', 3000), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 3.0),
           stretch: _tune('rainstretch', 0.024));
       scene.add(_rain!.node
@@ -522,8 +522,9 @@ class GameScene {
       lanternPos: lp,
       lanternLight: ll,
       range: lanternRange,
-      // Dusk sky light caught by the drops: barely there against the dark.
-      sky: vm.Vector3(0.010, 0.013, 0.024),
+      // Dusk sky light caught by the drops: next to nothing (round 18: dim
+      // streaks everywhere read as an overlay).
+      sky: vm.Vector3(0.002, 0.0025, 0.004),
     );
     for (final m in [_waterMat, _groundMat]) {
       if (m == null) continue;
