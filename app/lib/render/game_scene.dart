@@ -560,6 +560,10 @@ class GameScene {
             }
           }
         }
+        // Between flashes a firefly is a tiny dark bug, invisible at this
+        // distance: shrink it with its glow instead of drawing a black dot
+        // (critics: "dark specks read as dust or insects").
+        s *= (ff.glowAt(t) / 0.2).clamp(0.0, 1.0);
         list[i].setFromTranslationRotationScale(vm.Vector3(p.x, h, -p.y), vm.Quaternion.identity(), vm.Vector3.all(s));
       }
     });
