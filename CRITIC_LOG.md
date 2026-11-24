@@ -39,6 +39,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-16 | lighting/fog v7 (panel) | 3.41 | 3.44 | 3.42 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 15: **−0.31** (critics −0.50 / −0.12). Rejected; round 15 stays the best. 1st sub-0.3 round since round 14 |
 | round-17 | lighting/fog v8 (panel) | 3.75 | 3.86 | 3.80 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 15: **+0.05** (critics +0.50 / −0.41). New best by the ratchet (gain above zero), within noise. 2nd sub-0.3 round in a row and M4's 8th round → **M4 stops at round 17** |
 | round-18 | rain v1 (panel) | 3.56 | 3.84 | 3.70 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **−0.34** (critics −0.44 / −0.25). Rejected; round 17 stays the best. Rain alone 3.0 / 3.5 vs 2.0 (no rain). 1st sub-0.3 round in M5 |
+| round-19 | rain v2 (panel) | 3.78 | 3.97 | 3.88 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **+0.31** (critics +0.31 / +0.31). New best; resets the sub-0.3 count. Rain alone split (2.5 vs 3; 3 vs 2) |
 
 ## Round 1: water v1
 
@@ -755,3 +756,40 @@ The paired gains compound to roughly **+2.4 over M3's final version** in total, 
 - **No streaks.** The particle code stays but is off by default.
 - **Rings and crowns carry the rain.** A dense field of small overlapping rings: four cell layers of 7–14 cm, crests 6 mm apart, about three times as many rings at once. Splash crowns catch the lantern's light strongly near it: a crown is a small vertical sheet of water facing every way, so it glints where a flat surface cannot.
 - **Wetness is kept:** damp 0.7 and glossier bare stone.
+
+## Round 19: rain v2 (M5)
+
+**What changed** (built on round 17, judged against it):
+- **No falling streaks.**
+- **Denser, smaller rain rings:** four cell layers of 7–14 cm, crests 6 mm apart.
+- **Splash crowns** glint with the lantern's light.
+- **Wind ripples at half strength in rain.**
+- **Wetness from round 18 kept:** damp 0.7 and glossier bare stone.
+
+**Panel** (each critic compared this round with `captures/round-17` side by side, order flipped)
+
+| Critic | Round 19 (new) | Round 17 (best) | Difference | Rain and wetness, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.53 | 3.22 | +0.31 | 2.5 vs 3 |
+| b (new = Y) | 4.22 | 3.91 | +0.31 | 3 vs 2 |
+
+- **Gain +0.31**, critic spread 0.00. **Round 19 is the new best.** M5 continues; the sub-0.3 count resets.
+- Absolute score 3.88 (inner 3.78, cover 3.97); lowest shot 3.25.
+- **A/B** (separate critic, pairs only): **0/4 fooled**, 98–99 %. For the first time no tell was about the water or the rain. It named the cube lantern, the flat leaf cards and the tiled bed.
+- Tokens: 180k + 169k for the panel, 73k for the A/B critic.
+
+**What won: calmer water.** Both critics found the swirls far weaker in the new round.
+- **Critic b:** the new water "reads as a calm, dark, reflective surface", while the old round is "covered in curl-noise swirls that look like fingerprints or brush strokes". No real water forms whorls (refs 01, 07, 10, 03).
+- **Critic a, the other way round:** it saw the old round's whorls as oversized rain rings, "5–10 times too large and far too regular", and preferred the new round's "calm, glassy water with soft, wavy reflections".
+- Both found the old round's concentric rings across the shot-8 pool read as "a pattern laid over the image".
+
+**What still fails (both critics):**
+- **The rain is too faint and at the wrong scale.** Light rain should show as "a fine, even pocking across the whole surface" from a distance (ref01). Close up it is many small overlapping rings with crowns (ref05). The new round has only a handful of crisp, identical rings, plus dark specks that "read as dust or insects".
+- **The streaks should come back, inside the lantern's light only.** Critic b: "drops passing through a lamp's light should show as short bright streaks, not dark dots". Critic a: "no falling streaks anywhere, not even inside the lantern's light, where drops would catch it". Round 18's streaks failed because they spread a third of the frame out and were all identical, not because they existed.
+- **The rest, unchanged:** the cube lantern; the tiled bank carpet with knife-cut, dry, matte edges; no glitter path; card leaves and dot fireflies.
+
+**Changes for round 20 (rain v3, built on round 19):**
+- **Pocking.** Two fine layers of tiny impacts (3 and 4.2 cm cells, rings to about 1 cm, 5 mm crests, 0.25 s life) give a dense stipple across all open water.
+- **Varied rings.** Each drop gets its own strength and size, so the rings are no longer identical.
+- **Streaks back, only inside the lantern's light.** Drops glint within its 0.65 m reach (round 18 used 1 m), so only a handful show near the flame. Fall speeds range 3–6 m/s, so streak lengths differ, and widths vary.
+- **No dark specks.** The drifting foam flecks thin out in rain; dark against the sky sheen, they read as dirt.
