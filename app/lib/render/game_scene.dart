@@ -223,7 +223,7 @@ class GameScene {
     final fireflies = Node(name: 'fireflies')
       ..addComponent(InstancedMeshComponent(_fireflyMesh))
       ..shadowCastingMode = ShadowCastingMode.off
-      ..layers = kRenderLayerDefault | _noMirrorLayer
+      ..layers = _noMirrorLayer
       ..frustumCulled = false;
     if (Uri.base.queryParameters['noff'] != '1') scene.add(fireflies);
 
@@ -432,8 +432,10 @@ class GameScene {
         ..shadowCastingMode = ShadowCastingMode.off;
       if (Uri.base.queryParameters['noreflect'] != '1' && !Diagnostics.noEffects && !Diagnostics.noReflect) {
         // One shared mirror capture for every water chunk (they are co-planar).
-        // Fireflies stay out of the mirror: the reflection pass drew them as
-        // dark blobs, the "dark specks" critics saw in the pools since M2.
+        // Fireflies stay out of the mirror. At the mirror's 0.4 scale a 13 mm
+        // firefly covers part of a pixel; the water reads any lit mirror
+        // pixel as "an object hides the sky" and swapped the sky for that dim
+        // value: the "dark specks" critics saw in the pools since M2.
         final reflector = PlanarReflectorComponent(
             resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002, layerMask: kRenderLayerAll & ~_noMirrorLayer);
         _reflectors.add(reflector);
