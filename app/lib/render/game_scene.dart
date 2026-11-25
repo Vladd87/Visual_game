@@ -324,7 +324,7 @@ class GameScene {
       ..metallicFactor = 0
       // Rain-wet blades: a soft sheen.
       ..roughnessFactor = 0.5;
-    _grassClumps = [for (var s = 0; s < 4; s++) buildGrassClump(101 + s, blades: 10 + 3 * s, height: 0.10 + 0.02 * s)];
+    _grassClumps = [for (var s = 0; s < 4; s++) buildGrassClump(101 + s, blades: 16 + 4 * s, height: 0.09 + 0.02 * s)];
     // M5: rain wets the banks and rocks (0.35 was the light drizzle of M3/M4).
     final damp = _tune('damp', 0.7);
     for (final m in [_groundMat!, ..._rockMats]) {
@@ -423,7 +423,7 @@ class GameScene {
     final px = Uint8List(w * h * 4);
     for (var y = 0; y < h; y++) {
       final t = y / (h - 1); // v = 0 at the base
-      final r = (40 + 70 * t).round(), g = (52 + 78 * t).round(), b = (22 + 28 * t).round();
+      final r = (46 + 96 * t).round(), g = (62 + 110 * t).round(), b = (24 + 38 * t).round();
       for (var x = 0; x < w; x++) {
         final o = (y * w + x) * 4;
         px[o] = r;

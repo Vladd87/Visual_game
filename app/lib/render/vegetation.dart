@@ -132,6 +132,26 @@ double _hash(int a, int b, int s) {
   return (h & 0xffffff) / 0x1000000;
 }
 
+/// Smooth value noise in [0, 1] at [p] (metres) with cells of [cell] m.
+double _noise(V2 p, double cell, int salt) {
+  final x = p.x / cell, y = p.y / cell;
+  final ix = x.floor(), iy = y.floor();
+  final fx = x - ix, fy = y - iy;
+  final ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+  final a = _hash(ix, iy, salt), b = _hash(ix + 1, iy, salt);
+  final c = _hash(ix, iy + 1, salt), d = _hash(ix + 1, iy + 1, salt);
+  return (a + (b - a) * ux) * (1 - uy) + (c + (d - c) * ux) * uy;
+}
+
+/// Patchiness: grass grows in clumped stands with bare gaps, not as an
+/// even sprinkle (PLAN.md: never "regularly spaced").
+double _patch(V2 p, int salt) => 0.65 * _noise(p, 0.7, salt) + 0.35 * _noise(p, 0.23, salt + 1);
+
+double _smooth(double e0, double e1, double x) {
+  final t = ((x - e0) / (e1 - e0)).clamp(0.0, 1.0);
+  return t * t * (3 - 2 * t);
+}
+
 /// Deterministic scatter over the banks of [c].
 ///
 /// Zones by distance [out] outside the (noisy) water's edge:
@@ -181,8 +201,10 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
       final o = outside(p);
       if (o < -0.01) continue;
       final r = _hash(i, j, 3);
+      final patch = _patch(p, 5);
       if (o < 0.12) {
-        if (r > 0.6) continue;
+        // Dense along the waterline, with gaps where the bank is bare mud.
+        if (r > 0.25 + 0.65 * _smooth(0.3, 0.6, patch)) continue;
         if (!clearOfRocks(p, 0.03)) continue;
         // Lean toward the water: tilt about the bank's tangent.
         final e = 0.02;
@@ -195,7 +217,8 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
             _hash(i, j, 6) * math.pi * 2,
             tiltX: wz * lean, tiltZ: -wx * lean);
       } else if (o < 2.5) {
-        final density = 0.16 * (1 - (o / 2.5)) + 0.05;
+        // Stands of grass (up to most cells) separated by bare patches.
+        final density = 0.85 * _smooth(0.45, 0.7, patch) * (1 - 0.4 * (o / 2.5)) + 0.02;
         if (r > density) continue;
         if (!clearOfRocks(p, 0.03)) continue;
         place(PlantKind.grass, (r * 97).floor() % grassVariants, p, 0.8 + 0.7 * _hash(i, j, 5),
@@ -205,8 +228,8 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
   }
   // Coarse grids: ferns and sorrel.
   for (final (kind, cell, oMin, oMax, prob) in const [
-    (PlantKind.fern, 0.55, 0.10, 1.2, 0.42),
-    (PlantKind.sorrel, 0.32, 0.05, 2.0, 0.22),
+    (PlantKind.fern, 0.42, 0.08, 1.4, 0.55),
+    (PlantKind.sorrel, 0.22, 0.04, 2.2, 0.75),
   ]) {
     final salt = kind.index * 31;
     for (var i = (-2.5 / cell).floor(); i * cell < dEnd; i++) {
@@ -216,8 +239,11 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
         final p = V2(cx + (j + _hash(i, j, salt + 1)) * cell, d0 + _hash(i, j, salt + 2) * cell);
         final o = outside(p);
         if (o < oMin || o > oMax) continue;
-        // Ferns favour the moist ground near the water.
-        final pr = kind == PlantKind.fern ? prob * (1.2 - 0.6 * (o / oMax)) : prob;
+        // Ferns favour the moist ground near the water and grow in groups;
+        // sorrel carpets the gaps between grass stands.
+        final pr = kind == PlantKind.fern
+            ? prob * (1.2 - 0.6 * (o / oMax)) * _smooth(0.35, 0.65, _noise(p, 1.1, 9))
+            : prob * (1 - _smooth(0.4, 0.62, _patch(p, 5)));
         if (_hash(i, j, salt + 3) > pr) continue;
         if (kind == PlantKind.fern) {
           final v = (_hash(i, j, salt + 4) * fernVariants).floor() % fernVariants;
@@ -225,7 +251,7 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
           place(kind, v, p, 0.45 + 0.45 * _hash(i, j, salt + 5), _hash(i, j, salt + 6) * math.pi * 2, sink: 0.01);
         } else {
           if (!clearOfRocks(p, 0.08)) continue;
-          place(kind, 0, p, 0.8 + 0.6 * _hash(i, j, salt + 5), _hash(i, j, salt + 6) * math.pi * 2, sink: 0.002);
+          place(kind, 0, p, 1.0 + 0.8 * _hash(i, j, salt + 5), _hash(i, j, salt + 6) * math.pi * 2, sink: 0.002);
         }
       }
     }

@@ -13,6 +13,10 @@ Only CC0 assets ship in the app. Every file is logged here with its source, URL 
 | `assets/textures/surfaces/moss_*.jpg` | ambientCG "Moss 001" | https://ambientcg.com/view?id=Moss001 | CC0 | Moss cushions on the banks; 1K JPG set, repacked. |
 | `assets/textures/surfaces/forest_ground_*.jpg` | ambientCG "Ground 037" | https://ambientcg.com/view?id=Ground037 | CC0 | Damp forest ground, the bank base layer; 1K JPG set, repacked. |
 | `assets/textures/surfaces/mud_*.jpg` | Poly Haven "Brown Mud 02" by Rob Tuytel | https://polyhaven.com/a/brown_mud_02 | CC0 | Wet mud band at the waterline; 1k, repacked. |
+| `assets/plants/plants.bin` (ferns) | Poly Haven "Fern 02" | https://polyhaven.com/a/fern_02 | CC0 | Four fern variants (784–2,384 triangles each) from the 1k glTF, converted to native axes and centred by `tools/bake/bake_plants.py`. Added in M6. |
+| `assets/plants/plants.bin` (sorrel) | Poly Haven "Shrub Sorrel 01" | https://polyhaven.com/a/shrub_sorrel_01 | CC0 | One ground-cover clump (3,319 triangles) merged from the 1k glTF's eleven sprigs by the same script. Added in M6. |
+| `assets/textures/plants/{fern_02,shrub_sorrel_01}_col.png` | Same two Poly Haven models (diffuse and alpha maps) | as above | CC0 | Diffuse with the alpha mask packed into A (1k RGBA) for alpha-tested leaves. |
+| Grass clumps | Procedural, `lib/render/vegetation.dart` | (generated) | CC0 (original work) | Tapering, arching blades built at load; colour from a generated base-to-tip gradient. |
 | Course, terrain, rock placement and mounds, pebble bed, fireflies, leaves | Procedural (code) | (generated) | CC0 (original work) | The pebble bed is a shader (`assets/materials/ground.fmat`). The greybox icosphere rocks were replaced by the scans in M3. |
 
 Planned sources (PLAN.md §3): Poly Haven models, textures and HDRIs, and ambientCG materials, all CC0. Audio will be synthesised offline (`tools/audio/`), so it is CC0 by construction.
