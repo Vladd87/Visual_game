@@ -15,6 +15,7 @@ import 'rain.dart';
 import 'rock_layout.dart';
 import 'surface_pack.dart';
 import 'terrain.dart';
+import 'vegetation.dart';
 
 /// Builds and animates the 3D scene for a [World].
 ///
@@ -44,6 +45,11 @@ class GameScene {
   List<RockScan> _rockScans = const [];
   final List<PreprocessedMaterial> _rockMats = [];
   final List<Node> _rockNodes = [];
+  // M6 vegetation: baked CC0 plants and procedural grass, per-chunk batches.
+  List<PlantModel> _plants = const [];
+  List<MeshGeometry> _grassClumps = const [];
+  Material? _fernMat, _sorrelMat, _grassMat;
+  final List<Node> _plantNodes = [];
   // Sky-lit ambient for the hand-made terms in water.fmat and ground.fmat:
   // about a tenth of the open-sky radiance at envIntensity (blue hour).
   // (Doubled in M4 v2: sky light scattered in the tannin water fills the
@@ -307,6 +313,18 @@ class GameScene {
     for (final m in [_waterMat!, _groundMat!]) {
       m.parameters.setVec3('ambient', ambient);
     }
+    // M6 vegetation (Poly Haven fern_02 and shrub_sorrel_01, CC0).
+    await Diagnostics.checkpoint('plants');
+    _plants = await loadPlants();
+    _fernMat = _plantMaterial(await _loadTexture('assets/textures/plants/fern_02_col.png', content: TextureContent.color));
+    _sorrelMat = _plantMaterial(await _loadTexture('assets/textures/plants/shrub_sorrel_01_col.png', content: TextureContent.color));
+    _grassMat = PhysicallyBasedMaterial()
+      ..baseColorTexture = _grassGradient()
+      ..doubleSided = true
+      ..metallicFactor = 0
+      // Rain-wet blades: a soft sheen.
+      ..roughnessFactor = 0.5;
+    _grassClumps = [for (var s = 0; s < 4; s++) buildGrassClump(101 + s, blades: 10 + 3 * s, height: 0.10 + 0.02 * s)];
     // M5: rain wets the banks and rocks (0.35 was the light drizzle of M3/M4).
     final damp = _tune('damp', 0.7);
     for (final m in [_groundMat!, ..._rockMats]) {
@@ -387,6 +405,34 @@ class GameScene {
     return Texture2D.fromPixels(data!.buffer.asUint8List(), image.width, image.height,
         content: content,
         sampling: TextureSampling(maxAnisotropy: 8, mipmaps: mipmaps));
+  }
+
+  /// Leaf cut-outs: alpha-tested, both sides lit; wet leaves are a little
+  /// glossy (refs 01, 04).
+  static Material _plantMaterial(Texture2D colour) => PhysicallyBasedMaterial()
+    ..baseColorTexture = colour
+    ..alphaMode = AlphaMode.mask
+    ..alphaCutoff = 0.5
+    ..doubleSided = true
+    ..metallicFactor = 0
+    ..roughnessFactor = 0.5;
+
+  /// Blade colour from base (dark, shaded by the clump) to tip (paler).
+  static Texture2D _grassGradient() {
+    const w = 4, h = 64;
+    final px = Uint8List(w * h * 4);
+    for (var y = 0; y < h; y++) {
+      final t = y / (h - 1); // v = 0 at the base
+      final r = (40 + 70 * t).round(), g = (52 + 78 * t).round(), b = (22 + 28 * t).round();
+      for (var x = 0; x < w; x++) {
+        final o = (y * w + x) * 4;
+        px[o] = r;
+        px[o + 1] = g;
+        px[o + 2] = b;
+        px[o + 3] = 255;
+      }
+    }
+    return Texture2D.fromPixels(px, w, h, content: TextureContent.color);
   }
 
   static void _bind(PreprocessedMaterial m, String name, Texture2D t) =>
@@ -489,6 +535,43 @@ class GameScene {
     }
     for (final n in _rockNodes) {
       scene.add(n);
+    }
+
+    // M6 vegetation, batched per 4 m chunk so whole chunks cull by bounds.
+    for (final n in _plantNodes) {
+      scene.remove(n);
+    }
+    _plantNodes.clear();
+    if (_plants.isNotEmpty && Uri.base.queryParameters['noplants'] != '1') {
+      final ferns = [for (final p in _plants) if (p.kind == 0) p];
+      final sorrel = _plants.firstWhere((p) => p.kind == 1);
+      final batches = <String, InstancedMesh>{};
+      for (final pl in vegetationPlacements(c, rockPlacements(c, flatGroundHeight),
+          fernVariants: ferns.length, grassVariants: _grassClumps.length)) {
+        final ci = ((pl.d + 2.5) / chunk).floor();
+        final key = '${pl.kind.name}_${pl.variant}_$ci';
+        final mesh = batches.putIfAbsent(key, () {
+          final (MeshGeometry geo, Material mat) = switch (pl.kind) {
+            PlantKind.fern => (ferns[pl.variant].geometry, _fernMat!),
+            PlantKind.sorrel => (sorrel.geometry, _sorrelMat!),
+            PlantKind.grass || PlantKind.edgeGrass => (_grassClumps[pl.variant], _grassMat!),
+          };
+          return InstancedMesh(geometry: geo, material: mat, cullInstances: true);
+        });
+        mesh.addInstance(pl.transform, color: pl.tint);
+      }
+      for (final e in batches.entries) {
+        final kind = e.key.split('_').first;
+        final node = Node(name: 'plants_${e.key}')
+          ..addComponent(InstancedMeshComponent(e.value))
+          ..shadowStatic = true;
+        // Only ferns are big enough to cast the lantern's shadow; ground
+        // cover away from the water stays out of the mirror (cost).
+        if (kind != PlantKind.fern.name) node.shadowCastingMode = ShadowCastingMode.off;
+        if (kind == PlantKind.sorrel.name || kind == PlantKind.grass.name) node.layers = _noMirrorLayer;
+        _plantNodes.add(node);
+        scene.add(node);
+      }
     }
 
     // Fireflies follow the course list one-to-one.
