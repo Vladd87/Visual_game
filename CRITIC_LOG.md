@@ -40,6 +40,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-17 | lighting/fog v8 (panel) | 3.75 | 3.86 | 3.80 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 15: **+0.05** (critics +0.50 / −0.41). New best by the ratchet (gain above zero), within noise. 2nd sub-0.3 round in a row and M4's 8th round → **M4 stops at round 17** |
 | round-18 | rain v1 (panel) | 3.56 | 3.84 | 3.70 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **−0.34** (critics −0.44 / −0.25). Rejected; round 17 stays the best. Rain alone 3.0 / 3.5 vs 2.0 (no rain). 1st sub-0.3 round in M5 |
 | round-19 | rain v2 (panel) | 3.78 | 3.97 | 3.88 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **+0.31** (critics +0.31 / +0.31). New best; resets the sub-0.3 count. Rain alone split (2.5 vs 3; 3 vs 2) |
+| round-20 | rain v3 (panel) | 3.69 | 3.81 | 3.75 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 19: **−0.02** (critics −0.38 / +0.34). Rejected; round 19 stays the best. 1st sub-0.3 round since round 19 |
 
 ## Round 1: water v1
 
@@ -793,3 +794,42 @@ The paired gains compound to roughly **+2.4 over M3's final version** in total, 
 - **Varied rings.** Each drop gets its own strength and size, so the rings are no longer identical.
 - **Streaks back, only inside the lantern's light.** Drops glint within its 0.65 m reach (round 18 used 1 m), so only a handful show near the flame. Fall speeds range 3–6 m/s, so streak lengths differ, and widths vary.
 - **No dark specks.** The drifting foam flecks thin out in rain; dark against the sky sheen, they read as dirt.
+
+## Round 20: rain v3 (M5), rejected
+
+**What changed** (built on round 19, judged against it):
+- **Streaks back, inside the lantern's 0.65 m reach only.** Fall speeds range 3–6 m/s and widths 2–6 mm.
+- **Each rain ring varies.** Strength and size change per drop.
+- **Two fine pocking layers** (3 and 4.2 cm cells).
+- **Fewer foam flecks in rain.**
+- **Fireflies shrink with their glow.** This had no effect: the glow never falls below 0.25 (see below).
+
+**Panel** (each critic compared this round with `captures/round-19` side by side, order flipped)
+
+| Critic | Round 20 (new) | Round 19 (best) | Difference | Rain and wetness, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.34 | 3.72 | −0.38 | 3 vs 2.5 |
+| b (new = Y) | 4.16 | 3.81 | +0.34 | 3.5 vs 2.5 |
+
+- **Gain −0.02**, with a critic spread of 0.72. **Rejected: round 19 stays the best.** This is M5's first round under 0.3 since round 19; if round 21 is under 0.3 too, M5 stops at round 19.
+- Absolute score 3.75; lowest shot 3.25.
+- **A/B:** 0/4 fooled, all at 99 %. It named "identical straight streaks".
+- Tokens: 184k + 192k for the panel, 73k for the A/B critic.
+
+**The split is entirely about the streaks.**
+- **Critic a: an overlay.** It measured detail 7–21 % more vertical near the lantern: "thin lines of similar length, almost perfectly vertical and parallel everywhere", laid "exactly on the brightest area" as "a scratched, striped texture".
+- **Critic b: right in kind.** Warm, inside the lit zone only, and with "true perspective: the lean changes from about 12° at the left edge to about 1° at the right". It still found the length, width and brightness too uniform, saw no large out-of-focus drops near the camera, and noted the streaks stop sharply at the edge of the lit zone.
+
+**Both found the pocking missing**, and they were right: it never reached the captures. The fine layers faded out where a crest spans under 3 pixels of the summed screen-space derivative (`fwidth`). At the half-resolution captures that fade removed about 85 % of the layers. At the phone's full resolution they show.
+
+**Dark specks.** Critic b still saw "a patch of dark pepper specks on the pool in shot 8".
+- I first blamed the fireflies' glow, wrongly.
+- Isolation tests then ruled out, one by one: foam off (specks stay), lantern shadows off (stay), ambient occlusion off (stay). Hiding the fireflies (specks go) and turning the water reflection off (specks go) both cleared them.
+- **The cause is the planar mirror.** It renders at 0.4 resolution, so a 13 mm firefly covers part of a pixel. The water treats any lit mirror pixel as "an object hides the sky here", so it swapped the sky reflection for that dim value, which shows as a dark speck.
+- **The fix:** fireflies are now on a render layer the mirror skips. This also explains the "dark ring outlines" critics noted around fireflies since M2.
+
+**Changes for round 21 (rain v4, built on round 19):**
+- **Streaks off again.** They split the panel twice.
+- **Pocking that survives the captures.** The fine layers fade only where a 7 mm crest spans under about 2 pixels on the worse axis.
+- **Fireflies out of the mirror** (the speck fix).
+- **Kept from round 20:** rings that vary per drop, and fewer foam flecks in rain.
