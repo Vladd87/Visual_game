@@ -41,6 +41,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-18 | rain v1 (panel) | 3.56 | 3.84 | 3.70 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **−0.34** (critics −0.44 / −0.25). Rejected; round 17 stays the best. Rain alone 3.0 / 3.5 vs 2.0 (no rain). 1st sub-0.3 round in M5 |
 | round-19 | rain v2 (panel) | 3.78 | 3.97 | 3.88 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **+0.31** (critics +0.31 / +0.31). New best; resets the sub-0.3 count. Rain alone split (2.5 vs 3; 3 vs 2) |
 | round-20 | rain v3 (panel) | 3.69 | 3.81 | 3.75 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 19: **−0.02** (critics −0.38 / +0.34). Rejected; round 19 stays the best. 1st sub-0.3 round since round 19 |
+| round-21 | rain v4 (panel) | 3.44 | 3.72 | 3.58 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 19: **+0.09** (critics +0.12 / +0.06). New best by the ratchet. 2nd sub-0.3 round in a row → **M5 stops at round 21** |
 
 ## Round 1: water v1
 
@@ -833,3 +834,53 @@ The paired gains compound to roughly **+2.4 over M3's final version** in total, 
 - **Pocking that survives the captures.** The fine layers fade only where a 7 mm crest spans under about 2 pixels on the worse axis.
 - **Fireflies out of the mirror** (the speck fix).
 - **Kept from round 20:** rings that vary per drop, and fewer foam flecks in rain.
+
+## Round 21: rain v4 (M5), the last M5 round
+
+**What changed** (built on round 19, judged against it):
+- **Streaks off.**
+- **Pocking sized to survive the half-resolution captures.**
+- **Fireflies on a render layer the planar mirror skips** (the dark-speck fix).
+- **Kept from round 20:** rings that vary per drop, and fewer foam flecks in rain.
+
+**Panel** (each critic compared this round with `captures/round-19` side by side, order flipped)
+
+| Critic | Round 21 (new) | Round 19 (best) | Difference | Rain and wetness, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.53 | 3.41 | +0.12 | 2.5 vs 2 |
+| b (new = Y) | 3.62 | 3.56 | +0.06 | 3 vs 2.5 |
+
+- **Gain +0.09**, critic spread 0.06. By the ratchet round 21 is the new best. It is M5's second round in a row under 0.3, so **M5 stops at round 21**.
+- Absolute score 3.58 (inner 3.44, cover 3.72); lowest shot 2.75.
+- **A/B:** 0/4 fooled, all at 99 %. The tells it named were the box lantern, the repeating textures and the firefly dots; none was rain.
+- Tokens: 206k + 190k for the panel, 73k for the A/B critic.
+
+**What the gain was: the specks.** Both critics measured the old round's shot-8 pool against the new one.
+- **Critic a:** the old round has "4–7× more dark specks".
+- **Critic b:** "76 vs 42 isolated dark points, 12 vs 32 bright ones" in the new round's favour. Bright impact glints replaced black pepper.
+- **Everything else** measured identical within noise.
+
+**What still fails in the rain (both critics):**
+- **Too sparse.** The rain is "a few sparse, crisp, dark-edged rings on an otherwise still mirror" rather than "a dense, even field of fine pocks catching the lantern light as glints" (refs 01, 04, 02).
+- **Fine texture:** the fine pocking now registers only as 5–10 % more fine water texture (critic a).
+- **Wetness:** rocks and banks still read matte and dry except the lit lip.
+
+## M5 rain: summary
+
+M5 stops at round 21 under the stop rule: two rounds in a row under +0.3 (rounds 20 and 21).
+
+| Round | Change | Gain over best |
+|---|---|---|
+| 18 | lit particle streaks, rings, wet stone | −0.34 (rejected) |
+| 19 | no streaks, denser rings, crowns, wind ripples at half strength | **+0.31** |
+| 20 | streaks inside the lantern's light, varied rings, pocking (faded out of captures) | −0.02 (rejected) |
+| 21 | no streaks, pocking visible, fireflies out of the mirror | +0.09 |
+
+M5's net gain over M4 final is about +0.4. Most of it came from calming the wind ripples and from the dark-speck fix, not from rain itself.
+
+**What M5 learned:**
+- **Falling rain streaks split critics** whatever their density or extent: an overlay to one, rain to the other. A dusk photo mostly shows rain on surfaces.
+- **At this steep 55° view,** water reflects about 2.5 %, so impact rings have little to catch. They need lit glints, which only exist near the lantern.
+
+**Still open for later systems:**
+- Rain visibility could come back through post (M8: grain, a little veiling glare in damp air) and through the lantern's reflection breaking on the rings (M7).
