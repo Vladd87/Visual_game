@@ -206,9 +206,10 @@ class GameScene {
     _lantern.add(_lanternLightNode);
     scene.add(_lantern);
 
-    // Falling streaks only where the lantern lights them (M5 v3; round 18's
-    // streaks reached a third of the frame and read as an overlay).
-    if (Uri.base.queryParameters['rainstreaks'] != '0') {
+    // Falling streaks are off: round 18 read them as an overlay and round 20
+    // split the panel (+0.34 / -0.38) even confined to the lantern's light.
+    // ?rainstreaks=1 for tests.
+    if (Uri.base.queryParameters['rainstreaks'] == '1') {
       _rain = RainEffect(rate: _tune('rainrate', 3000), size: _tune('rainsize', 1.0), glow: _tune('rainglow', 3.0),
           stretch: _tune('rainstretch', 0.024));
       scene.add(_rain!.node
@@ -219,10 +220,12 @@ class GameScene {
     // Fireflies: tiny emissive spheres, instanced.
     final fireflyMat = UnlitMaterial()..baseColorFactor = vm.Vector4(3.2, 4.0, 1.1, 1);
     _fireflyMesh = InstancedMesh(geometry: SphereGeometry(radius: 0.0065, segments: 8, rings: 5), material: fireflyMat);
-    scene.add(Node(name: 'fireflies')
+    final fireflies = Node(name: 'fireflies')
       ..addComponent(InstancedMeshComponent(_fireflyMesh))
       ..shadowCastingMode = ShadowCastingMode.off
-      ..frustumCulled = false);
+      ..layers = kRenderLayerDefault | _noMirrorLayer
+      ..frustumCulled = false;
+    if (Uri.base.queryParameters['noff'] != '1') scene.add(fireflies);
 
     // Leaves: thin cards, instanced; hidden ones are scaled to zero.
     final leafMat = PhysicallyBasedMaterial()
@@ -277,6 +280,7 @@ class GameScene {
     // drop rings (M5 v2): at full strength their flow-stretched pattern read
     // as painted swirls and concentric arcs (critics, rounds 15-18).
     _waterMat!.parameters.setFloat('normal_strength', _tune('nstr', 0.5));
+    _waterMat!.parameters.setFloat('foam_amount', _tune('foam', 1.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -318,6 +322,9 @@ class GameScene {
   /// Diffuse sky fill (image-based light) on banks, rocks and bed. M4 v6:
   /// 0.25 -> 0.19, so the canopy-shaded banks sit darker than the open sky
   /// the water mirrors (critics: "lit by a flat grey fill, not by a sky").
+  /// Render layer for things the water's planar mirror must not draw.
+  static const int _noMirrorLayer = 1 << 4;
+
   static final double envIntensity = _tune('env', 0.19);
 
   /// Radiance of the open sky the water reflects, in the same units as
@@ -425,7 +432,10 @@ class GameScene {
         ..shadowCastingMode = ShadowCastingMode.off;
       if (Uri.base.queryParameters['noreflect'] != '1' && !Diagnostics.noEffects && !Diagnostics.noReflect) {
         // One shared mirror capture for every water chunk (they are co-planar).
-        final reflector = PlanarReflectorComponent(resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002);
+        // Fireflies stay out of the mirror: the reflection pass drew them as
+        // dark blobs, the "dark specks" critics saw in the pools since M2.
+        final reflector = PlanarReflectorComponent(
+            resolutionScale: 0.4, reflectionGroupId: 0, clipBias: 0.002, layerMask: kRenderLayerAll & ~_noMirrorLayer);
         _reflectors.add(reflector);
         water.addComponent(reflector);
       }
@@ -560,10 +570,6 @@ class GameScene {
             }
           }
         }
-        // Between flashes a firefly is a tiny dark bug, invisible at this
-        // distance: shrink it with its glow instead of drawing a black dot
-        // (critics: "dark specks read as dust or insects").
-        s *= (ff.glowAt(t) / 0.2).clamp(0.0, 1.0);
         list[i].setFromTranslationRotationScale(vm.Vector3(p.x, h, -p.y), vm.Quaternion.identity(), vm.Vector3.all(s));
       }
     });
