@@ -42,6 +42,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-19 | rain v2 (panel) | 3.78 | 3.97 | 3.88 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 17: **+0.31** (critics +0.31 / +0.31). New best; resets the sub-0.3 count. Rain alone split (2.5 vs 3; 3 vs 2) |
 | round-20 | rain v3 (panel) | 3.69 | 3.81 | 3.75 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 19: **−0.02** (critics −0.38 / +0.34). Rejected; round 19 stays the best. 1st sub-0.3 round since round 19 |
 | round-21 | rain v4 (panel) | 3.44 | 3.72 | 3.58 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 19: **+0.09** (critics +0.12 / +0.06). New best by the ratchet. 2nd sub-0.3 round in a row → **M5 stops at round 21** |
+| round-22 | vegetation v1 (panel) | 3.97 | 4.03 | 4.00 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 21 (M5 final): **+0.62** (critics +0.69 / +0.56). New best; vegetation alone 4 vs 2.5 (both critics) |
 
 ## Round 1: water v1
 
@@ -884,3 +885,44 @@ M5's net gain over M4 final is about +0.4. Most of it came from calming the wind
 
 **Still open for later systems:**
 - Rain visibility could come back through post (M8: grain, a little veiling glare in damp air) and through the lantern's reflection breaking on the rings (M7).
+
+## Round 22: vegetation v1 (M6)
+
+**What changed** (built on round 21, the M5 final, judged against it):
+- **Plants on the banks:** Poly Haven `fern_02` (four variants) and `shrub_sorrel_01` (CC0 scans with alpha-masked leaves), plus procedural grass clumps of 16–28 tapering, arching blades.
+- **Placement by distance from the noisy waterline:**
+  - dense grass leaning over the water at the edge
+  - ferns grouped near the water
+  - grass stands across the bank
+  - sorrel in the gaps
+- **Patchiness:** a smooth noise field gives stands and bare patches.
+- **Budget:** per-4 m-chunk instancing. Only ferns cast the lantern's shadow, and ground cover stays out of the mirror.
+
+**Panel** (each critic compared this round with `captures/round-21` side by side, order flipped). `System` scores the vegetation and banks alone.
+
+| Critic | Round 22 (new) | Round 21 (best) | Difference | Vegetation and banks, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.00 | 3.31 | +0.69 | 4 vs 2.5 |
+| b (new = X) | 4.00 | 3.44 | +0.56 | 4 vs 2.5 |
+
+- **Gain +0.62**, critic spread 0.12, the largest since round 10. **Round 22 is the new best.** Absolute score 4.00 (inner 3.97, cover 4.03); lowest shot 3.5.
+- **A/B:** 0/4 fooled, all at 99 %. It named "identical repeated grass cards".
+- Tokens: 166k + 166k for the panel, 72k for the A/B critic.
+
+**Why both critics preferred it:**
+- **Plants break the bank's outline and shade themselves.** The old banks read as "felt or carpet" or "a terrain prototype" (refs 01, 03, 05).
+- **At the waterline, grass leans over the water.** It hides the hard spline-cut edge and the smeared, lantern-lit bank face. Near the lantern the blades "glow warm with light passing through" them. Critic b called this "the most photographic thing in either build" (ref02, ref07).
+- **Grass shadows deepen the darks:** the darkest 1 % of pixels fell from about 7 to 2–3.
+
+**What still fails in the vegetation (both critics):**
+- **"One species of identical tufts, all the same size, evenly spaced on bare gravel,"** almost on a grid (right halves of shots 2, 6 and 7). There are no dense mats spilling toward the water, no dead brown blades and no mixed species. Real banks crowd where the ground is wet (refs 03, 05, 01, 09).
+- **Flowers sprinkled at a constant density.** The ferns read as "flat dark cards".
+- **The hard bank lip shows wherever there are no tufts.** It has stretched texture on the vertical faces and no dark wet band, silt or half-sunk stones.
+- **Rocks are speckled props with no moss cushions** (critic b; refs 03, 09).
+
+**Changes for round 23 (vegetation v2, built on round 22):**
+- **Grass with mixed colour.** Each blade draws its colour from one of four columns: fresh green, olive, straw and dead brown. The mix leans brown away from the water.
+- **Clump sizes range 0.5–2× and placement is irregular,** not one clump per grid cell.
+- **Density rises toward the water:** a dense, continuous mat along the edge that spills over it.
+- **Fewer, more clustered sorrel patches,** so the flowers stop sprinkling evenly.
+- **Brighter ferns,** some bronze.
