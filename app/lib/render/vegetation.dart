@@ -63,23 +63,10 @@ Future<List<PlantModel>> loadPlants() async {
   return out;
 }
 
-/// Grass clump variants (M6 v2): fresh, mixed wet-ground clumps; drier
-/// ones with straw and dead blades for the upper bank; and low dense mats
-/// for the waterline.
-const int kGrassWet = 0, kGrassDry = 3, kGrassMat = 6, kGrassVariants = 8;
-
-List<MeshGeometry> buildGrassVariants() => [
-      for (var s = 0; s < 3; s++) buildGrassClump(101 + s, blades: 18 + 5 * s, height: 0.09 + 0.025 * s, dry: 0.1),
-      for (var s = 0; s < 3; s++) buildGrassClump(201 + s, blades: 14 + 5 * s, height: 0.08 + 0.025 * s, dry: 0.6),
-      for (var s = 0; s < 2; s++) buildGrassClump(301 + s, blades: 34 + 8 * s, height: 0.05 + 0.012 * s, dry: 0.25, spread: 0.05),
-    ];
-
 /// A clump of grass blades rising from a small base and arching outward,
 /// each a tapering strip of three segments. UV v runs base (0) to tip (1)
-/// for a darker base and paler tip; u picks one of four colour columns per
-/// blade (fresh green, olive, straw, dead brown), weighted by [dry], so a
-/// clump is not one uniform colour (critics, round 22).
-MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13, double dry = 0.2, double spread = 0.018}) {
+/// for a darker base and paler tip; u runs across the blade.
+MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13}) {
   final rnd = math.Random(seed);
   const segs = 3;
   final pos = <double>[];
@@ -90,11 +77,7 @@ MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13, d
     final az = rnd.nextDouble() * math.pi * 2;
     final dir = vm.Vector3(math.cos(az), 0, math.sin(az));
     final side = vm.Vector3(-dir.z, 0, dir.x);
-    final base = dir * (rnd.nextDouble() * spread);
-    final roll = rnd.nextDouble();
-    final pGreen = 0.55 - 0.4 * dry, pOlive = 0.3, pStraw = 0.1 + 0.25 * dry;
-    final col = roll < pGreen ? 0 : (roll < pGreen + pOlive ? 1 : (roll < pGreen + pOlive + pStraw ? 2 : 3));
-    final u = (col + 0.5) / 4;
+    final base = dir * (rnd.nextDouble() * 0.018);
     final h = height * (0.55 + 0.6 * rnd.nextDouble());
     final lean = 0.25 + 0.55 * rnd.nextDouble(); // how far the tip arches out, x height
     final w0 = 0.0028 + 0.0022 * rnd.nextDouble();
@@ -110,7 +93,7 @@ MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13, d
         final q = p + side * (w * k);
         pos.addAll([q.x, q.y, q.z]);
         nrm.addAll([n.x, n.y, n.z]);
-        uv.addAll([u, t]);
+        uv.addAll([k < 0 ? 0 : 1, t]);
       }
     }
     for (var s = 0; s < segs; s++) {
@@ -178,7 +161,7 @@ double _smooth(double e0, double e1, double x) {
 ///  - 5 cm-2 m: low sorrel patches as ground cover;
 ///  - 12 cm-2.5 m: scattered grass clumps.
 /// Nothing grows inside a rock's footprint.
-List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {int fernVariants = 4}) {
+List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {int fernVariants = 4, int grassVariants = 4}) {
   final out = <PlantPlacement>[];
   const span = 2.6;
 
@@ -194,23 +177,14 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
   double outside(V2 p) => -(c.clearance(p) + shoreNoise(p));
 
   void place(PlantKind kind, int variant, V2 p, double scale, double yaw, {double tiltX = 0, double tiltZ = 0, double sink = 0.004}) {
-    final pk = (p.x * 1000).round(), pd = (p.y * 1000).round();
     final y = groundHeight(c, p) - sink;
     final q = vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), yaw);
     if (tiltX != 0 || tiltZ != 0) {
       q.setFrom(vm.Quaternion.axisAngle(vm.Vector3(1, 0, 0), tiltX) * vm.Quaternion.axisAngle(vm.Vector3(0, 0, 1), tiltZ) * q);
     }
-    final hue = _hash(pk, pd, 7);
-    var lum = 0.78 + 0.4 * _hash(pk, pd, 11);
-    var tint = vm.Vector4(lum * (0.96 + 0.1 * hue), lum, lum * (1.04 - 0.1 * hue), 1);
-    if (kind == PlantKind.fern) {
-      // Ferns read as "flat dark cards": lift them, and turn some bronze as
-      // late-season fronds do (refs 03, 05).
-      lum = 1.15 + 0.35 * _hash(pk, pd, 12);
-      tint = _hash(pk, pd, 14) < 0.3
-          ? vm.Vector4(lum * 1.3, lum * 0.95, lum * 0.55, 1)
-          : vm.Vector4(lum * (0.95 + 0.1 * hue), lum, lum * 0.9, 1);
-    }
+    final hue = _hash((p.x * 1000).round(), (p.y * 1000).round(), 7);
+    final lum = 0.78 + 0.4 * _hash((p.x * 1000).round(), (p.y * 1000).round(), 11);
+    final tint = vm.Vector4(lum * (0.96 + 0.1 * hue), lum, lum * (1.04 - 0.1 * hue), 1);
     out.add(PlantPlacement(kind, variant, p.y,
         vm.Matrix4.compose(vm.Vector3(p.x, y, -p.y), q, vm.Vector3.all(scale)), tint));
   }
@@ -228,10 +202,9 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
       if (o < -0.01) continue;
       final r = _hash(i, j, 3);
       final patch = _patch(p, 5);
-      if (o < 0.16) {
-        // A dense, continuous mat along the waterline that spills over it,
-        // with a few gaps of bare mud.
-        if (r > 0.45 + 0.5 * _smooth(0.25, 0.55, patch)) continue;
+      if (o < 0.12) {
+        // Dense along the waterline, with gaps where the bank is bare mud.
+        if (r > 0.25 + 0.65 * _smooth(0.3, 0.6, patch)) continue;
         if (!clearOfRocks(p, 0.03)) continue;
         // Lean toward the water: tilt about the bank's tangent.
         final e = 0.02;
@@ -240,31 +213,23 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
         final len = math.sqrt(gx * gx + gy * gy) + 1e-9;
         final wx = gx / len, wz = -gy / len; // world x/z toward the water
         final lean = 0.25 + 0.3 * _hash(i, j, 4);
-        final mat = _hash(i, j, 7) < 0.45;
-        final v = mat ? kGrassMat + (r * 97).floor() % 2 : kGrassWet + (r * 97).floor() % 3;
-        place(PlantKind.edgeGrass, v, p, 0.7 + 1.1 * _hash(i, j, 5),
+        place(PlantKind.edgeGrass, (r * 97).floor() % grassVariants, p, 1.1 + 0.7 * _hash(i, j, 5),
             _hash(i, j, 6) * math.pi * 2,
             tiltX: wz * lean, tiltZ: -wx * lean);
       } else if (o < 2.5) {
-        // Stands of grass separated by bare patches, thicker toward the
-        // wet ground by the water; drier (straw, dead blades) up the bank.
-        final wet = 1 - _smooth(0.15, 1.6, o);
-        final density = (0.6 + 0.35 * wet) * _smooth(0.4, 0.65, patch) + 0.04;
+        // Stands of grass (up to most cells) separated by bare patches.
+        final density = 0.85 * _smooth(0.45, 0.7, patch) * (1 - 0.4 * (o / 2.5)) + 0.02;
         if (r > density) continue;
-        // Irregular, not one clump per cell: a random offset up to a whole
-        // cell beyond the cell (critics: "almost on a grid").
-        final q = V2(p.x + (_hash(i, j, 8) - 0.5) * g * 1.6, p.y + (_hash(i, j, 9) - 0.5) * g * 1.6);
-        if (!clearOfRocks(q, 0.03)) continue;
-        final v = _hash(i, j, 10) < wet ? kGrassWet + (r * 97).floor() % 3 : kGrassDry + (r * 97).floor() % 3;
-        final sz = 0.5 + 1.5 * math.pow(_hash(i, j, 5), 1.6);
-        place(PlantKind.grass, v, q, sz, _hash(i, j, 6) * math.pi * 2);
+        if (!clearOfRocks(p, 0.03)) continue;
+        place(PlantKind.grass, (r * 97).floor() % grassVariants, p, 0.8 + 0.7 * _hash(i, j, 5),
+            _hash(i, j, 6) * math.pi * 2);
       }
     }
   }
   // Coarse grids: ferns and sorrel.
   for (final (kind, cell, oMin, oMax, prob) in const [
     (PlantKind.fern, 0.42, 0.08, 1.4, 0.55),
-    (PlantKind.sorrel, 0.22, 0.04, 2.2, 0.6),
+    (PlantKind.sorrel, 0.22, 0.04, 2.2, 0.75),
   ]) {
     final salt = kind.index * 31;
     for (var i = (-2.5 / cell).floor(); i * cell < dEnd; i++) {
@@ -278,7 +243,7 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
         // sorrel carpets the gaps between grass stands.
         final pr = kind == PlantKind.fern
             ? prob * (1.2 - 0.6 * (o / oMax)) * _smooth(0.35, 0.65, _noise(p, 1.1, 9))
-            : prob * (1 - _smooth(0.4, 0.62, _patch(p, 5))) * _smooth(0.45, 0.7, _noise(p, 0.9, 13));
+            : prob * (1 - _smooth(0.4, 0.62, _patch(p, 5)));
         if (_hash(i, j, salt + 3) > pr) continue;
         if (kind == PlantKind.fern) {
           final v = (_hash(i, j, salt + 4) * fernVariants).floor() % fernVariants;

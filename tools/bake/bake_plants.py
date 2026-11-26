@@ -33,6 +33,9 @@ import sys
 import numpy as np
 from PIL import Image
 
+# Sources whose flowers are cut out of the alpha mask.
+FLOWERLESS = {'shrub_sorrel_01'}
+
 COMPONENT = {5126: np.float32, 5123: np.uint16, 5125: np.uint32, 5121: np.uint8}
 NCOMP = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4}
 
@@ -130,6 +133,17 @@ def pack_texture(src_dir, name, tex_dir, size):
     t = os.path.join(src_dir, 'textures')
     col = Image.open(os.path.join(t, f'{name}_diff_1k.jpg')).convert('RGB')
     alpha = Image.open(os.path.join(t, f'{name}_alpha_1k.png')).convert('L')
+    if name in FLOWERLESS:
+        # Remove flowers: pink/lilac petals (red and blue above green) are
+        # cut out through the mask. At dusk they read as identical bright
+        # dots sprinkled evenly (critics, rounds 22-23).
+        c = np.asarray(col).astype(np.int32)
+        a8 = np.asarray(alpha).copy()
+        r, g, b = c[..., 0], c[..., 1], c[..., 2]
+        petal = (r > g + 12) & (b > g + 4)
+        a8[petal] = 0
+        alpha = Image.fromarray(a8)
+        print(f'  {name}: removed {int(petal.sum())} flower texels')
     rgba = Image.merge('RGBA', (*col.split(), alpha))
     if size != rgba.size[0]:
         rgba = rgba.resize((size, size), Image.LANCZOS)

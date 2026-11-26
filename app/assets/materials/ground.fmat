@@ -29,6 +29,8 @@ material {
     { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
     { type: float, name: caustic_strength, default: 1.0 },
     { type: float, name: damp, default: 0.35 },
+    // Raises moss cover on the banks (0 = the M3 ~40 % cushions).
+    { type: float, name: moss_bias, default: 0.0 },
   ],
 }
 
@@ -205,11 +207,19 @@ fragment {
                       (1.0 - smoothstep(0.06, 0.14, out_d)) *
                       smoothstep(0.38, 0.5, texture(data_tex, p * 0.31 + 0.53).g);
       float mossW = 0.0;
-      if (mossField > 0.4) {
+      // M6 v3: moss over most of the bank between the plants, broken by soil
+      // only in patches (critics: "bare grey gravel that reads like asphalt").
+      float mb = material_params.moss_bias;
+      if (mossField > 0.4 - mb) {
         vec3 mc, mn, ma;
         SampleSurface(vec2(1.0, 0.0), uv / 0.45, duvx / 0.45, duvy / 0.45, n2, mc, mn, ma);
-        mossW = clamp((mossField - 0.54 + (ma.b - 0.44) * 0.35) * 9.0, 0.0, 1.0) * (1.0 - mudBand);
-        col = mix(col, mc, mossW);
+        mossW = clamp((mossField - 0.54 + mb + (ma.b - 0.44) * 0.35) * 9.0, 0.0, 1.0) * (1.0 - mudBand);
+        // Wet moss is a deep, saturated olive even at dusk (refs 04, 09);
+        // the scan's fine grey speckle read as gravel under the blue fill.
+        float ml = dot(mc, vec3(0.3, 0.55, 0.15));
+        vec3 mossy = mix(vec3(ml), mc, 1.35) * vec3(0.82, 1.0, 0.62);
+        mossy = mix(mossy, vec3(ml) * vec3(0.7, 1.0, 0.45), 0.25);
+        col = mix(col, mossy, mossW);
         tn = normalize(mix(tn, mn, mossW));
         arh = mix(arh, ma, mossW);
       }
