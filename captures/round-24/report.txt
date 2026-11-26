@@ -1,0 +1,16 @@
+inner shot1 227.922s shot=1 t=7.00 d=1.66 ff=4 luma=24.1±18.4 samplers<=13
+inner shot2 231.271s shot=2 t=38.25 d=7.35 ff=7 luma=24.4±19.0 samplers<=13
+inner shot3 231.369s shot=3 t=18.08 d=3.59 ff=4 luma=23.8±21.1 samplers<=13
+inner shot4 213.198s shot=4 t=120.78 d=24.00 ff=21 luma=23.1±18.2 samplers<=13
+inner shot5 221.814s shot=5 t=80.36 d=16.50 ff=10 luma=24.2±16.8 samplers<=13
+inner shot6 209.578s shot=6 t=38.46 d=7.37 ff=7 luma=24.1±18.3 samplers<=13
+inner shot7 229.584s shot=7 t=161.14 d=32.00 ff=26 luma=25.9±24.1 samplers<=13
+inner shot8 210.533s shot=8 t=205.88 d=40.26 ff=35 luma=24.8±19.8 samplers<=13
+cover shot1 157.694s shot=1 t=7.00 d=1.66 ff=4 luma=26.3±21.4 samplers<=13
+cover shot2 161.903s shot=2 t=38.25 d=7.35 ff=7 luma=26.8±22.1 samplers<=13
+cover shot3 156.465s shot=3 t=18.08 d=3.59 ff=4 luma=25.8±24.0 samplers<=13
+cover shot4 164.083s shot=4 t=120.78 d=24.00 ff=21 luma=24.1±21.6 samplers<=13
+cover shot5 157.301s shot=5 t=80.36 d=16.50 ff=10 luma=25.6±19.6 samplers<=13
+cover shot6 167.028s shot=6 t=38.46 d=7.37 ff=7 luma=26.1±21.0 samplers<=13
+cover shot7 166.589s shot=7 t=161.14 d=32.00 ff=26 luma=29.2±27.8 samplers<=13
+cover shot8 146.033s shot=8 t=205.88 d=40.26 ff=35 luma=28.4±23.0 samplers<=13
