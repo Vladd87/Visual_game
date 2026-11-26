@@ -44,6 +44,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-21 | rain v4 (panel) | 3.44 | 3.72 | 3.58 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 19: **+0.09** (critics +0.12 / +0.06). New best by the ratchet. 2nd sub-0.3 round in a row → **M5 stops at round 21** |
 | round-22 | vegetation v1 (panel) | 3.97 | 4.03 | 4.00 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 21 (M5 final): **+0.62** (critics +0.69 / +0.56). New best; vegetation alone 4 vs 2.5 (both critics) |
 | round-23 | vegetation v2 (panel) | 3.53 | 3.62 | 3.58 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 22: **−0.06** (critics −0.22 / +0.09). Rejected; round 22 stays the best. 1st sub-0.3 round in M6 |
+| round-24 | vegetation v3 (panel) | 4.12 | 3.97 | 4.05 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 22: **+0.33** (critics +0.31 / +0.34). New best; resets the sub-0.3 count |
 
 ## Round 1: water v1
 
@@ -956,3 +957,43 @@ M5's net gain over M4 final is about +0.4. Most of it came from calming the wind
 **Changes for round 24 (vegetation v3, built on round 22):**
 - **Mossy ground between plants.** Moss covers most of the bank, broken by soil only in patches, and the bank reads darker and damper. The gaps between plants become "moss running right to the waterline" (refs 09, 11), not grey grit.
 - **Sorrel without flowers.** Its pink flower pixels are recoloured to leaf green at bake time. It stays the low green filler critic a credited.
+
+## Round 24: vegetation v3 (M6)
+
+**What changed** (built on round 22, judged against it):
+- **Mossy ground.** Moss covers most of the bank between the plants (`moss_bias` 0.1), pushed to a deep, wet olive.
+- **Sorrel without flowers.** Its flowers are cut out of the alpha mask at bake time.
+
+**Panel** (each critic compared this round with `captures/round-22` side by side, order flipped)
+
+| Critic | Round 24 (new) | Round 22 (best) | Difference | Vegetation and banks, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.31 | 4.00 | +0.31 | 4 vs 3.5 |
+| b (new = X) | 3.78 | 3.44 | +0.34 | 3.5 vs 3 |
+
+- **Gain +0.33**, critic spread 0.03. **Round 24 is the new best;** the sub-0.3 count resets.
+- Absolute score 4.05 (inner 4.12, cover 3.97); lowest shot 3.38.
+- **A/B:** 0/4 fooled, all at 99 %.
+- Tokens: 178k + 174k for the panel, 72k for the A/B critic.
+
+**Why both preferred it:**
+- **Bank colour.** Round 22's ground was "cyan to blue-grey… grey gravel or ash under a cold grade" (median hue 180–200°, blue about equal to green). The new ground is green (hue about 160°, green 10 % above blue). It reads as "soil and grass", and as wet ground that keeps its colour in rain (refs 04, 06, 01, 05).
+- **No flower decals.** Round 22 had 18–67 identical lilac specks per inner frame; the new round has 0–3.
+
+**What still fails in the vegetation (both critics):**
+- "Separate, near-identical tufts placed at even spacing on a flat, uniformly speckled ground".
+- The waterline is "a clean, dry seam":
+  - no moss running under the water
+  - no plants rooted in the water
+  - no dark wet band
+  - no wet sheen on the ground or the blades
+  
+  Real banks show these things (iris clump standing in water in ref01, moss under a water film in ref09, ferns down to the waterline in ref02).
+- **Critic a, beyond vegetation:** the frames sit at a median luminance of about 23/255, darker than a phone would auto-expose at dusk (refs 03, 07). They also lack the camera noise of a phone at blue hour. Both belong to the post and grade milestones.
+
+**Changes for round 25 (vegetation v4, built on round 24):**
+- **Plants rooted in the shallows.** Taller wet-grass clumps stand in the water up to 8 cm from the edge, their bases under the surface.
+- **Irregular grass:** offsets up to about a cell beyond each grid cell, and clump sizes from 0.5 to 2×.
+- **A wet waterline:**
+  - a darker, glossier band where the bank meets the water
+  - wet moss with a soft sheen instead of matte
