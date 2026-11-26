@@ -43,6 +43,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-20 | rain v3 (panel) | 3.69 | 3.81 | 3.75 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 19: **−0.02** (critics −0.38 / +0.34). Rejected; round 19 stays the best. 1st sub-0.3 round since round 19 |
 | round-21 | rain v4 (panel) | 3.44 | 3.72 | 3.58 | 2.75 | 0/4 (A/B-only critic) | Panel vs round 19: **+0.09** (critics +0.12 / +0.06). New best by the ratchet. 2nd sub-0.3 round in a row → **M5 stops at round 21** |
 | round-22 | vegetation v1 (panel) | 3.97 | 4.03 | 4.00 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 21 (M5 final): **+0.62** (critics +0.69 / +0.56). New best; vegetation alone 4 vs 2.5 (both critics) |
+| round-23 | vegetation v2 (panel) | 3.53 | 3.62 | 3.58 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 22: **−0.06** (critics −0.22 / +0.09). Rejected; round 22 stays the best. 1st sub-0.3 round in M6 |
 
 ## Round 1: water v1
 
@@ -926,3 +927,32 @@ M5's net gain over M4 final is about +0.4. Most of it came from calming the wind
 - **Density rises toward the water:** a dense, continuous mat along the edge that spills over it.
 - **Fewer, more clustered sorrel patches,** so the flowers stop sprinkling evenly.
 - **Brighter ferns,** some bronze.
+
+## Round 23: vegetation v2 (M6), rejected
+
+**What changed** (built on round 22, judged against it):
+- **Grass blade colours:** blades in four colours (green, olive, straw, dead brown).
+- **Grass clumps:** low dense mats along the waterline; clump sizes 0.5–2× and placed irregularly; density rising toward the water.
+- **Other plants:** fewer, clustered sorrel; brighter and partly bronze ferns.
+
+**Panel** (each critic compared this round with `captures/round-22` side by side, order flipped)
+
+| Critic | Round 23 (new) | Round 22 (best) | Difference | Vegetation and banks, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.69 | 3.91 | −0.22 | 3.5 vs 4 |
+| b (new = Y) | 3.47 | 3.38 | +0.09 | 3.5 vs 3 |
+
+- **Gain −0.06**, critic spread 0.31. **Rejected: round 22 stays the best.** This is M6's first round under 0.3.
+- Absolute score 3.58; lowest shot 3.0.
+- **A/B:** 0/4 fooled, 98–99 %. It named "grass made of identical flat blade cards".
+- **Interruption:** a usage limit stopped both scoring critics part-way. They were resumed from their saved state with the same packets.
+- **Tokens:** 169k + 165k for the panel, 72k for the A/B critic.
+
+**Where the critics agree and split:**
+- **Split on the round-22 sorrel.** Critic a preferred round 22's low green rosettes between the tufts: green-dominant pixels were 1.5–1.8× round 23's, "where round 23's gaps are bare grey gravel that reads like asphalt". Critic b preferred round 23 for removing most of the "confetti" of identical pink flowers.
+- **Both dislike the flowers.** They read as identical, evenly spaced pink dots.
+- **The core complaint is the same for both:** "one spiky grass tuft repeated at even spacing over a flat grey gravel texture, with no moss, leaf litter, mixed species or wet darkening where the bank meets the water". The grey ground between plants, the photographed forest-ground texture, now dominates. Round 23's drier blades also made the banks "greyer, a dry gravel lot" (critic b).
+
+**Changes for round 24 (vegetation v3, built on round 22):**
+- **Mossy ground between plants.** Moss covers most of the bank, broken by soil only in patches, and the bank reads darker and damper. The gaps between plants become "moss running right to the waterline" (refs 09, 11), not grey grit.
+- **Sorrel without flowers.** Its pink flower pixels are recoloured to leaf green at bake time. It stays the low green filler critic a credited.
