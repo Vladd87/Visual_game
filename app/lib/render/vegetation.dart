@@ -249,7 +249,7 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
         // Stands of grass separated by bare patches, thicker toward the
         // wet ground by the water; drier (straw, dead blades) up the bank.
         final wet = 1 - _smooth(0.15, 1.6, o);
-        final density = (0.35 + 0.4 * wet) * _smooth(0.45, 0.7, patch) + 0.02;
+        final density = (0.6 + 0.35 * wet) * _smooth(0.4, 0.65, patch) + 0.04;
         if (r > density) continue;
         // Irregular, not one clump per cell: a random offset up to a whole
         // cell beyond the cell (critics: "almost on a grid").
