@@ -324,7 +324,7 @@ class GameScene {
       ..metallicFactor = 0
       // Rain-wet blades: a soft sheen.
       ..roughnessFactor = 0.5;
-    _grassClumps = [for (var s = 0; s < 4; s++) buildGrassClump(101 + s, blades: 16 + 4 * s, height: 0.09 + 0.02 * s)];
+    _grassClumps = buildGrassVariants();
     // M5: rain wets the banks and rocks (0.35 was the light drizzle of M3/M4).
     final damp = _tune('damp', 0.7);
     for (final m in [_groundMat!, ..._rockMats]) {
@@ -417,21 +417,29 @@ class GameScene {
     ..metallicFactor = 0
     ..roughnessFactor = 0.5;
 
-  /// Blade colour from base (dark, shaded by the clump) to tip (paler).
+  /// Blade colours: four columns (fresh green, olive, straw, dead brown),
+  /// each from base (dark, shaded by the clump) to tip (paler).
   static Texture2D _grassGradient() {
     const w = 4, h = 64;
+    const base = [
+      [46, 62, 24], [58, 60, 26], [72, 62, 34], [52, 38, 24],
+    ];
+    const tip = [
+      [142, 172, 62], [150, 150, 70], [190, 168, 104], [128, 96, 62],
+    ];
     final px = Uint8List(w * h * 4);
     for (var y = 0; y < h; y++) {
       final t = y / (h - 1); // v = 0 at the base
-      final r = (46 + 96 * t).round(), g = (62 + 110 * t).round(), b = (24 + 38 * t).round();
       for (var x = 0; x < w; x++) {
         final o = (y * w + x) * 4;
-        px[o] = r;
-        px[o + 1] = g;
-        px[o + 2] = b;
+        for (var k = 0; k < 3; k++) {
+          px[o + k] = (base[x][k] + (tip[x][k] - base[x][k]) * t).round();
+        }
         px[o + 3] = 255;
       }
     }
+    // Nearest sampling across columns would be ideal; at 4 texels the
+    // centre of each column is sampled, so bilinear blending stays inside it.
     return Texture2D.fromPixels(px, w, h, content: TextureContent.color);
   }
 
@@ -547,7 +555,7 @@ class GameScene {
       final sorrel = _plants.firstWhere((p) => p.kind == 1);
       final batches = <String, InstancedMesh>{};
       for (final pl in vegetationPlacements(c, rockPlacements(c, flatGroundHeight),
-          fernVariants: ferns.length, grassVariants: _grassClumps.length)) {
+          fernVariants: ferns.length)) {
         final ci = ((pl.d + 2.5) / chunk).floor();
         final key = '${pl.kind.name}_${pl.variant}_$ci';
         final mesh = batches.putIfAbsent(key, () {
