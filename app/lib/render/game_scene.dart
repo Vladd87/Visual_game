@@ -418,18 +418,26 @@ class GameScene {
     ..metallicFactor = 0
     ..roughnessFactor = 0.5;
 
-  /// Blade colour from base (dark, shaded by the clump) to tip (paler).
+  /// Blade colours: four columns (fresh green, olive, straw, dead brown),
+  /// each from base (dark, shaded by the clump) to tip. Tips are darker and
+  /// more olive than v1-v4's: lit by the lantern they turned lemon-yellow
+  /// "self-lit props"; in ref02 lantern-lit plants go amber-olive.
   static Texture2D _grassGradient() {
     const w = 4, h = 64;
+    const base = [
+      [40, 54, 22], [50, 52, 24], [66, 58, 32], [48, 36, 22],
+    ];
+    const tip = [
+      [104, 124, 50], [118, 118, 56], [160, 140, 86], [110, 82, 52],
+    ];
     final px = Uint8List(w * h * 4);
     for (var y = 0; y < h; y++) {
       final t = y / (h - 1); // v = 0 at the base
-      final r = (46 + 96 * t).round(), g = (62 + 110 * t).round(), b = (24 + 38 * t).round();
       for (var x = 0; x < w; x++) {
         final o = (y * w + x) * 4;
-        px[o] = r;
-        px[o + 1] = g;
-        px[o + 2] = b;
+        for (var k = 0; k < 3; k++) {
+          px[o + k] = (base[x][k] + (tip[x][k] - base[x][k]) * t).round();
+        }
         px[o + 3] = 255;
       }
     }
