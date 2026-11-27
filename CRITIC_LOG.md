@@ -1119,3 +1119,10 @@ Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies
 
 **Beyond this system, both critics' top giveaways are unchanged:** the even grass field over speckled ground, water with too little rain or sky sheen and stair-stepped reflection edges, the clean point-light pool with hard edges on the banks, and no camera signature (grain, depth of field).
 
+**Changes for round 28 (lantern v2, built on round 27):**
+- **No waterline blob; the lantern's own reflection instead.** The blob was the candle light's specular reflection on the water. Treated as a small sphere about 70 times brighter than the paper is drawn, its 2.5 % reflection outshone the lantern. The candle light no longer reaches the water directly. The water now traces each pixel's reflected ray, tilted by ripples and rain, against the lantern's paper box. The reflection is then the paper's own shape and colour, dimmer than the lantern and broken at its edges (ref02).
+- **A softer near field:** the candle light is treated as the 7 cm glowing box (radius 6 cm, not 3 cm), so the bed just under the lantern no longer outshines it.
+- **Paper:** warmer amber, brightest at candle height and half as bright at the rim, with larger, bolder characters.
+- **Fireflies** are saturated yellow-green, with a wider range of brightness.
+- **Leaves** come in mixed yellows and browns, at sizes from 0.7 to 1.3. A third ride low, soaked, with their middles just under the surface.
+
