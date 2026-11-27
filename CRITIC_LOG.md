@@ -1158,7 +1158,7 @@ Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies
 **Beyond this system, unchanged:** the cloned grass carpet on flat banks, water without dense rain rings or glints, dry-looking rocks, and no haze or dusk ambient.
 
 **Changes for round 29 (lantern v3, built on round 28):**
-- **A dim, broken reflection:** about half as bright, and tilted twice as hard by the ripple and rain slopes, so it breaks into fragments.
+- **A dim, broken reflection:** about half as bright, and tilted 3.5 times as hard by the ripple and rain slopes, so it breaks into fragments.
 - **A hot core:** the candle flame now sits on a 2.5 cm candle, so its tip shows through the open top. The paper's hot spot is tighter and brighter.
 - **Frame cues:** dark, thin corner edges and a rim line on the paper.
 - **Fireflies drawn out into visible streaks** (about three times the stretch), with a wider spread of sizes.

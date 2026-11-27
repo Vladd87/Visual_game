@@ -215,7 +215,8 @@ class GameScene {
     base.position = vm.Vector3(0, 0.012, 0);
     base.lightChannelMask = _lanternSelfChannel;
     _lantern.add(base);
-    // The candle flame, upright, seen through the open top.
+    // The candle flame, upright, on a 2.5 cm candle: its tip shows over the
+    // near rim through the open top, the lantern's hot core (round 28).
     _flame = Sprite(
         texture: LanternModel.flameTexture(),
         width: _tune('flamew', 0.014),
@@ -223,7 +224,7 @@ class GameScene {
         blendMode: SpriteBlendMode.additive,
         facing: BillboardFacing.axisLocked);
     _lantern.add(Node(name: 'lanternFlame', mesh: _flame.mesh)
-      ..position = vm.Vector3(0, 0.03, 0)
+      ..position = vm.Vector3(0, _tune('flamey', 0.048), 0)
       ..shadowCastingMode = ShadowCastingMode.off);
     // Glow in the damp air around the flame (refs 01, 03): a faint additive
     // halo that dissolves where it meets the bed or banks.
@@ -279,7 +280,7 @@ class GameScene {
     // hard identical dots critics flagged.
     _fireflyGeom = BillboardGeometry(capacity: 256)
       ..facing = BillboardFacing.velocityStretched
-      ..velocityStretch = _tune('ffstretch', 0.08);
+      ..velocityStretch = _tune('ffstretch', 0.25);
     final fireflyMat = SpriteMaterial(colorTexture: fireflyTexture())
       ..blendMode = SpriteBlendMode.additive
       ..softDepthFade = 0.01;
@@ -305,15 +306,16 @@ class GameScene {
       ..roughnessFactor = 0.45
       ..doubleSided = true;
     _leafMesh = InstancedMesh(geometry: leafGeometry(), material: leafMat);
-    // Mixed yellow and brown, as fallen leaves on a stream (ref08).
+    // Rust, ochre and browns with the odd yellow (ref08). Olive and grey
+    // shades read as pale coins on the dark water (round 28 critics).
     const leafShades = [
       [0.62, 0.30, 0.10], // rust
-      [0.72, 0.55, 0.14], // yellow
+      [0.55, 0.40, 0.16], // ochre
       [0.38, 0.22, 0.10], // brown
-      [0.40, 0.40, 0.14], // dull olive
       [0.78, 0.48, 0.13], // amber
       [0.30, 0.17, 0.08], // dark, soaked
-      [0.62, 0.50, 0.22], // pale ochre
+      [0.70, 0.52, 0.13], // yellow
+      [0.50, 0.24, 0.09], // red-brown
     ];
     for (var i = 0; i < maxLeaves; i++) {
       final c = leafShades[(i * 7 + 3) % leafShades.length];
@@ -372,7 +374,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('normal_strength', _tune('nstr', 0.5));
     _waterMat!.parameters.setFloat('foam_amount', _tune('foam', 1.0));
     // M7: the lantern's reflection (see water.fmat LanternMirror).
-    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0));
+    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 7.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -764,7 +766,7 @@ class GameScene {
       // Per-firefly variety (stable hash of the index).
       final h1 = (math.sin(i * 12.9898) * 43758.5453) % 1.0;
       final h2 = (math.sin(i * 78.233 + 1.7) * 43758.5453) % 1.0;
-      final size = ffSize * (0.6 + 0.8 * h1.abs()) * (0.75 + 0.25 * g);
+      final size = ffSize * (0.45 + 1.1 * h1.abs()) * (0.75 + 0.25 * g);
       final bright = ffGlow * g * (0.3 + 1.2 * h2.abs());
       final c = at(t);
       final vel = (c - at(t - 0.05)) / 0.05;
