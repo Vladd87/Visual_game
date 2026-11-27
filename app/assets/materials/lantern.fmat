@@ -84,9 +84,11 @@ fragment {
     float v = float(uv.y);
     float dx = (u - 0.5) * 2.0;
     // The inside faces take the flame's light directly; the outside shows
-    // what passes through the paper. The panels wind clockwise seen from
-    // outside, so the outside is the back face.
-    float side = gl_FrontFacing ? 1.0 : 0.0;
+    // what passes through the paper. Decided from the panel's outward
+    // normal (as built, before two-sided flipping) against the view
+    // direction, not from the rasteriser's facing, whose convention can
+    // differ between the browser and the phone's Vulkan.
+    float side = dot(normalize(v_normal), GetViewDirection()) < 0.0 ? 1.0 : 0.0;
 
     // Light through the paper (ref02): the base band, the flame's hot spot
     // above it, then a gentle falloff to the rim.
