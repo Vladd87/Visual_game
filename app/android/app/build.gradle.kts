@@ -20,9 +20,20 @@ android {
         // --android-project-arg): its own package so both install side by
         // side, with Impeller on its OpenGL ES backend instead of Vulkan.
         val gles = (project.findProperty("lanternGles") as String?) == "1"
-        applicationId = if (gles) "dev.lantern.lantern.gles" else "dev.lantern.lantern"
+        // Build tag (-P lanternTag=m7.2, set by tools/build_apk.sh): each
+        // tagged build is its own app, "Lantern m7.2" with package
+        // dev.lantern.lantern.m7_2, so several versions install side by side
+        // on the phone for comparison. No tag: the plain "Lantern".
+        val tag = (project.findProperty("lanternTag") as String?)?.trim().orEmpty()
+        val tagId = tag.lowercase().replace(Regex("[^a-z0-9]"), "_").let {
+            if (it.isEmpty() || it[0].isLetter()) it else "v$it"
+        }
+        var appId = "dev.lantern.lantern"
+        if (gles) appId += ".gles"
+        if (tagId.isNotEmpty()) appId += ".$tagId"
+        applicationId = appId
         manifestPlaceholders["impellerBackend"] = if (gles) "opengles" else "vulkan"
-        manifestPlaceholders["appLabel"] = if (gles) "Lantern GLES" else "Lantern"
+        manifestPlaceholders["appLabel"] = listOfNotNull("Lantern", tag.ifEmpty { null }, if (gles) "GLES" else null).joinToString(" ")
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 29

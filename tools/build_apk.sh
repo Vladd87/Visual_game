@@ -28,7 +28,12 @@ build() {
   for i in 1 2 3; do
     # LANTERN_BUILD_ARGS: extra flutter args, e.g. the GLES diagnostic variant:
     #   LANTERN_BUILD_ARGS=--android-project-arg=lanternGles=1
-    if flutter build apk --"$mode" --target-platform android-arm64 ${LANTERN_BUILD_ARGS:-}; then return 0; fi
+    # Each tag is its own app ("Lantern <tag>", package
+    # dev.lantern.lantern.<tag>) so builds install side by side.
+    # LANTERN_NO_TAG=1 builds the plain "Lantern" (final release).
+    local tagarg=--android-project-arg=lanternTag=$tag
+    [[ ${LANTERN_NO_TAG:-0} == 1 ]] && tagarg=
+    if flutter build apk --"$mode" --target-platform android-arm64 $tagarg ${LANTERN_BUILD_ARGS:-}; then return 0; fi
     echo "build failed (try $i); retrying in 60 s in case of a registry rate limit" >&2
     sleep 60
     rm -rf build/app
