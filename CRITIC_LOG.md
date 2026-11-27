@@ -1239,3 +1239,15 @@ M7's net gain is about **+1.5** over the M6 final, the largest of any system. A/
 
 **Beyond this system,** every critic since M6 ranks first the cloned grass carpet, the water without dense rain rings or glints, dry-looking rocks, and the missing camera signature: grain, glow, depth of field and black point. The last of these is M8 (post).
 
+## Round 31: post v1 (M8)
+
+**What changed** (built on round 28, judged against it):
+- **Depth of field:** a thin lens at f/2.8 focused on the lantern every frame. Blur grows with distance from the focus plane, capped at 14 px, using the engine's low tier (16 taps, no post filter), which is the phone's budget. PLAN §1 asks for a shallow, slightly miniature band of focus (ref11). Critics since M6 have called the render "equally sharp from a high, almost orthographic viewpoint".
+- **Grain:** sensor noise added in linear light before display encoding, so it shows in the shadows and vanishes in the lit areas, as a phone's does at dusk.
+- **Vignette:** a gentle falloff toward the corners (intensity 0.25).
+- **Two phone fixes since round 28, both also in these captures:**
+  - Rain splash crowns away from the lantern are a third as bright. They speckled the water with white dots at the phone's full resolution.
+  - The lantern paper now uses a precision-safe hash, so its brush strokes have different shapes.
+
+The critics score this system as "the camera and lens (depth of field, motion, grain, bloom, sharpness)".
+
