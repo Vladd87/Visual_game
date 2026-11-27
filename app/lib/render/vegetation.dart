@@ -66,12 +66,7 @@ Future<List<PlantModel>> loadPlants() async {
 /// A clump of grass blades rising from a small base and arching outward,
 /// each a tapering strip of three segments. UV v runs base (0) to tip (1)
 /// for a darker base and paler tip; u runs across the blade.
-///
-/// Each blade takes one of four colour columns of the blade texture (fresh
-/// green, olive, straw, dead brown); [dry] weights the last two, so clumps
-/// carry some dead material instead of being one clean green (critics,
-/// rounds 22-25).
-MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13, double dry = 0.15}) {
+MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13}) {
   final rnd = math.Random(seed);
   const segs = 3;
   final pos = <double>[];
@@ -83,10 +78,6 @@ MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13, d
     final dir = vm.Vector3(math.cos(az), 0, math.sin(az));
     final side = vm.Vector3(-dir.z, 0, dir.x);
     final base = dir * (rnd.nextDouble() * 0.018);
-    final roll = rnd.nextDouble();
-    final pGreen = 0.6 - 0.4 * dry, pOlive = 0.3, pStraw = 0.05 + 0.2 * dry;
-    final col = roll < pGreen ? 0 : (roll < pGreen + pOlive ? 1 : (roll < pGreen + pOlive + pStraw ? 2 : 3));
-    final u = (col + 0.5) / 4;
     final h = height * (0.55 + 0.6 * rnd.nextDouble());
     final lean = 0.25 + 0.55 * rnd.nextDouble(); // how far the tip arches out, x height
     final w0 = 0.0028 + 0.0022 * rnd.nextDouble();
@@ -102,7 +93,7 @@ MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13, d
         final q = p + side * (w * k);
         pos.addAll([q.x, q.y, q.z]);
         nrm.addAll([n.x, n.y, n.z]);
-        uv.addAll([u, t]);
+        uv.addAll([k < 0 ? 0 : 1, t]);
       }
     }
     for (var s = 0; s < segs; s++) {

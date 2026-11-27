@@ -46,6 +46,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-23 | vegetation v2 (panel) | 3.53 | 3.62 | 3.58 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 22: **−0.06** (critics −0.22 / +0.09). Rejected; round 22 stays the best. 1st sub-0.3 round in M6 |
 | round-24 | vegetation v3 (panel) | 4.12 | 3.97 | 4.05 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 22: **+0.33** (critics +0.31 / +0.34). New best; resets the sub-0.3 count |
 | round-25 | vegetation v4 (panel) | 3.72 | 3.72 | 3.72 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.14** (critics +0.03 / −0.31). Rejected; round 24 stays the best. 1st sub-0.3 round since round 24 |
+| round-26 | vegetation v5 (panel) | 3.56 | 4.03 | 3.80 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.11** (critics +0.12 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M6 stops at round 24** |
 
 ## Round 1: water v1
 
@@ -1031,3 +1032,51 @@ M5's net gain over M4 final is about +0.4. Most of it came from calming the wind
 - **Some dead blades.** A light mix of straw and dead blades (about 10–15 %) goes into the mostly green clumps.
 - **No clumps standing in the water.** The edge grass leans over the water from the bank, as in round 24.
 - **Kept:** the glossy soaked band and the wet-moss sheen, which neither critic objected to.
+
+## Round 26: vegetation v5 (M6), rejected; M6 stops
+
+**What changed** (built on round 24, judged against it):
+- **Darker, more olive blade tips.**
+- **Straw and dead blades:** about 10–15 %, mixed into mostly green clumps.
+- **Kept from round 25:** no clumps standing in the water, the glossy soaked band and the wet-moss sheen.
+
+**Panel** (each critic compared this round with `captures/round-24` side by side, order flipped)
+
+| Critic | Round 26 (new) | Round 24 (best) | Difference | Vegetation and banks, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.22 | 4.09 | +0.12 | 3.5 vs 3.5 |
+| b (new = X) | 3.38 | 3.72 | −0.34 | 3.0 vs 3.5 |
+
+- **Gain −0.11**, critic spread 0.47. **Rejected.** This is the second round in a row under +0.3 (rounds 25 and 26), so **M6 stops at round 24**. The code is back at round 24.
+- Absolute score 3.80; lowest shot 3.0.
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 176k + 169k for the panel, 73k for the A/B critic.
+
+**What the darker tips did:**
+- **Critic a, lantern-lit grass:** better. It became "amber or ochre" rather than lime, with "shadowed blades between the lit ones" that give the clump depth (refs 10, 03).
+- **Critic a, the unlit field:** worse. The tufts became "dark stars stamped on lighter ground, which makes the even planting grid more obvious". From above, blade tips facing the sky should be lighter than the soil (refs 05, 01).
+- **Critic b:** "sparse, stiff, near-black star-shaped tufts", teal-grey when unlit and straw-orange when lit.
+
+## M6 vegetation: summary
+
+M6 stops at round 24 under the stop rule: two rounds in a row under +0.3 (rounds 25 and 26).
+
+| Round | Change | Gain over best |
+|---|---|---|
+| 22 | ferns, sorrel, procedural grass by zone and noise patches | **+0.62** |
+| 23 | blade colour mix, edge mats, density toward the water | −0.06 (rejected) |
+| 24 | mossy wet-olive ground, flowerless sorrel | **+0.33** |
+| 25 | clumps in the shallows, irregular grass, glossy waterline | −0.14 (rejected) |
+| 26 | olive blade tips, some dead blades | −0.11 (rejected) |
+
+M6's net gain over the M5 final is about **+0.95**, the largest of any system since M2. Panel absolute scores are now about 4.0–4.2.
+
+**What still fails (every critic):**
+- **Identical tufts at even spacing over a speckled ground.** Real banks have continuous, mixed, overlapping cover with dead material (refs 03, 04, 05).
+- **A hard, dry seam at the water.**
+
+**Approaches likely to beat round 24:**
+- **Fill the ground itself, not the tufts.** For example, a moss or turf material with real relief and blades in the texture, or shell-textured short grass, so no bare speckle shows between clumps.
+- **Use several distinct grass meshes,** from scans or hand-built, instead of one procedural clump.
+
+Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies and floating leaves are now the top giveaways in every panel.

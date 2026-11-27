@@ -241,8 +241,6 @@ fragment {
       // Large, soft light/dark patches (litter, soil moisture).
       col *= 0.8 + 0.4 * texture(data_tex, p * 0.09 + 0.21).g;
       rough = mix(rough, rough * 0.6, damp * (1.0 - mossW));
-      // Rain-soaked moss holds a soft sheen (ref09), not felt-matte.
-      rough = mix(rough, 0.5, damp * mossW * 0.6);
       // Saturated mud at the waterline, with puddles in its low spots.
       // Whatever reaches the waterline is soaked (moss and soil too).
       float nearWater = 1.0 - smoothstep(0.0, 0.035, above);
@@ -253,9 +251,7 @@ fragment {
       // bank slopes beside the water (critics, round 12).
       col *= mix(1.0, 0.72, 1.0 - smoothstep(0.0, 0.14, above));
       float puddle = mudW * soak * (1.0 - smoothstep(0.3, 0.42, arh.b));
-      // The soaked band at the waterline is glossy: a wet edge, not a dry
-      // seam (critics, round 24).
-      rough = mix(rough, 0.12, soak);
+      rough = mix(rough, 0.25, soak);
       rough = mix(rough, 0.04, puddle);
       n = normalize(mix(n, geo, puddle));
       col *= mix(1.0, ao, 0.5);
