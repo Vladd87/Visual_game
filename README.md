@@ -2,11 +2,19 @@
 
 A small Flutter game for the Samsung Galaxy Z Fold8 Ultra. You guide a paper lantern down a stream at dusk; the ambition is that it looks like a photograph.
 
-> **Status: Milestone 6 (water, stone and moss, lighting and fog, rain, vegetation).** Gameplay, fold/unfold, Flex mode and the platform layer are in (M1). The water (M2), scanned rocks and textured banks (M3), the blue-hour lighting with an amber paper-lantern key (M4), light rain on the water (M5), and ferns, sorrel and grass on wet-moss banks (M6) went through the blind critic loop (`CRITIC_LOG.md`). The lantern and fireflies, post and the AMOLED grade come next (see `PLAN.md` §4).
+> **Status: Milestone 7 (water, stone and moss, lighting and fog, rain, vegetation, the lantern and fireflies).** Gameplay, fold/unfold, Flex mode and the platform layer are in (M1). These systems went through the blind critic loop (`CRITIC_LOG.md`):
+> - M2: the water
+> - M3: scanned rocks and textured banks
+> - M4: the blue-hour lighting with an amber lantern key
+> - M5: light rain on the water
+> - M6: ferns, sorrel and grass on wet-moss banks
+> - M7: a paper toro nagashi lantern with its reflection, soft fireflies, and leaf-shaped floating leaves
+>
+> Post and the AMOLED grade come next (see `PLAN.md` §4).
 
 ## Install
 
-**Release build (recommended).** `releases/lantern-m6-release.apk`, about 35 MB ([direct download](https://github.com/Vladd87/Visual_game/raw/ccr-32d0ba79-c0iehd/releases/lantern-m6-release.apk)). Copy it to the phone and open it (allow installs from your file manager if asked), or run `adb install -r releases/lantern-m6-release.apk`. It opens on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Earlier milestone builds (`lantern-m1-…`, `m2`, `m4`, `m5`) stay in `releases/` for comparison.
+**Release build (recommended).** `releases/lantern-m7-release.apk`, about 35 MB ([direct download](https://github.com/Vladd87/Visual_game/raw/ccr-32d0ba79-c0iehd/releases/lantern-m7-release.apk)). Copy it to the phone and open it (allow installs from your file manager if asked), or run `adb install -r releases/lantern-m7-release.apk`. It opens on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Earlier milestone builds (`lantern-m1-…`, `m2`, `m4`, `m5`, `m6`) stay in `releases/` for comparison.
 
 **Debug build.** It's 110 MB, over GitHub's 100 MB file limit, so it's split in two. It's slower (JIT plus Vulkan validation) and useful for logs, not for judging smoothness. Reassemble it first:
 
@@ -92,13 +100,12 @@ flutter test                                                   # simulation test
 
 Clear `build/app` before a debug APK build. With Flutter 3.50 on Gradle 9.5, Gradle's strict task validation trips on stale debug outputs inside the project directory (`compileFlutterBuildDebug`). A clean Android output dir avoids it. Release builds aren't affected.
 
-## Known weaknesses (M6)
+## Known weaknesses (M7)
 
-Blind critics still score every shot as clearly CG (about 3.6–4.2 out of 10 on recent panels; the target is 7.5). In their order:
-- **The lantern** is a uniformly glowing cube (M7).
-- **Leaves and fireflies** are flat orange squares and hard dots (M7).
-- **The banks** show identical tufts at even spacing over a speckled ground, with a hard, dry seam at the water (M6 stopped by its rule at round 24; see `CRITIC_LOG.md`).
-- **The water** has no glitter path from the lantern, and the rain reads as sparse rings and small glints rather than a dense pocking.
-- **The ambient light** is flat and directionless, and there is no mist (M8 post).
+Blind critics still score every shot as clearly CG: about 3.8–4.3 out of 10 on recent panels, against a target of 7.5. Their giveaways, in order:
+- **The banks** show identical grass tufts at even spacing over a speckled ground, with no wet sheen, and the seam where they meet the water is hard and dry.
+- **The water** has too few rain rings and glints for rain, and the rocks look dry.
+- **The lantern's light** ends in crisp crescents on the bank crests. The lantern itself still reads as a clean glowing box at this size, and its reflection is either too intact or, when broken up more, reads as missing (M7 stopped by its rule at round 28; see `CRITIC_LOG.md`).
+- **No camera signature:** no grain, no glow in the wet air, no depth of field, and a lifted black point (M8 post, M9 grade).
 
 Not yet measured on the phone: frame pacing over a 20-minute run, thermal stepping, and tilt on each screen. Those need your playtest; the triple-tap perf overlay records them. The test menu and bring-up materials are scaffolding and go before the final release. No audio yet (M10).
