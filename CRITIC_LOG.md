@@ -50,6 +50,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-27 | lantern v1 (panel) | 4.09 | 4.44 | 4.27 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 24: **+1.00** (critics +0.94 / +1.06). New best; lantern system 5 vs 2.5 and 5 vs 3 |
 | round-28 | lantern v2 (panel) | 4.00 | 4.22 | 4.11 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 27: **+0.50** (critics +0.38 / +0.62). New best; lantern system 3.5 vs 3.0 and 4.5 vs 3.5 |
 | round-29 | lantern v3 (panel) | 3.72 | 4.16 | 3.94 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.00** (critics −0.25 / +0.25). Rejected; round 28 stays the best. 1st sub-0.3 round in M7 |
+| round-30 | lantern v4 (panel) | 3.66 | 4.11 | 3.88 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 28: **−0.03** (critics +0.25 / −0.31). Rejected. 2nd sub-0.3 round in a row → **M7 stops at round 28** |
 
 ## Round 1: water v1
 
@@ -1195,4 +1196,46 @@ Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies
 - **The light it casts.** Its reach is shorter (0.65 → 0.55 m), so the banks a few lantern-widths away fall off. Shadow edges are softer (penumbra 11 → 20), so the bank crests no longer cut the pool into crescents. The light sits at the paper's centre of glow (5.5 cm above the water, not the flame's 3.5 cm), as it leaves through the whole lower paper.
 - **Glow in the wet air:** the soft halo around the lantern is twice as strong (refs 02, 03).
 - **Reflection:** between rounds 28 and 29. It is slightly dimmer than round 28's (gain 13 → 11) and broken a little more at its edges (1.8 times the slope, against 1.0 and 3.5).
+
+## Round 30: lantern v4 (M7)
+
+**What changed:** see "Changes for round 30" above.
+
+**Panel** (each critic compared this round with `captures/round-28` side by side, order flipped)
+
+| Critic | Round 30 (new) | Round 28 (best) | Difference | Lantern, fireflies and leaves, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.02 | 3.77 | +0.25 | 3.75 vs 3.5 |
+| b (new = X) | 3.75 | 4.06 | −0.31 | 3.5 vs 4.0 |
+
+- **Gain −0.03**, critic spread 0.56. **Rejected.** This is the second round in a row under +0.3 (rounds 29 and 30), so **M7 stops at round 28**. The code is back at round 28, plus the inside/outside fix in the paper shader (which renders the same).
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 209k + 170k for the panel, 71k for the A/B critic.
+
+**The split:**
+- **Critic a** preferred the shorter reach: "a candle in a paper box is a weak source and falls off quickly" (ref02, ref06). It also liked the cool sky sheen kept over the lit bed.
+- **Critic b** preferred round 28's wider, warmer pool: "the lantern sits in it" (ref06, ref10). It found round 30's lantern "pasted onto the scene".
+- **Both** saw a new dark wedge beside the lantern, pointing the same way in world space whatever the lantern's yaw. It is worst in shot 5, and both called it "a hole: a translucent lantern does not throw a dark shadow sideways". The likely cause is the wider shadow filter (penumbra 20) smearing across a seam of the point light's cube shadow map.
+- **Neither** found the bank edges much softer: "the light ends in a crisp crescent… within about 20 px".
+
+## M7 lantern and fireflies: summary
+
+M7 stops at round 28 under the stop rule: two rounds in a row under +0.3 (rounds 29 and 30).
+
+| Round | Change | Gain over best |
+|---|---|---|
+| 27 | paper lantern (panels, tray, characters, light-channel exclusion), soft billboard fireflies, leaf-shaped leaves | **+1.00** |
+| 28 | the paper's own reflection instead of the point light's specular blob, an extended-source near field, warmer paper, yellow-green fireflies | **+0.50** |
+| 29 | dimmer, more broken reflection, flame tip, frame lines, longer firefly streaks | +0.00 (rejected) |
+| 30 | shorter, softer light reach, stronger air glow, reflection between rounds 28 and 29 | −0.03 (rejected) |
+
+M7's net gain is about **+1.5** over the M6 final, the largest of any system. A/B critics were fooled 0/4 in every round.
+
+**What still fails in this system:**
+- **The light it casts** ends in crisp crescents on the bank crests. This is the lantern's biggest remaining tell for most critics, but shorter reach and a wider shadow filter (round 30) traded it for a dark wedge.
+- **The lantern still reads as a clean, evenly glowing box** at this size. The characters, hot spot and frame cues mostly vanish below about 60 px.
+- **The reflection:** critics want it "dim, warm and broken into fragments" but also present; round 29's version read as empty to one critic.
+- **Fireflies and leaves** still read as particles and flat shapes.
+
+**Beyond this system,** every critic since M6 ranks first the cloned grass carpet, the water without dense rain rings or glints, dry-looking rocks, and the missing camera signature: grain, glow, depth of field and black point. The last of these is M8 (post).
 

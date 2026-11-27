@@ -250,9 +250,7 @@ class GameScene {
       radius: _tune('lrad', 0.06),
       // Wide penumbra: the bank lip and rocks cast soft-edged shade, not the
       // hard bright stripes critics flagged (round 12).
-      // Round 30: 11 -> 20, so the bank crests no longer cut the pool off in
-      // hard crescents (round 29 critics).
-      shadowSoftness: _tune('shsoft', 20.0),
+      shadowSoftness: 11.0,
       shadowNear: 0.02,
       shadowMapResolution: 512,
       // Not the lantern's own paper and wood: a few centimetres from the
@@ -261,10 +259,7 @@ class GameScene {
       channelMask: 0xFF & ~_lanternSelfChannel & ~_waterChannel,
     );
     _lanternLightNode = Node(name: 'lanternLight')..addComponent(PointLightComponent(_lanternLight));
-    // At the paper's centre of glow rather than the flame (round 30): the
-    // light leaves through the whole lower paper, so banks past a crest are
-    // not cut off as from a point 3.5 cm above the water.
-    _lanternLightNode.position = vm.Vector3(0, _tune('ly', 0.055), 0);
+    _lanternLightNode.position = vm.Vector3(0, 0.035, 0);
     _lantern.add(_lanternLightNode);
     scene.add(_lantern);
 
@@ -377,7 +372,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('normal_strength', _tune('nstr', 0.5));
     _waterMat!.parameters.setFloat('foam_amount', _tune('foam', 1.0));
     // M7: the lantern's reflection (see water.fmat LanternMirror).
-    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 11.0));
+    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -445,10 +440,7 @@ class GameScene {
   /// Reach of the lantern's light (m). M4 v7: 1.0 -> 0.65, so the banks show
   /// a hot spot near the lantern that dies quickly (refs 02, 10) instead of
   /// long, evenly lit strips.
-  // M7 round 30: 0.65 -> 0.55 m. Round 27-29 critics: the candle lit banks
-  // 2-3 times farther away as brightly as the gravel beside it, like a game
-  // point light; a lantern barely lights its surroundings (refs 02, 10).
-  static final double lanternRange = _tune('lrange', 0.55);
+  static final double lanternRange = _tune('lrange', 0.65);
 
   /// Browser tuning only: a query parameter overrides a look constant, so
   /// variants can be captured from one web build. Android has no query.
@@ -705,7 +697,7 @@ class GameScene {
     _paperMat?.parameters.setFloat('glow', _tune('pglow', 0.15) + _tune('pglowf', 1.25) * f * flicker);
     final fl = 0.2 + 1.0 * f * flicker;
     _flame.color = vm.Vector4(1.0 * fl, 0.62 * fl, 0.26 * fl, 1.0) * _tune('flame', 4.0);
-    _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * ((0.03 + 0.18 * f * flicker) * _tune('halo', 2.0));
+    _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * ((0.03 + 0.18 * f * flicker) * _tune('halo', 1.0));
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
     final rainDt = _lastRealTime == null ? 0.0 : (realTime - _lastRealTime!).clamp(0.0, 0.1);

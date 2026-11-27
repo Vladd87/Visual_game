@@ -325,10 +325,8 @@ fragment {
     // drawn unclipped, far below a real candle-lit paper's radiance, so its
     // mirror image (2.5 % at this view) would vanish; `lantern_mirror`
     // restores the reflection a photo shows (ref02).
-    // 1.8 times the raw slope (round 30; 1.0 in round 28, 3.5 in round
-    // 29): broken at its edges, still a clear reflection. The critics split
-    // between "ghost copy" (round 28) and "nearly empty" (round 29).
-    vec3 nG = normalize(vec3(-slope.x * 1.8, 1.0, -slope.y * 1.8));
+    // Full ripple and rain tilt (the sky reflection uses a gentler one).
+    vec3 nG = normalize(vec3(-slope.x, 1.0, -slope.y));
     reflected += LanternMirror(wp, reflect(-v, nG)) * f * material_params.lantern_mirror;
 
     // --- foam ----------------------------------------------------------------------
