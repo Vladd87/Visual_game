@@ -53,6 +53,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-30 | lantern v4 (panel) | 3.66 | 4.11 | 3.88 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 28: **−0.03** (critics +0.25 / −0.31). Rejected. 2nd sub-0.3 round in a row → **M7 stops at round 28** |
 | round-31 | post v1 (panel) | 4.16 | 4.12 | 4.14 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.36** (critics +0.34 / +0.38). New best; camera system 4 vs 3 and 4.5 vs 3.5 |
 | round-32 | post v2 (panel) | 4.47 | 4.75 | 4.61 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 31: **+0.09** (critics +0.50 / −0.31). New best by the ratchet; 1st sub-0.3 round in M8 |
+| round-33 | post v3 (panel) | 3.97 | 4.41 | 4.19 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 32: **+0.47** (critics +0.50 / +0.44). New best; resets the sub-0.3 count; camera system 5.0 vs 3.5 and 5 vs 4 |
 
 ## Round 1: water v1
 
@@ -1307,4 +1308,29 @@ The critics score this system as "the camera and lens (depth of field, motion, g
 - **Phone noise reduction in the shadows:** the present pass blends dark areas toward a small local blur and sharpens less (0.55 → 0.3). Fine detail in the shadows (grass-card edges, the tiled ground) softens the way a phone's noise reduction smears it, while lit areas stay crisp.
 - **Grain between rounds 31 and 32:** about 30 % stronger, with more of it reaching the near-blacks. A per-launch seed means each capture gets its own noise.
 - **Exposure-time streaks on the fireflies:** each one drifts in its own direction at 0.1–0.3 m/s on top of its sim motion, drawn out over about 1/8 s. They become dashes of different lengths and directions, not dots (ref04, ref06).
+
+## Round 33: post v3 (M8)
+
+**What changed:** see "Changes for round 33" above.
+
+**Panel** (each critic compared this round with `captures/round-32` side by side, order flipped)
+
+| Critic | Round 33 (new) | Round 32 (best) | Difference | Camera and lens, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.72 | 3.22 | +0.50 | 5.0 vs 3.5 |
+| b (new = Y) | 4.66 | 4.22 | +0.44 | 5 vs 4 |
+
+- **Gain +0.47**, critic spread 0.06. **Round 33 is the new best**, and the sub-0.3 count resets. The absolute scores are lower than round 32's because this pair of critics is harsher; the paired difference is what counts.
+- **A/B:** 0/4 fooled, 95–98 %.
+- Tokens: 184k + 192k for the panel, 73k for the A/B critic.
+
+**Why both preferred it:**
+- **Softer detail, read as depth of field.** On the raised banks round 33 keeps 0.66–0.70 of round 32's fine detail, on the water plane 0.81–0.97, and around the lantern all of it. It "softens the crisp alpha-card edges of the grass", "mild enough not to look like a tilt-shift miniature" (refs 03, 08, 09). The shadow noise reduction and the depth of field together read as a lens.
+- **Lifted, grainier shadows:** the darkest 1 % sits at 7–8/255 instead of 3–5 (refs 01, 02).
+- **Firefly streaks.** In shot 8, the blobs are 2.4–3.5 times as long as wide, against 1.0–1.6 before. "A dusk exposure cannot freeze a flying insect."
+
+**The biggest remaining camera tell, for both:** the shadows are too clean for this exposure. With a median around 24/255 in rain at dusk, a sensor shows heavy, brightness-dependent noise, partly coloured. Critic b measured the grain in comparable shadows at about half of ref04's and a third of ref02's. Critic a measured chroma noise at only 0.2–0.35 levels, against a near-colourless luma grain of about 2.
+
+**Changes for round 34 (post v4, built on round 33):**
+- **Heavier, coloured sensor noise.** Luma grain is about 1.7 times stronger. Chroma noise comes in soft clumps about 2 source pixels across, the low-frequency colour mottling a phone leaves after noise reduction, at about half the luma's strength. Both still follow brightness: strongest in the dark mid-tones, lighter in near-black, fading in the highlights.
 

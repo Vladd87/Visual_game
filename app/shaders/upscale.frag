@@ -86,8 +86,20 @@ void main() {
     // Round 33: between rounds 31 and 32 (critics split on the near-black).
     float wgt = mix(0.4, 1.0, smoothstep(0.015, 0.11, l)) * (1.0 - 0.75 * smoothstep(0.3, 0.8, l));
     float gl = hash(gp) + hash(gp + 31.7) - 1.0;
-    vec3 gc = vec3(hash(gp + 3.1), hash(gp + 5.9), hash(gp + 8.3)) - 0.5;
-    c += (gl + gc * 0.35) * (0.032 * uGrain * wgt);
+    // Round 34: chroma noise in soft clumps about two source pixels
+    // across (bilinear between hashed cells), the colour mottling a phone
+    // leaves after noise reduction; critics found the round-33 grain about
+    // half to a third of the references' and nearly colourless.
+    vec2 cp = uv * uInSize * 0.5 + uFrame * 3.71;
+    vec2 ci = floor(cp), cf = fract(cp);
+    cf = cf * cf * (3.0 - 2.0 * cf);
+    vec3 c00 = vec3(hash(ci + 3.1), hash(ci + 5.9), hash(ci + 8.3));
+    vec3 c10 = vec3(hash(ci + vec2(1.0, 0.0) + 3.1), hash(ci + vec2(1.0, 0.0) + 5.9), hash(ci + vec2(1.0, 0.0) + 8.3));
+    vec3 c01 = vec3(hash(ci + vec2(0.0, 1.0) + 3.1), hash(ci + vec2(0.0, 1.0) + 5.9), hash(ci + vec2(0.0, 1.0) + 8.3));
+    vec3 c11 = vec3(hash(ci + vec2(1.0, 1.0) + 3.1), hash(ci + vec2(1.0, 1.0) + 5.9), hash(ci + vec2(1.0, 1.0) + 8.3));
+    vec3 gc = mix(mix(c00, c10, cf.x), mix(c01, c11, cf.x), cf.y) - 0.5;
+    gc -= dot(gc, vec3(0.333));  // colour only
+    c += (gl * 0.055 + gc * 0.06) * (uGrain * wgt);
   }
   // TPDF dither, +/- 1 LSB of 8-bit, so dark gradients never band.
   float d = hash(fc + uFrame) + hash(fc * 1.37 + 17.0 + uFrame) - 1.0;
