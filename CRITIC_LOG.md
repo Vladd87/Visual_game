@@ -1080,3 +1080,16 @@ M6's net gain over the M5 final is about **+0.95**, the largest of any system si
 - **Use several distinct grass meshes,** from scans or hand-built, instead of one procedural clump.
 
 Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies and floating leaves are now the top giveaways in every panel.
+
+## Round 27: lantern v1 (M7)
+
+**What changed** (built on round 24, judged against it):
+- **The lantern** is a paper toro nagashi lantern instead of a glowing cube (ref02):
+  - four slightly tapered paper panels (6.6 × 8.5 cm) standing in a dark wooden tray, open at the top
+  - the paper shows the candle's light through it: a deeper orange band at the base, a pale hot spot above it, peach paper fading toward the rim, slightly darker folded corners and paper fibre
+  - a column of brushed characters on each panel
+  - brighter, paler inner faces seen through the open top
+  - the candle no longer lights the lantern's own paper and wood, which had clipped them to white
+- **Fireflies** are soft glows of varied size and brightness, a 4–6 mm core in a faint halo, drawn out into short streaks along their flight (ref06). Before, they were identical hard dots.
+- **Floating leaves** are cupped leaf shapes with an outline, stalk, midrib, side veins and decay spots, tinted per leaf from rust and ochre to dull olive and soaked brown. Before, they were flat orange squares.
+
