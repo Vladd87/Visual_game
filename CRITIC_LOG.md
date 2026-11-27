@@ -47,6 +47,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-24 | vegetation v3 (panel) | 4.12 | 3.97 | 4.05 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 22: **+0.33** (critics +0.31 / +0.34). New best; resets the sub-0.3 count |
 | round-25 | vegetation v4 (panel) | 3.72 | 3.72 | 3.72 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.14** (critics +0.03 / −0.31). Rejected; round 24 stays the best. 1st sub-0.3 round since round 24 |
 | round-26 | vegetation v5 (panel) | 3.56 | 4.03 | 3.80 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.11** (critics +0.12 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M6 stops at round 24** |
+| round-27 | lantern v1 (panel) | 4.09 | 4.44 | 4.27 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 24: **+1.00** (critics +0.94 / +1.06). New best; lantern system 5 vs 2.5 and 5 vs 3 |
 
 ## Round 1: water v1
 
@@ -1092,4 +1093,29 @@ Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies
   - the candle no longer lights the lantern's own paper and wood, which had clipped them to white
 - **Fireflies** are soft glows of varied size and brightness, a 4–6 mm core in a faint halo, drawn out into short streaks along their flight (ref06). Before, they were identical hard dots.
 - **Floating leaves** are cupped leaf shapes with an outline, stalk, midrib, side veins and decay spots, tinted per leaf from rust and ochre to dull olive and soaked brown. Before, they were flat orange squares.
+
+**Panel** (each critic compared this round with `captures/round-24` side by side, order flipped)
+
+| Critic | Round 27 (new) | Round 24 (best) | Difference | Lantern, fireflies and leaves, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 3.72 | 2.78 | +0.94 | 5 vs 2.5 |
+| b (new = X) | 4.81 | 3.75 | +1.06 | 5 vs 3 |
+
+- **Gain +1.00**, critic spread 0.12. **Round 27 is the new best,** the largest single gain of any round so far.
+- Absolute score 4.27 (inner 4.09, cover 4.44); lowest shot 4.0.
+- **A/B:** 0/4 fooled, 97–98 %. The A/B critic still called the render's lantern "a glowing white cube" at its crop size.
+- Tokens: 184k + 175k for the panel, 73k for the A/B critic.
+
+**Why both preferred it** (the rest of each frame was identical, which both confirmed by difference maps):
+- **The lantern.** The old one was "a single blown-out emissive block… a game pickup", with 2–4 times as many pixels above 200 near it. The new one "keeps the paper below clipping": walls, open top, tray, a calligraphy mark (refs 02, 11).
+- **The leaves.** The old "flat orange squares… like confetti or UI tiles" are gone.
+- **The fireflies.** The old spheres had "hard bright cores with a dark cap… tiny bug sprites"; the new ones are "soft round glows that fade smoothly" (ref06).
+
+**What still fails in the lantern system:**
+- **The paper is too pale and even.** Measured at about (221,175,132) against ref02's (249,176,98): it should be warmer amber, brightest at candle height low in the lantern, with bolder characters.
+- **A bright blob at the waterline below the lantern,** brighter than the paper itself (about 245 against 210–220). In ref02 the lantern's reflection is a long, dimmer column broken by ripples.
+- **Fireflies too pale and uniform:** about (213,209,167) against ref06's saturated yellow-green (about 208,231,127), all similar in size; a cluster in shot 8 looks evenly spaced.
+- **Leaves too dark, one size and tone:** ref08's leaves are curled, mixed yellow and brown, some partly sunk.
+
+**Beyond this system, both critics' top giveaways are unchanged:** the even grass field over speckled ground, water with too little rain or sky sheen and stair-stepped reflection edges, the clean point-light pool with hard edges on the banks, and no camera signature (grain, depth of field).
 
