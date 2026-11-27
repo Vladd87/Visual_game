@@ -1,0 +1,134 @@
+// LANTERN paper (M7): candle light seen through the paper panels of a
+// floating toro nagashi lantern (ref02).
+// UV: x = panel index + across the panel (0-1), y = up the panel (0 at the
+// tray, 1 at the rim).
+// What ref02 shows, bottom to top:
+//  - a deeper orange band where the wooden base inside blocks the flame;
+//  - a pale hot spot just above it, the flame behind the paper;
+//  - peach-apricot paper above, a little dimmer toward the rim;
+//  - a column of large brushed characters in dark ink;
+//  - barely any frame: the folded paper corners are a little darker.
+// The candle light does not reach these panels (light channels): their glow
+// is all emission, so it stays amber instead of clipping to white.
+material {
+  name: "LanternPaper",
+  shading_model: lit,
+  culling: none,
+  parameters: [
+    { type: float, name: glow, default: 1.0 },
+    { type: vec3, name: tint, default: [1.0, 0.42, 0.13] },
+    { type: float, name: inner, default: 0.6 },
+  ],
+}
+
+fragment {
+  float Hash(highp vec2 p) {
+    p = mod(p, 289.0);
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  }
+
+  float VNoise(highp vec2 p) {
+    highp vec2 i = floor(p);
+    vec2 f = vec2(fract(p));
+    vec2 w = f * f * (3.0 - 2.0 * f);
+    float a = Hash(i), b = Hash(i + vec2(1.0, 0.0));
+    float c = Hash(i + vec2(0.0, 1.0)), d = Hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, w.x), mix(c, d, w.x), w.y);
+  }
+
+  // Distance from p to the segment a-b, and where along it (0-1).
+  vec2 Segment(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return vec2(length(pa - ba * h), h);
+  }
+
+  // One brushed character in a unit cell: five strokes, mostly horizontal
+  // and vertical, some slanted, each thicker where the brush lands.
+  float Glyph(vec2 q, float seed) {
+    float ink = 0.0;
+    for (int k = 0; k < 5; k++) {
+      float fk = float(k);
+      float h1 = Hash(vec2(seed, fk));
+      float h2 = Hash(vec2(seed + 7.1, fk));
+      float h3 = Hash(vec2(seed + 3.3, fk));
+      float h4 = Hash(vec2(seed + 5.9, fk));
+      vec2 a, b;
+      if (h1 < 0.45) {
+        // horizontal
+        float y = 0.12 + 0.76 * h2;
+        a = vec2(0.08 + 0.3 * h3, y);
+        b = vec2(0.92 - 0.3 * h4, y + 0.08 * (h3 - 0.5));
+      } else if (h1 < 0.8) {
+        // vertical
+        float x = 0.15 + 0.7 * h2;
+        a = vec2(x, 0.92 - 0.25 * h3);
+        b = vec2(x + 0.06 * (h4 - 0.5), 0.08 + 0.3 * h4);
+      } else {
+        // slanted sweep
+        a = vec2(0.2 + 0.6 * h2, 0.85 - 0.2 * h3);
+        b = a + vec2(h4 < 0.5 ? -0.35 : 0.35, -0.45);
+      }
+      vec2 s = Segment(q, a, b);
+      // The brush lands heavy and lifts thin.
+      float w = mix(0.085, 0.04, s.y);
+      ink = max(ink, 1.0 - smoothstep(w * 0.6, w, s.x));
+    }
+    return ink;
+  }
+
+  void Surface(inout MaterialInputs material) {
+    highp vec2 uv = GetUV0();
+    float panel = floor(float(uv.x));
+    float u = float(fract(uv.x));
+    float v = float(uv.y);
+    float dx = (u - 0.5) * 2.0;
+    // The inside faces take the flame's light directly; the outside shows
+    // what passes through the paper. The panels wind clockwise seen from
+    // outside, so the outside is the back face.
+    float side = gl_FrontFacing ? 1.0 : 0.0;
+
+    // Light through the paper (ref02): the base band, the flame's hot spot
+    // above it, then a gentle falloff to the rim.
+    float band = 1.0 - smoothstep(0.15, 0.2, v);
+    float hot = exp(-(dx * dx * 1.6 + (v - 0.27) * (v - 0.27) * 30.0));
+    float body = mix(1.0, 0.72, smoothstep(0.25, 1.0, v)) * (1.0 - 0.25 * dx * dx);
+    float glow = mix(body, 0.5, band) + 0.9 * hot * (1.0 - band);
+    // Folded corners and the rim edge: a little darker.
+    float edge = mix(0.8, 1.0, smoothstep(0.0, 0.05, u) * smoothstep(1.0, 0.95, u));
+    // Paper fibre: fine mottling and long vertical fibres.
+    highp vec2 p = vec2(u, v) + panel * 3.7;
+    float fib = 0.86 + 0.14 * VNoise(p * vec2(70.0, 110.0)) + 0.06 * (VNoise(p * vec2(5.0, 160.0)) - 0.5);
+
+    // A column of characters on each panel (ref02): three on two opposite
+    // panels, two on the others. Cells are square on the paper (0.066 m
+    // wide, 0.085 m tall).
+    float ink = 0.0;
+    float rows = fract(panel * 0.5) > 0.25 ? 2.0 : 3.0;
+    if (side < 0.5) {
+      float cw = 0.36, ch = 0.36 * 0.066 / 0.085;
+      float c0 = 0.86 - ch * 3.0;
+      float row = floor((v - c0) / ch);
+      vec2 q = vec2((u - 0.5) / cw + 0.5, fract((v - c0) / ch));
+      if (row >= 3.0 - rows && row < 3.0 && abs(u - 0.5) < cw * 0.5) {
+        ink = Glyph(q, panel * 13.0 + row * 3.1 + 1.0);
+        // Dry-brush breaks.
+        ink *= 0.75 + 0.25 * smoothstep(0.3, 0.6, VNoise(p * vec2(60.0, 90.0)));
+      }
+    }
+
+    // Deeper orange where the light is weaker or passes more paper (the
+    // band); paler peach in the hot spot.
+    vec3 tint = material_params.tint;
+    vec3 col = mix(tint * vec3(1.0, 0.75, 0.5), tint, smoothstep(0.1, 0.22, v));
+    col = mix(col, tint * vec3(1.0, 1.45, 2.2), hot * (1.0 - band) * 0.7);
+    // Seen through the open top, the inner faces are paler and brighter.
+    col = mix(col, tint * vec3(1.0, 1.3, 1.8), side * 0.3);
+
+    material.base_color = vec4(vec3(0.62, 0.5, 0.36) * (1.0 - 0.8 * ink), 1.0);
+    material.metallic = 0.0;
+    material.roughness = 0.9;
+    material.emissive = col * glow * edge * fib * (1.0 - 0.88 * ink) * material_params.glow *
+                        (1.0 + material_params.inner * side);
+  }
+}

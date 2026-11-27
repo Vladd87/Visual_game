@@ -11,6 +11,8 @@ import '../sim/vec2.dart';
 import '../sim/world.dart';
 import '../game/diagnostics.dart';
 import 'rock_assets.dart';
+import 'leaf_model.dart';
+import 'lantern_model.dart';
 import 'rain.dart';
 import 'rock_layout.dart';
 import 'surface_pack.dart';
@@ -28,12 +30,18 @@ class GameScene {
   final Scene scene;
   World? _world;
   final List<Node> _chunks = [];
-  late InstancedMesh _fireflyMesh;
+  // M7: fireflies as soft, motion-stretched glows (ref06), one batch.
+  late final BillboardGeometry _fireflyGeom;
   late InstancedMesh _leafMesh;
   late final Node _lantern;
   late final Node _lanternLightNode;
   late final PointLight _lanternLight;
   late final PhysicallyBasedMaterial _paper;
+  // M7: paper panels drawn with lantern.fmat (the PBR [_paper] in safe mode).
+  late final Node _paperNode;
+  late final MeshGeometry _paperGeom;
+  PreprocessedMaterial? _paperMat;
+  late final Sprite _flame;
   late final Sprite _halo;
   bool _staticBuilt = false;
   PreprocessedMaterial? _waterMat;
@@ -61,6 +69,9 @@ class GameScene {
   // AgX (M4 v3).
   // M4 v6: deeper toward the candle amber of ref02 (its lit water is about
   // 90/40/19); the paler 1.0/0.52/0.2 spilled cream-yellow onto the banks.
+  /// Light channel of the lantern's own parts, which its candle does not
+  /// light (see the point light).
+  static const int _lanternSelfChannel = 0x80;
   static final vm.Vector3 lanternColor = vm.Vector3(1.0, 0.42, 0.13);
 
   static const int maxLeaves = 48;
@@ -157,30 +168,60 @@ class GameScene {
       scene.antiAliasingMode = AntiAliasingMode.fxaa;
     }
 
-    // Lantern: paper cube with a warm shadow-casting point light inside.
+    // Lantern (M7): a floating paper lantern (refs 02, 10) with a warm
+    // shadow-casting point light inside: four tapered paper panels on a
+    // wooden tray, corner ribs and a rim, open at the top so the flame shows.
     _paper = PhysicallyBasedMaterial()
-      // Amber paper: the candle's light seen through it (ref02), so the lit
-      // faces stay amber instead of tone-mapping to cream.
+      // Safe-mode stand-in for lantern.fmat: amber paper, the candle's light
+      // seen through it (ref02).
       ..baseColorFactor = vm.Vector4(0.9, 0.55, 0.25, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.85
       ..emissiveFactor = vm.Vector4(1.0, 0.44, 0.12, 1)
       ..emissiveStrength = 1.6;
     _lantern = Node(name: 'lantern');
-    final body = Node(name: 'lanternBody', mesh: Mesh(CuboidGeometry(vm.Vector3(0.07, 0.07, 0.07)), _paper));
-    body.position = vm.Vector3(0, 0.03, 0);
-    body.shadowCastingMode = ShadowCastingMode.off;
-    _lantern.add(body);
+    _paperGeom = LanternModel.paperPanels();
+    _paperNode = Node(name: 'lanternPaper', mesh: Mesh(_paperGeom, _paper))
+      // The light sits inside the paper: the panels must not block it.
+      ..shadowCastingMode = ShadowCastingMode.off
+      ..lightChannelMask = _lanternSelfChannel;
+    _lantern.add(_paperNode);
+    // Dark, damp wood: the tray.
+    final woodMat = PhysicallyBasedMaterial()
+      ..baseColorFactor = vm.Vector4(0.07, 0.045, 0.028, 1)
+      ..metallicFactor = 0
+      ..roughnessFactor = 0.55;
+    final (trayAt, traySize) = LanternModel.tray();
+    _lantern.add(Node(name: 'lanternTray', mesh: Mesh(CuboidGeometry(traySize), woodMat))
+      ..position = trayAt
+      // Wider than the candle holder: its shadow would be the hard black
+      // hole of round 13.
+      ..shadowCastingMode = ShadowCastingMode.off
+      ..lightChannelMask = _lanternSelfChannel);
+    // The tray floor inside, lit warm by the candle (seen through the open
+    // top). The candle light itself skips the lantern's parts.
+    _lantern.add(Node(name: 'lanternFloor', mesh: Mesh(LanternModel.floor(), UnlitMaterial()..baseColorFactor = vm.Vector4(0.55, 0.2, 0.05, 1)))
+      ..shadowCastingMode = ShadowCastingMode.off);
     // A small wooden candle holder under the flame (M4 v5): a soft
-    // darkening right under the lantern instead of a hot spot. Round 13's
-    // full-width base cast a hard black hole beside the lantern (critics).
+    // darkening right under the lantern instead of a hot spot.
     final baseMat = PhysicallyBasedMaterial()
       ..baseColorFactor = vm.Vector4(0.06, 0.04, 0.025, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.8;
     final base = Node(name: 'lanternBase', mesh: Mesh(CuboidGeometry(vm.Vector3(0.04, 0.01, 0.04)), baseMat));
     base.position = vm.Vector3(0, 0.012, 0);
+    base.lightChannelMask = _lanternSelfChannel;
     _lantern.add(base);
+    // The candle flame, upright, seen through the open top.
+    _flame = Sprite(
+        texture: LanternModel.flameTexture(),
+        width: _tune('flamew', 0.014),
+        height: _tune('flameh', 0.03),
+        blendMode: SpriteBlendMode.additive,
+        facing: BillboardFacing.axisLocked);
+    _lantern.add(Node(name: 'lanternFlame', mesh: _flame.mesh)
+      ..position = vm.Vector3(0, 0.03, 0)
+      ..shadowCastingMode = ShadowCastingMode.off);
     // Glow in the damp air around the flame (refs 01, 03): a faint additive
     // halo that dissolves where it meets the bed or banks.
     _halo = Sprite(texture: _haloTexture(), width: 0.7, height: 0.7, blendMode: SpriteBlendMode.additive);
@@ -206,6 +247,10 @@ class GameScene {
       shadowSoftness: 11.0,
       shadowNear: 0.02,
       shadowMapResolution: 512,
+      // Not the lantern's own paper and wood: a few centimetres from the
+      // flame they would clip to white (M7 preview). The paper's glow is its
+      // emission (lantern.fmat); the frame reads dark against it.
+      channelMask: 0xFF & ~_lanternSelfChannel,
     );
     _lanternLightNode = Node(name: 'lanternLight')..addComponent(PointLightComponent(_lanternLight));
     _lanternLightNode.position = vm.Vector3(0, 0.035, 0);
@@ -223,25 +268,51 @@ class GameScene {
         ..frustumCulled = false);
     }
 
-    // Fireflies: tiny emissive spheres, instanced.
-    final fireflyMat = UnlitMaterial()..baseColorFactor = vm.Vector4(3.2, 4.0, 1.1, 1);
-    _fireflyMesh = InstancedMesh(geometry: SphereGeometry(radius: 0.0065, segments: 8, rings: 5), material: fireflyMat);
-    final fireflies = Node(name: 'fireflies')
-      ..addComponent(InstancedMeshComponent(_fireflyMesh))
+    // Fireflies (M7): soft glows of varied size and brightness, drawn out
+    // a little along their flight by the exposure (ref06), instead of the
+    // hard identical dots critics flagged.
+    _fireflyGeom = BillboardGeometry(capacity: 256)
+      ..facing = BillboardFacing.velocityStretched
+      ..velocityStretch = _tune('ffstretch', 0.08);
+    final fireflyMat = SpriteMaterial(colorTexture: fireflyTexture())
+      ..blendMode = SpriteBlendMode.additive
+      ..softDepthFade = 0.01;
+    final fireflies = Node(name: 'fireflies', mesh: Mesh(_fireflyGeom, fireflyMat))
       ..shadowCastingMode = ShadowCastingMode.off
+      // After the water: both draw in the translucent pass, sprites write no
+      // depth, and the water drawn later painted over every firefly above it.
+      ..renderOrder = 1
       ..layers = _noMirrorLayer
       ..frustumCulled = false;
     if (Uri.base.queryParameters['noff'] != '1') scene.add(fireflies);
 
-    // Leaves: thin cards, instanced; hidden ones are scaled to zero.
+    // Leaves (M7): real leaf outlines with veins, cupped, each its own shade
+    // from dull green to rust (refs 08, 12), instead of flat orange cards.
+    // Hidden ones are scaled to zero.
     final leafMat = PhysicallyBasedMaterial()
-      ..baseColorFactor = vm.Vector4(0.42, 0.22, 0.08, 1)
+      ..baseColorTexture = leafTexture()
+      ..baseColorFactor = vm.Vector4(1, 1, 1, 1)
+      ..alphaMode = AlphaMode.mask
+      ..alphaCutoff = 0.5
       ..metallicFactor = 0
-      ..roughnessFactor = 0.7
+      // Wet: a soft sheen.
+      ..roughnessFactor = 0.45
       ..doubleSided = true;
-    _leafMesh = InstancedMesh(geometry: CuboidGeometry(vm.Vector3(0.05, 0.002, 0.034)), material: leafMat);
+    _leafMesh = InstancedMesh(geometry: leafGeometry(), material: leafMat);
+    const leafShades = [
+      [0.62, 0.30, 0.10], // rust
+      [0.55, 0.40, 0.16], // ochre
+      [0.38, 0.22, 0.10], // brown
+      [0.34, 0.36, 0.14], // dull olive
+      [0.70, 0.42, 0.12], // amber
+      [0.30, 0.17, 0.08], // dark, soaked
+    ];
     for (var i = 0; i < maxLeaves; i++) {
-      _leafMesh.addInstance(vm.Matrix4.zero());
+      final c = leafShades[(i * 7 + 3) % leafShades.length];
+      // The texture is sRGB (about 0.5 linear on the blade): lift the shades
+      // so the leaves read about as bright as the old cards.
+      final k = _tune('leafk', 1.8) * (0.85 + 0.3 * ((math.sin(i * 3.7) * 43758.5453) % 1.0).abs());
+      _leafMesh.addInstance(vm.Matrix4.zero(), color: vm.Vector4(c[0] * k, c[1] * k, c[2] * k, 1));
     }
     // The greybox leaves sit centimetres from the lantern's point light, so their
     // shadow lands on the bed magnified into a hard dark trapezoid (round-5
@@ -267,6 +338,11 @@ class GameScene {
     final wv = Diagnostics.waterVariant;
     _waterMat = await loadFmatMaterial(wv > 0 && wv < 9 ? 'assets/materials/bringup/water_v$wv.fmat' : 'assets/materials/water.fmat');
     _groundMat = await loadFmatMaterial('assets/materials/ground.fmat');
+    _paperMat = await loadFmatMaterial('assets/materials/lantern.fmat');
+    _paperNode.mesh = Mesh(_paperGeom, _paperMat!);
+    // Saturated amber (AgX pales bright, weakly saturated colours to cream).
+    _paperMat!.parameters.setVec3('tint', vm.Vector3(1.0, _tune('ptg', 0.32), _tune('ptb', 0.07)));
+    _paperMat!.parameters.setFloat('inner', _tune('pinner', 0.3));
     _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
     _waterMat!.parameters.setTexture('sky_tex', _sky!.gpuTexture, sampler: _sky!.sampledSampler);
     // Baked sky encodes sqrt(radiance / 1.3939) (scale printed by tools/bake/bake_sky.py).
@@ -575,11 +651,6 @@ class GameScene {
       }
     }
 
-    // Fireflies follow the course list one-to-one.
-    _fireflyMesh.clearInstances();
-    for (var i = 0; i < world.fireflies.length; i++) {
-      _fireflyMesh.addInstance(vm.Matrix4.zero(), color: vm.Vector4.all(1));
-    }
   }
 
   /// Per-frame update from the simulation ([alpha] interpolates the lantern).
@@ -607,6 +678,9 @@ class GameScene {
     // (Fresnel ~3 %); the light it casts slightly lower again (bank stripes).
     _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
     _paper.emissiveStrength = 0.1 + 1.6 * f * flicker;
+    _paperMat?.parameters.setFloat('glow', _tune('pglow', 0.15) + _tune('pglowf', 0.85) * f * flicker);
+    final fl = 0.2 + 1.0 * f * flicker;
+    _flame.color = vm.Vector4(1.0 * fl, 0.62 * fl, 0.26 * fl, 1.0) * _tune('flame', 4.0);
     _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * (0.03 + 0.18 * f * flicker);
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
@@ -629,40 +703,61 @@ class GameScene {
       m.parameters.setFloat('lantern_range', lanternRange);
     }
 
-    // Fireflies: hover, blink; collected ones spiral up into the lantern and fade.
-    _fireflyMesh.updateInstanceTransforms((list) {
-      for (var i = 0; i < w.fireflies.length; i++) {
-        final ff = w.fireflies[i];
+    // Fireflies: hover, blink; collected ones spiral up into the lantern and
+    // fade. Each has its own size and brightness, and its velocity draws its
+    // glow out into a short streak.
+    var nff = 0;
+    final ffSize = _tune('ffsize', 0.045), ffGlow = _tune('ffglow', 3.5);
+    for (var i = 0; i < w.fireflies.length && nff < _fireflyGeom.capacity; i++) {
+      final ff = w.fireflies[i];
+      vm.Vector3 at(double tt) {
         V2 p;
-        double h, s;
-        if (!ff.collected) {
-          p = ff.positionAt(t);
-          h = ff.heightAt(t);
-          s = 1;
+        double h;
+        if (!ff.collected || tt < ff.collectedAt) {
+          p = ff.positionAt(tt);
+          h = ff.heightAt(tt);
         } else {
-          final k = ((t - ff.collectedAt) / 0.8).clamp(0.0, 1.0);
+          final k = ((tt - ff.collectedAt) / 0.8).clamp(0.0, 1.0);
           final from = ff.positionAt(ff.collectedAt);
           p = V2.lerp(from, pose.pos, k);
           h = ff.heightAt(ff.collectedAt) * (1 - k) + 0.04 * k;
-          s = 1 - k;
           if (w.phase == RunPhase.won) {
             // Finale: gathered fireflies rise into the sky.
-            final rise = ((t - w.endedAt) / 6.0).clamp(0.0, 1.0);
+            final rise = ((tt - w.endedAt) / 6.0).clamp(0.0, 1.0);
             if (rise > 0) {
               final a = i * 2.399;
               p = pose.pos + V2(math.cos(a), math.sin(a)) * (0.05 + 0.25 * rise);
-              h = 0.05 + rise * 1.6 + 0.1 * math.sin(i + t);
-              s = 1;
+              h = 0.05 + rise * 1.6 + 0.1 * math.sin(i + tt);
             }
           }
         }
-        list[i].setFromTranslationRotationScale(vm.Vector3(p.x, h, -p.y), vm.Quaternion.identity(), vm.Vector3.all(s));
+        return vm.Vector3(p.x, h, -p.y);
       }
-    });
-    for (var i = 0; i < w.fireflies.length; i++) {
-      final g = w.fireflies[i].glowAt(t);
-      _fireflyMesh.setInstanceColor(i, vm.Vector4(g, g, g, 1));
+
+      var s = 1.0;
+      if (ff.collected) {
+        final k = ((t - ff.collectedAt) / 0.8).clamp(0.0, 1.0);
+        s = 1 - k;
+        if (w.phase == RunPhase.won && t > w.endedAt) s = 1;
+      }
+      final g = ff.glowAt(t) * s;
+      if (g < 0.01) continue;
+      // Per-firefly variety (stable hash of the index).
+      final h1 = (math.sin(i * 12.9898) * 43758.5453) % 1.0;
+      final h2 = (math.sin(i * 78.233 + 1.7) * 43758.5453) % 1.0;
+      final size = ffSize * (0.6 + 0.8 * h1.abs()) * (0.75 + 0.25 * g);
+      final bright = ffGlow * g * (0.5 + 1.0 * h2.abs());
+      final c = at(t);
+      final vel = (c - at(t - 0.05)) / 0.05;
+      _fireflyGeom.setInstance(nff++,
+          center: c,
+          width: size,
+          height: size,
+          // Yellow-green bioluminescence (ref06), a touch warmer when dim.
+          color: vm.Vector4(1.0 * bright, (0.95 + 0.05 * g) * bright, 0.25 * bright, 1),
+          velocity: vel);
     }
+    _fireflyGeom.commit(nff);
 
     // Leaves.
     _leafMesh.updateInstanceTransforms((list) {
@@ -674,7 +769,8 @@ class GameScene {
         final leaf = w.leaves[i];
         final flutter = leaf.state == LeafState.falling ? math.sin(leaf.age * 5 + leaf.seed % 9) * 0.6 : 0.0;
         final pos = leaf.state == LeafState.stuck ? pose.pos : leaf.pos;
-        final y = leaf.state == LeafState.stuck ? 0.072 : leaf.height + 0.002;
+        // Stuck leaves rest across the lantern's open top.
+        final y = leaf.state == LeafState.stuck ? LanternModel.trayTop + LanternModel.height + 0.001 : leaf.height + 0.002;
         list[i].setFromTranslationRotationScale(
           vm.Vector3(pos.x, y, -pos.y),
           vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), leaf.angle) * vm.Quaternion.axisAngle(vm.Vector3(1, 0, 0), flutter),
