@@ -71,7 +71,7 @@ fragment {
       }
       vec2 s = Segment(q, a, b);
       // The brush lands heavy and lifts thin.
-      float w = mix(0.085, 0.04, s.y);
+      float w = mix(0.12, 0.06, s.y);
       ink = max(ink, 1.0 - smoothstep(w * 0.6, w, s.x));
     }
     return ink;
@@ -92,21 +92,23 @@ fragment {
     // above it, then a gentle falloff to the rim.
     float band = 1.0 - smoothstep(0.15, 0.2, v);
     float hot = exp(-(dx * dx * 1.6 + (v - 0.27) * (v - 0.27) * 30.0));
-    float body = mix(1.0, 0.72, smoothstep(0.25, 1.0, v)) * (1.0 - 0.25 * dx * dx);
-    float glow = mix(body, 0.5, band) + 0.9 * hot * (1.0 - band);
+    // Brightest at candle height, half as bright at the rim (round 27
+    // critics: evenly lit).
+    float body = mix(1.0, 0.45, smoothstep(0.2, 1.0, v)) * (1.0 - 0.25 * dx * dx);
+    float glow = mix(body, 0.5, band) + 1.1 * hot * (1.0 - band);
     // Folded corners and the rim edge: a little darker.
     float edge = mix(0.8, 1.0, smoothstep(0.0, 0.05, u) * smoothstep(1.0, 0.95, u));
     // Paper fibre: fine mottling and long vertical fibres.
     highp vec2 p = vec2(u, v) + panel * 3.7;
     float fib = 0.86 + 0.14 * VNoise(p * vec2(70.0, 110.0)) + 0.06 * (VNoise(p * vec2(5.0, 160.0)) - 0.5);
 
-    // A column of characters on each panel (ref02): three on two opposite
-    // panels, two on the others. Cells are square on the paper (0.066 m
-    // wide, 0.085 m tall).
+    // A column of large characters on each panel (ref02): three on two
+    // opposite panels, two on the others, about 2.9 cm wide and 2 cm tall
+    // on the 6.6 × 8.5 cm paper.
     float ink = 0.0;
     float rows = fract(panel * 0.5) > 0.25 ? 2.0 : 3.0;
     if (side < 0.5) {
-      float cw = 0.36, ch = 0.36 * 0.066 / 0.085;
+      float cw = 0.44, ch = 0.235;
       float c0 = 0.86 - ch * 3.0;
       float row = floor((v - c0) / ch);
       vec2 q = vec2((u - 0.5) / cw + 0.5, fract((v - c0) / ch));

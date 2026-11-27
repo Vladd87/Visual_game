@@ -33,6 +33,9 @@ material {
     { type: vec3, name: lantern_pos, default: [0, 0.03, 0] },
     { type: vec3, name: lantern_light, default: [1.0, 0.52, 0.2] },
     { type: float, name: lantern_range, default: 1.0 },
+    { type: float, name: lantern_mirror, default: 12.0 },
+    { type: float, name: lantern_yaw, default: 0.0 },
+    { type: float, name: lantern_soft, default: 0.0025 },
     { type: vec3, name: ambient, default: [0.02, 0.025, 0.03] },
     { type: vec3, name: absorption, default: [5.0, 6.0, 10.0] },
     { type: vec3, name: murk, default: [0.06, 0.055, 0.035] },
@@ -190,7 +193,36 @@ fragment {
     highp vec3 d = material_params.lantern_pos - p;
     float r2 = dot(d, d);
     float window = clamp(1.0 - r2 / (material_params.lantern_range * material_params.lantern_range), 0.0, 1.0);  // the lantern light's range
-    return material_params.lantern_light * (0.012 / (r2 + 0.0025)) * window * window;
+    return material_params.lantern_light * (0.012 / (r2 + material_params.lantern_soft)) * window * window;
+  }
+
+  // The lantern's paper seen along a reflected ray (M7): its glowing panels
+  // as a 6.6 cm box (turned by the lantern's yaw) standing 1.2-9.7 cm above
+  // its base, the dark tray below. Ripples tilt the ray, so the reflection
+  // breaks into a column of glints under the lantern (ref02). Returns its
+  // radiance in units of the lantern's light colour.
+  vec3 LanternMirror(highp vec3 wp, vec3 rd) {
+    if (rd.y <= 0.0) return vec3(0.0);
+    float cy = cos(material_params.lantern_yaw), sy = sin(material_params.lantern_yaw);
+    highp vec2 ow = wp.xz - material_params.lantern_pos.xz;
+    // World to lantern-local: the transpose of a rotation about +Y.
+    highp vec2 o = vec2(cy * ow.x - sy * ow.y, sy * ow.x + cy * ow.y);
+    highp vec2 d = vec2(cy * rd.x - sy * rd.z, sy * rd.x + cy * rd.z);
+    const float h = 0.033;
+    highp vec2 inv = 1.0 / max(abs(d), vec2(1e-5)) * sign(d + vec2(1e-9));
+    highp vec2 t0 = (vec2(-h) - o) * inv, t1 = (vec2(h) - o) * inv;
+    highp vec2 tn = min(t0, t1), tf = max(t0, t1);
+    highp float tNear = max(tn.x, tn.y), tFar = min(tf.x, tf.y);
+    if (tNear <= 0.0 || tNear >= tFar) return vec3(0.0);
+    float base = float(material_params.lantern_pos.y) - 0.035;
+    float v = (float(wp.y + rd.y * tNear) - base - 0.012) / 0.085;
+    // Soft edges: thin chords at the box's silhouette, top and bottom.
+    float chord = float((tFar - tNear) * length(d));
+    float edge = smoothstep(0.0, 0.008, chord);
+    float span = smoothstep(0.0, 0.06, v) * (1.0 - smoothstep(0.94, 1.0, v));
+    // Brightest low, where the candle sits (lantern.fmat).
+    float profile = mix(1.0, 0.45, smoothstep(0.15, 1.0, v));
+    return material_params.lantern_light * (profile * edge * span);
   }
 
   // Planar reflection sampled at a ripple-displaced world point.
@@ -289,6 +321,13 @@ fragment {
     float covered = smoothstep(0.002, 0.02, max(mir.r, max(mir.g, mir.b)));
     vec3 r = reflect(-v, nSky);
     vec3 reflected = mix(Sky(r, wp), mir.rgb, covered) * f * material_params.reflection;
+    // The lantern's own reflection along the full ripple tilt. The paper is
+    // drawn unclipped, far below a real candle-lit paper's radiance, so its
+    // mirror image (2.5 % at this view) would vanish; `lantern_mirror`
+    // restores the reflection a photo shows (ref02).
+    // Full ripple and rain tilt (the sky reflection uses a gentler one).
+    vec3 nG = normalize(vec3(-slope.x, 1.0, -slope.y));
+    reflected += LanternMirror(wp, reflect(-v, nG)) * f * material_params.lantern_mirror;
 
     // --- foam ----------------------------------------------------------------------
     // Streaks: long along the flow, narrow across it, advected downstream.

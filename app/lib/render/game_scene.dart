@@ -72,6 +72,9 @@ class GameScene {
   /// Light channel of the lantern's own parts, which its candle does not
   /// light (see the point light).
   static const int _lanternSelfChannel = 0x80;
+
+  /// Light channel of the water, which the candle light skips too.
+  static const int _waterChannel = 0x40;
   static final vm.Vector3 lanternColor = vm.Vector3(1.0, 0.42, 0.13);
 
   static const int maxLeaves = 48;
@@ -238,10 +241,13 @@ class GameScene {
       // the bank slopes facing the lantern still caught a bright rim.
       range: lanternRange,
       castsShadow: Uri.base.queryParameters['noshadow'] != '1' && !Diagnostics.noEffects,
-      // A flame-sized source inside the 7 cm lantern: soft shadows, broad
-      // glints, but inside the paper (a larger sphere lit the lantern's own
-      // outside faces near-white).
-      radius: 0.03,
+      // The glowing paper box (6.8 × 8.5 cm) is the emitter, not the flame:
+      // the radius floors the inverse-square falloff, so the bed right under
+      // the lantern no longer outshines the paper (round 27 critics: a
+      // waterline blob brighter than the lantern). The lantern's own parts
+      // are on another light channel, so the larger sphere no longer
+      // whitens them.
+      radius: _tune('lrad', 0.06),
       // Wide penumbra: the bank lip and rocks cast soft-edged shade, not the
       // hard bright stripes critics flagged (round 12).
       shadowSoftness: 11.0,
@@ -250,7 +256,7 @@ class GameScene {
       // Not the lantern's own paper and wood: a few centimetres from the
       // flame they would clip to white (M7 preview). The paper's glow is its
       // emission (lantern.fmat); the frame reads dark against it.
-      channelMask: 0xFF & ~_lanternSelfChannel,
+      channelMask: 0xFF & ~_lanternSelfChannel & ~_waterChannel,
     );
     _lanternLightNode = Node(name: 'lanternLight')..addComponent(PointLightComponent(_lanternLight));
     _lanternLightNode.position = vm.Vector3(0, 0.035, 0);
@@ -299,13 +305,15 @@ class GameScene {
       ..roughnessFactor = 0.45
       ..doubleSided = true;
     _leafMesh = InstancedMesh(geometry: leafGeometry(), material: leafMat);
+    // Mixed yellow and brown, as fallen leaves on a stream (ref08).
     const leafShades = [
       [0.62, 0.30, 0.10], // rust
-      [0.55, 0.40, 0.16], // ochre
+      [0.72, 0.55, 0.14], // yellow
       [0.38, 0.22, 0.10], // brown
-      [0.34, 0.36, 0.14], // dull olive
-      [0.70, 0.42, 0.12], // amber
+      [0.40, 0.40, 0.14], // dull olive
+      [0.78, 0.48, 0.13], // amber
       [0.30, 0.17, 0.08], // dark, soaked
+      [0.62, 0.50, 0.22], // pale ochre
     ];
     for (var i = 0; i < maxLeaves; i++) {
       final c = leafShades[(i * 7 + 3) % leafShades.length];
@@ -341,7 +349,7 @@ class GameScene {
     _paperMat = await loadFmatMaterial('assets/materials/lantern.fmat');
     _paperNode.mesh = Mesh(_paperGeom, _paperMat!);
     // Saturated amber (AgX pales bright, weakly saturated colours to cream).
-    _paperMat!.parameters.setVec3('tint', vm.Vector3(1.0, _tune('ptg', 0.32), _tune('ptb', 0.07)));
+    _paperMat!.parameters.setVec3('tint', vm.Vector3(1.0, _tune('ptg', 0.23), _tune('ptb', 0.035)));
     _paperMat!.parameters.setFloat('inner', _tune('pinner', 0.3));
     _waterMat!.parameters.setTexture('normal_tex', _waterNormal!.gpuTexture, sampler: _waterNormal!.sampledSampler);
     _waterMat!.parameters.setTexture('sky_tex', _sky!.gpuTexture, sampler: _sky!.sampledSampler);
@@ -363,6 +371,8 @@ class GameScene {
     // as painted swirls and concentric arcs (critics, rounds 15-18).
     _waterMat!.parameters.setFloat('normal_strength', _tune('nstr', 0.5));
     _waterMat!.parameters.setFloat('foam_amount', _tune('foam', 1.0));
+    // M7: the lantern's reflection (see water.fmat LanternMirror).
+    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -552,7 +562,13 @@ class GameScene {
                 positions: w.positions, normals: w.normals, colors: Diagnostics.waterNoColors ? null : w.colors, indices: w.indices),
             Diagnostics.waterVariant == 9 ? groundMat : waterMat),
       )
-        ..shadowCastingMode = ShadowCastingMode.off;
+        ..shadowCastingMode = ShadowCastingMode.off
+        // The candle's light does not reach the water directly (M7): as a
+        // 6 cm sphere of about 70× the paper's drawn brightness, its
+        // specular reflection made a blob below the lantern brighter than
+        // the lantern itself (round 27). The water draws the lantern's
+        // reflection from the paper instead (water.fmat LanternMirror).
+        ..lightChannelMask = _tune('waterlit', 0) == 1 ? 0xFF : _waterChannel;
       if (Uri.base.queryParameters['noreflect'] != '1' && !Diagnostics.noEffects && !Diagnostics.noReflect) {
         // One shared mirror capture for every water chunk (they are co-planar).
         // Fireflies stay out of the mirror. At the mirror's 0.4 scale a 13 mm
@@ -678,10 +694,10 @@ class GameScene {
     // (Fresnel ~3 %); the light it casts slightly lower again (bank stripes).
     _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
     _paper.emissiveStrength = 0.1 + 1.6 * f * flicker;
-    _paperMat?.parameters.setFloat('glow', _tune('pglow', 0.15) + _tune('pglowf', 0.85) * f * flicker);
+    _paperMat?.parameters.setFloat('glow', _tune('pglow', 0.15) + _tune('pglowf', 1.25) * f * flicker);
     final fl = 0.2 + 1.0 * f * flicker;
     _flame.color = vm.Vector4(1.0 * fl, 0.62 * fl, 0.26 * fl, 1.0) * _tune('flame', 4.0);
-    _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * (0.03 + 0.18 * f * flicker);
+    _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * ((0.03 + 0.18 * f * flicker) * _tune('halo', 1.0));
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     final ll = lanternColor * _lanternLight.intensity;
     final rainDt = _lastRealTime == null ? 0.0 : (realTime - _lastRealTime!).clamp(0.0, 0.1);
@@ -701,13 +717,16 @@ class GameScene {
       m.parameters.setVec3('lantern_pos', lp);
       m.parameters.setVec3('lantern_light', ll);
       m.parameters.setFloat('lantern_range', lanternRange);
+      // The same extended-source near field for the custom lantern terms.
+      m.parameters.setFloat('lantern_soft', _tune('lsoft', 0.0055));
+      if (m == _waterMat) m.parameters.setFloat('lantern_yaw', pose.angle);
     }
 
     // Fireflies: hover, blink; collected ones spiral up into the lantern and
     // fade. Each has its own size and brightness, and its velocity draws its
     // glow out into a short streak.
     var nff = 0;
-    final ffSize = _tune('ffsize', 0.045), ffGlow = _tune('ffglow', 3.5);
+    final ffSize = _tune('ffsize', 0.045), ffGlow = _tune('ffglow', 3.0);
     for (var i = 0; i < w.fireflies.length && nff < _fireflyGeom.capacity; i++) {
       final ff = w.fireflies[i];
       vm.Vector3 at(double tt) {
@@ -746,15 +765,16 @@ class GameScene {
       final h1 = (math.sin(i * 12.9898) * 43758.5453) % 1.0;
       final h2 = (math.sin(i * 78.233 + 1.7) * 43758.5453) % 1.0;
       final size = ffSize * (0.6 + 0.8 * h1.abs()) * (0.75 + 0.25 * g);
-      final bright = ffGlow * g * (0.5 + 1.0 * h2.abs());
+      final bright = ffGlow * g * (0.3 + 1.2 * h2.abs());
       final c = at(t);
       final vel = (c - at(t - 0.05)) / 0.05;
       _fireflyGeom.setInstance(nff++,
           center: c,
           width: size,
           height: size,
-          // Yellow-green bioluminescence (ref06), a touch warmer when dim.
-          color: vm.Vector4(1.0 * bright, (0.95 + 0.05 * g) * bright, 0.25 * bright, 1),
+          // Saturated yellow-green bioluminescence (ref06; round 27 critics
+          // measured the old tint as pale cream).
+          color: vm.Vector4(0.72 * bright, 1.0 * bright, 0.16 * bright, 1),
           velocity: vel);
     }
     _fireflyGeom.commit(nff);
@@ -770,11 +790,15 @@ class GameScene {
         final flutter = leaf.state == LeafState.falling ? math.sin(leaf.age * 5 + leaf.seed % 9) * 0.6 : 0.0;
         final pos = leaf.state == LeafState.stuck ? pose.pos : leaf.pos;
         // Stuck leaves rest across the lantern's open top.
-        final y = leaf.state == LeafState.stuck ? LanternModel.trayTop + LanternModel.height + 0.001 : leaf.height + 0.002;
+        // A third of the floating leaves ride low, soaked, their middle just
+        // under the surface (ref08); sizes vary from 0.7 to 1.3.
+        final hs = ((math.sin(leaf.seed * 12.9898) * 43758.5453) % 1.0).abs();
+        final sunk = leaf.state == LeafState.floating && hs < 0.33 ? -0.003 : 0.0;
+        final y = leaf.state == LeafState.stuck ? LanternModel.trayTop + LanternModel.height + 0.001 : leaf.height + 0.002 + sunk;
         list[i].setFromTranslationRotationScale(
           vm.Vector3(pos.x, y, -pos.y),
           vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), leaf.angle) * vm.Quaternion.axisAngle(vm.Vector3(1, 0, 0), flutter),
-          vm.Vector3.all(1),
+          vm.Vector3.all(0.7 + 0.6 * ((math.sin(leaf.seed * 78.233 + 1.7) * 43758.5453) % 1.0).abs()),
         );
       }
     });
