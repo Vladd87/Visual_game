@@ -312,7 +312,8 @@ class GameScene {
     // hard identical dots critics flagged.
     _fireflyGeom = BillboardGeometry(capacity: 256)
       ..facing = BillboardFacing.velocityStretched
-      ..velocityStretch = _tune('ffstretch', 0.08);
+      // About 1/8 s of motion (round 33).
+      ..velocityStretch = _tune('ffstretch', 0.12);
     final fireflyMat = SpriteMaterial(colorTexture: fireflyTexture())
       ..blendMode = SpriteBlendMode.additive
       ..softDepthFade = 0.01;
@@ -805,7 +806,16 @@ class GameScene {
       final size = ffSize * (0.6 + 0.8 * h1.abs()) * (0.75 + 0.25 * g);
       final bright = ffGlow * g * (0.3 + 1.2 * h2.abs());
       final c = at(t);
-      final vel = (c - at(t - 0.05)) / 0.05;
+      // Exposure-time streaks (M8 round 33): on top of its sim motion each
+      // firefly flits in its own direction at 0.1-0.3 m/s, so a dusk
+      // exposure draws dashes of different lengths and directions, not
+      // frozen dots (refs 04, 06).
+      final h3 = (math.sin(i * 39.346 + 0.5) * 43758.5453) % 1.0;
+      final h4 = (math.sin(i * 11.135 + 2.3) * 43758.5453) % 1.0;
+      final ang = h3.abs() * 2 * math.pi + 0.6 * math.sin(t * 0.7 + i);
+      final flit = _tune('ffflit', 1.0) * (0.1 + 0.2 * h4.abs());
+      final vel = (c - at(t - 0.05)) / 0.05 +
+          vm.Vector3(math.cos(ang) * flit, 0.25 * flit * math.sin(t * 1.3 + i * 2.1), math.sin(ang) * flit);
       _fireflyGeom.setInstance(nff++,
           center: c,
           width: size,

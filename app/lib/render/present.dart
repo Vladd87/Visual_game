@@ -21,7 +21,8 @@ class ScenePresenter extends StatefulWidget {
     required this.cameraFor,
     required this.onTick,
     required this.renderScale,
-    this.sharpen = 0.55,
+    // M8 round 33: 0.55 -> 0.3; a phone at dusk is soft, not crisp.
+    this.sharpen = 0.3,
   });
 
   final Scene scene;
@@ -106,6 +107,8 @@ class _UpscalePainter extends CustomPainter {
   /// captures). The engine's own film grain is off.
   static final double grain = double.tryParse(Uri.base.queryParameters['pgrain'] ?? '') ?? 1.0;
 
+  static final int _seed = math.Random().nextInt(256);
+
   static bool _firstPaint = true;
   static int _paints = 0;
 
@@ -127,7 +130,8 @@ class _UpscalePainter extends CustomPainter {
       ..setFloat(2, img.width.toDouble())
       ..setFloat(3, img.height.toDouble())
       ..setFloat(4, sharpen)
-      ..setFloat(5, (tick.value % 64).toDouble())
+      // Per-launch seed: every capture (and every run) gets its own noise.
+      ..setFloat(5, ((tick.value + _seed) % 256).toDouble())
       ..setFloat(6, grain)
       ..setImageSampler(0, img, filterQuality: FilterQuality.low);
     canvas.save();

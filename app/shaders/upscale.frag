@@ -57,7 +57,21 @@ void main() {
   vec3 mn = min(min(n, s), min(e, w));
   vec3 mx = max(max(n, s), max(e, w));
   vec3 amp = clamp(min(mn, 1.0 - mx) / max(mx, vec3(1e-4)), 0.0, 1.0);
-  float k = uSharpen * 0.2 * sqrt(dot(amp, vec3(0.333)));
+  // M8 round 33: a phone's noise reduction smears fine detail in the
+  // shadows (critics: "pin-sharp, noise-free render with an even grain
+  // layer on top"). Dark areas blend toward a small local blur and are
+  // not sharpened; lit areas keep their detail.
+  float lum0 = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  float nr = (1.0 - smoothstep(0.035, 0.2, lum0)) * 0.75;
+  if (nr > 0.0) {
+    vec3 d1 = texture(uSrc, uv + px * vec2(1.5, 1.5)).rgb;
+    vec3 d2 = texture(uSrc, uv + px * vec2(-1.5, 1.5)).rgb;
+    vec3 d3 = texture(uSrc, uv + px * vec2(1.5, -1.5)).rgb;
+    vec3 d4 = texture(uSrc, uv + px * vec2(-1.5, -1.5)).rgb;
+    vec3 blur = (2.0 * c + n + s + e + w + d1 + d2 + d3 + d4) / 10.0;
+    c = mix(c, blur, nr);
+  }
+  float k = uSharpen * 0.2 * sqrt(dot(amp, vec3(0.333))) * (1.0 - nr);
   c = clamp(c + (4.0 * c - (n + s + e + w)) * k, 0.0, 1.0);
   // M8: phone sensor noise after its noise reduction, on the display image.
   // Strongest in the dark mid-tones, nearly clean in the blacks and fading
@@ -69,10 +83,11 @@ void main() {
   if (uGrain > 0.0) {
     vec2 gp = floor(uv * uInSize) + uFrame * 7.13;
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-    float wgt = mix(0.22, 1.0, smoothstep(0.015, 0.11, l)) * (1.0 - 0.75 * smoothstep(0.3, 0.8, l));
+    // Round 33: between rounds 31 and 32 (critics split on the near-black).
+    float wgt = mix(0.4, 1.0, smoothstep(0.015, 0.11, l)) * (1.0 - 0.75 * smoothstep(0.3, 0.8, l));
     float gl = hash(gp) + hash(gp + 31.7) - 1.0;
     vec3 gc = vec3(hash(gp + 3.1), hash(gp + 5.9), hash(gp + 8.3)) - 0.5;
-    c += (gl + gc * 0.35) * (0.025 * uGrain * wgt);
+    c += (gl + gc * 0.35) * (0.032 * uGrain * wgt);
   }
   // TPDF dither, +/- 1 LSB of 8-bit, so dark gradients never band.
   float d = hash(fc + uFrame) + hash(fc * 1.37 + 17.0 + uFrame) - 1.0;
