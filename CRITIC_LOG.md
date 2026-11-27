@@ -48,6 +48,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-25 | vegetation v4 (panel) | 3.72 | 3.72 | 3.72 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.14** (critics +0.03 / −0.31). Rejected; round 24 stays the best. 1st sub-0.3 round since round 24 |
 | round-26 | vegetation v5 (panel) | 3.56 | 4.03 | 3.80 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.11** (critics +0.12 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M6 stops at round 24** |
 | round-27 | lantern v1 (panel) | 4.09 | 4.44 | 4.27 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 24: **+1.00** (critics +0.94 / +1.06). New best; lantern system 5 vs 2.5 and 5 vs 3 |
+| round-28 | lantern v2 (panel) | 4.00 | 4.22 | 4.11 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 27: **+0.50** (critics +0.38 / +0.62). New best; lantern system 3.5 vs 3.0 and 4.5 vs 3.5 |
 
 ## Round 1: water v1
 
@@ -1125,4 +1126,41 @@ Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies
 - **Paper:** warmer amber, brightest at candle height and half as bright at the rim, with larger, bolder characters.
 - **Fireflies** are saturated yellow-green, with a wider range of brightness.
 - **Leaves** come in mixed yellows and browns, at sizes from 0.7 to 1.3. A third ride low, soaked, with their middles just under the surface.
+
+## Round 28: lantern v2 (M7)
+
+**What changed:** see "Changes for round 28" above.
+
+**Panel** (each critic compared this round with `captures/round-27` side by side, order flipped)
+
+| Critic | Round 28 (new) | Round 27 (best) | Difference | Lantern, fireflies and leaves, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.66 | 3.28 | +0.38 | 3.5 vs 3.0 |
+| b (new = Y) | 4.56 | 3.94 | +0.62 | 4.5 vs 3.5 |
+
+- **Gain +0.50**, critic spread 0.25. **Round 28 is the new best.**
+- Absolute score 4.11 (inner 4.00, cover 4.22); lowest shot 3.75. Absolute panel scores drift with each pair of critics; the paired difference is what counts.
+- **A/B:** 0/4 fooled, 96–98 %.
+- Tokens: 199k + 174k for the panel, 73k for the A/B critic.
+
+**Why both preferred it:**
+- **No waterline blob.** Round 27's "glow puck at the lantern's base, brighter than the paper" read as "a game pickup sitting on a spawn glow". In round 28 "the paper is the brightest thing", as a real lantern is (refs 10, 11).
+- **Warmer, tighter light.** Round 27 washed the rocks next to the lantern near-white "like snow or frost"; round 28 keeps them amber.
+- **Colour.** The paper is amber-peach, not LED-neutral, and the fireflies are yellow-green (ref05).
+
+**What still fails in the lantern system:**
+- **The reflection is an intact ghost copy** at 55–60 % of the paper's brightness. That is too bright for a high camera and too intact for rain-rippled water; it should be dim, warm and broken into fragments (refs 01, 04, 11).
+- **The lantern still reads as an evenly glowing cube.** It needs a hot core where the flame is, and some frame or rib cue (ref11).
+- **Fireflies are identical round dots,** with no visible streaks (ref05).
+- **Leaves:** critic a found round 28's olive-grey leaves "pale discs or coins" and preferred round 27's rust-brown.
+- **The light it casts** still reaches banks 4–5 lantern-widths away about as brightly as the pebbles beside it, with crisp edges along the bank crests.
+
+**Beyond this system, unchanged:** the cloned grass carpet on flat banks, water without dense rain rings or glints, dry-looking rocks, and no haze or dusk ambient.
+
+**Changes for round 29 (lantern v3, built on round 28):**
+- **A dim, broken reflection:** about half as bright, and tilted twice as hard by the ripple and rain slopes, so it breaks into fragments.
+- **A hot core:** the candle flame now sits on a 2.5 cm candle, so its tip shows through the open top. The paper's hot spot is tighter and brighter.
+- **Frame cues:** dark, thin corner edges and a rim line on the paper.
+- **Fireflies drawn out into visible streaks** (about three times the stretch), with a wider spread of sizes.
+- **Leaves back to rust, ochre, amber and brown,** keeping the size variety and the low-riding soaked ones.
 
