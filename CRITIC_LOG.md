@@ -52,6 +52,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-29 | lantern v3 (panel) | 3.72 | 4.16 | 3.94 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.00** (critics −0.25 / +0.25). Rejected; round 28 stays the best. 1st sub-0.3 round in M7 |
 | round-30 | lantern v4 (panel) | 3.66 | 4.11 | 3.88 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 28: **−0.03** (critics +0.25 / −0.31). Rejected. 2nd sub-0.3 round in a row → **M7 stops at round 28** |
 | round-31 | post v1 (panel) | 4.16 | 4.12 | 4.14 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.36** (critics +0.34 / +0.38). New best; camera system 4 vs 3 and 4.5 vs 3.5 |
+| round-32 | post v2 (panel) | 4.47 | 4.75 | 4.61 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 31: **+0.09** (critics +0.50 / −0.31). New best by the ratchet; 1st sub-0.3 round in M8 |
 
 ## Round 1: water v1
 
@@ -1278,4 +1279,32 @@ The critics score this system as "the camera and lens (depth of field, motion, g
 - **Exposure +0.4 EV** (1.6 → 2.1). Mean luminance rises from about 20–23 to 26–30 out of 255.
 - **A wider, stronger lens glow from the lantern** (bloom 0.18 → 0.3, scatter 0.85 → 0.92).
 - Depth of field and the vignette are unchanged.
+
+## Round 32: post v2 (M8)
+
+**What changed:** see "Changes for round 32" above.
+
+**Panel** (each critic compared this round with `captures/round-31` side by side, order flipped)
+
+| Critic | Round 32 (new) | Round 31 (best) | Difference | Camera and lens, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.69 | 4.19 | +0.50 | 5.0 vs 4.5 |
+| b (new = X) | 4.53 | 4.84 | −0.31 | 4 vs 5 |
+
+- **Gain +0.09**, critic spread 0.81. **Round 32 is the new best by the ratchet** (gain above zero). This is M8's first round under +0.3. Its absolute score, 4.61, is the highest yet; lowest shot 4.0.
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 180k + 187k for the panel, 73k for the A/B critic.
+
+**The split, on taste:**
+- **Critic a** preferred the brighter exposure, with a black floor of about 4–5/255 instead of crushed: "dusk is not pure black". It also preferred the quieter near-black grain (references 0.35–2.5 levels; phone noise reduction leaves deep shadows clean) and the more legible water, with rain rings, rippled reflections and a cool sheen.
+- **Critic b** preferred round 31's darker frame and stronger grain (4–5 levels, like ref05). Darkness "sinks the gamey right bank", and the deep shadows of round 32 were "CG-clean" at 1.3 levels. It still agreed that round 32's water reads better as a pool (shot 8) and that its lifted black point suits dusk in rain (ref01 6.7, ref11 7.0). It also measured that round 32's noise repeats across shots. Every capture lands on the same frame count, so the present pass drew the same noise pattern each time; in play it animates.
+
+**What both want next from the camera:**
+- **Noise-reduction smear:** "a pin-sharp, noise-free render (crisp grass-card edges, tiled ground texture) with an even grain layer on top". A phone smears fine detail in the shadows.
+- **Exposure time:** "fireflies, ripples and rain frozen pin-sharp, where a 1/15–1/4 s dusk exposure would streak them" (ref04).
+
+**Changes for round 33 (post v3, built on round 32):**
+- **Phone noise reduction in the shadows:** the present pass blends dark areas toward a small local blur and sharpens less (0.55 → 0.3). Fine detail in the shadows (grass-card edges, the tiled ground) softens the way a phone's noise reduction smears it, while lit areas stay crisp.
+- **Grain between rounds 31 and 32:** about 30 % stronger, with more of it reaching the near-blacks. A per-launch seed means each capture gets its own noise.
+- **Exposure-time streaks on the fireflies:** each one drifts in its own direction at 0.1–0.3 m/s on top of its sim motion, drawn out over about 1/8 s. They become dashes of different lengths and directions, not dots (ref04, ref06).
 
