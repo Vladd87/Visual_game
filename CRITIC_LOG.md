@@ -45,6 +45,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-22 | vegetation v1 (panel) | 3.97 | 4.03 | 4.00 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 21 (M5 final): **+0.62** (critics +0.69 / +0.56). New best; vegetation alone 4 vs 2.5 (both critics) |
 | round-23 | vegetation v2 (panel) | 3.53 | 3.62 | 3.58 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 22: **−0.06** (critics −0.22 / +0.09). Rejected; round 22 stays the best. 1st sub-0.3 round in M6 |
 | round-24 | vegetation v3 (panel) | 4.12 | 3.97 | 4.05 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 22: **+0.33** (critics +0.31 / +0.34). New best; resets the sub-0.3 count |
+| round-25 | vegetation v4 (panel) | 3.72 | 3.72 | 3.72 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.14** (critics +0.03 / −0.31). Rejected; round 24 stays the best. 1st sub-0.3 round since round 24 |
 
 ## Round 1: water v1
 
@@ -997,3 +998,36 @@ M5's net gain over M4 final is about +0.4. Most of it came from calming the wind
 - **A wet waterline:**
   - a darker, glossier band where the bank meets the water
   - wet moss with a soft sheen instead of matte
+
+## Round 25: vegetation v4 (M6), rejected
+
+**What changed** (built on round 24, judged against it):
+- **Grass rooted in the shallows:** taller, near-upright clumps standing up to 8 cm into the stream.
+- **Irregular bank grass:** offsets up to most of a cell beyond the grid, sizes 0.5–2×.
+- **A wet waterline:** a glossy soaked band (roughness 0.12) and wet moss with a sheen.
+
+**Panel** (each critic compared this round with `captures/round-24` side by side, order flipped)
+
+| Critic | Round 25 (new) | Round 24 (best) | Difference | Vegetation and banks, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 3.91 | 3.88 | +0.03 | 4 vs 3.5 |
+| b (new = X) | 3.53 | 3.84 | −0.31 | 3.5 vs 4 |
+
+- **Gain −0.14**, critic spread 0.34. **Rejected: round 24 stays the best.** This is M6's first round under 0.3 since round 24.
+- Absolute score 3.72; lowest shot 3.0.
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 179k + 186k for the panel, 73k for the A/B critic.
+
+**Where the critics split and agree:**
+- **Split on the clumps in the water.**
+  - Critic a liked the "softer, untidy waterline" with grass leaning across it and tufts "rising out of shallow water", like ref01's iris clump and the plants trailing into the current in ref08.
+  - Critic b found them "pasted on": grass standing in moving water with no wake or matching reflection. They also cover "the lantern-lit pebble bed, one of the most photographic parts of the frame".
+- **Both found the lantern-lit grass wrong.** It was too bright and lemon-yellow. Critic a measured 3–5× as many pixels above level 120 and a red/green ratio of 1.24 against 1.37. Being taller as well, the tufts "read as self-lit props". In ref02, plants lit by a lantern go "amber-olive with a soft falloff".
+- **Still common to both:** one clean green clump repeated, with "no variety of species, height, colour or dead material". The ferns are barely legible, and the edge has no wet, muddy band.
+- **The A/B critic's "fine grid in the dark water"** lines up with the 8/16-pixel JPEG blocks of the packet (critic a). It is a compression artifact, not the render.
+
+**Changes for round 26 (vegetation v5, built on round 24):**
+- **Grass colour.** Blade tips are darker and more olive, so the lantern's light turns them amber-olive instead of lemon.
+- **Some dead blades.** A light mix of straw and dead blades (about 10–15 %) goes into the mostly green clumps.
+- **No clumps standing in the water.** The edge grass leans over the water from the bank, as in round 24.
+- **Kept:** the glossy soaked band and the wet-moss sheen, which neither critic objected to.
