@@ -151,6 +151,27 @@ class GameScene {
       // (critics: no halation or scatter around the light; ref03).
       bloomIntensity: _tune('bloom', 0.18),
       bloomScatter: 0.85,
+      // M8 post: a camera's signature (critics since M6: "everything sharp
+      // on one plane", "no grain at this exposure", "no lens falloff").
+      // Depth of field from a thin lens focused on the lantern each frame
+      // (PLAN §1 Lens; refs 09, 11). The low tier gathers 16 taps with no
+      // post filter, the phone's budget.
+      depthOfFieldEnabled: _tune('dof', 2.8) > 0 && !Diagnostics.noEffects,
+      depthOfFieldFStop: math.max(_tune('dof', 2.8), 0.5),
+      depthOfFieldFocusDistance: 2.2,
+      depthOfFieldQuality: DepthOfFieldQuality.low,
+      depthOfFieldMaxForegroundBlur: _tune('dofmax', 14.0),
+      depthOfFieldMaxBackgroundBlur: _tune('dofmax', 14.0),
+      // Sensor noise: added in linear light before display encoding, so it
+      // shows in the shadows as a phone's does at dusk and vanishes in the
+      // lit areas (refs 03, 06).
+      filmGrainEnabled: _tune('grain', 0.008) > 0,
+      filmGrainIntensity: _tune('grain', 0.008),
+      // A lens's gentle falloff toward the corners.
+      vignetteEnabled: _tune('vig', 0.25) > 0,
+      vignetteIntensity: _tune('vig', 0.25),
+      vignetteRadius: 0.7,
+      vignetteSmoothness: 0.7,
     );
     // Blue-hour skylight from the open, left side of the valley: cool, faint
     // and shadowless, so stones read lit on one side and darker on the other
@@ -706,6 +727,8 @@ class GameScene {
     _flame.color = vm.Vector4(1.0 * fl, 0.62 * fl, 0.26 * fl, 1.0) * _tune('flame', 4.0);
     _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * ((0.03 + 0.18 * f * flicker) * _tune('halo', 1.0));
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
+    // Focus on the lantern (M8).
+    scene.depthOfField.focusDistance = (cameraEye - lp).length;
     final ll = lanternColor * _lanternLight.intensity;
     final rainDt = _lastRealTime == null ? 0.0 : (realTime - _lastRealTime!).clamp(0.0, 0.1);
     _lastRealTime = realTime;
