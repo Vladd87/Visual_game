@@ -24,9 +24,15 @@ material {
 }
 
 fragment {
+  // Sine-free hash with highp intermediates (as ground.fmat). On the
+  // phone materials run at 16-bit precision, where sin(x) * 43758 lands on
+  // multiples of 8 and its fract is always 0: every brush stroke collapsed
+  // to one faint bar and the paper fibre went flat (device screenshots, M7).
   float Hash(highp vec2 p) {
     p = mod(p, 289.0);
-    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    highp vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
   }
 
   float VNoise(highp vec2 p) {
