@@ -126,7 +126,10 @@ class GameScene {
     // lantern is the key light (refs 02, 05, 07, 11).
     scene.environmentSettings = EnvironmentSettings(
       toneMapping: ToneMappingMode.agx,
-      exposure: 1.6,
+      // M8 round 32: 1.6 -> 2.1 (+0.4 EV). Round 31 critics: the frame is
+      // underexposed (mean about 22/255 against about 69 for ref02) and the
+      // lantern never clips; a phone exposes a dusk scene brighter.
+      exposure: _tune('expo', 2.1),
       environmentIntensity: envIntensity,
       // Unlit dusk mist hugging the water: dark, so it deepens distance
       // rather than lifting the blacks into a veil.
@@ -149,8 +152,11 @@ class GameScene {
       bloomThreshold: 0.6,
       // M4 v8: 0.12 -> 0.18, so the lantern glows into the damp air
       // (critics: no halation or scatter around the light; ref03).
-      bloomIntensity: _tune('bloom', 0.18),
-      bloomScatter: 0.85,
+      // Round 32: 0.18 -> 0.3 and wider. Round 31 critics: a lens would
+      // spread a wide halo from the lantern into the rainy air (refs 02,
+      // 03), not a 20 px glow.
+      bloomIntensity: _tune('bloom', 0.3),
+      bloomScatter: _tune('bscatter', 0.92),
       // M8 post: a camera's signature (critics since M6: "everything sharp
       // on one plane", "no grain at this exposure", "no lens falloff").
       // Depth of field from a thin lens focused on the lantern each frame
@@ -165,8 +171,10 @@ class GameScene {
       // Sensor noise: added in linear light before display encoding, so it
       // shows in the shadows as a phone's does at dusk and vanishes in the
       // lit areas (refs 03, 06).
-      filmGrainEnabled: _tune('grain', 0.008) > 0,
-      filmGrainIntensity: _tune('grain', 0.008),
+      // Round 32: off; the present pass adds phone-like noise shaped by
+      // brightness instead (shaders/upscale.frag).
+      filmGrainEnabled: _tune('grain', 0.0) > 0,
+      filmGrainIntensity: _tune('grain', 0.0),
       // A lens's gentle falloff toward the corners.
       vignetteEnabled: _tune('vig', 0.25) > 0,
       vignetteIntensity: _tune('vig', 0.25),

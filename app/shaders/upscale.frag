@@ -7,6 +7,7 @@ uniform vec2 uOutSize;     // output size in physical px
 uniform vec2 uInSize;      // source texture size in px
 uniform float uSharpen;    // 0..1
 uniform float uFrame;      // for dither animation
+uniform float uGrain;      // sensor-noise strength (M8), 0 = none
 uniform sampler2D uSrc;
 
 out vec4 fragColor;
@@ -58,6 +59,21 @@ void main() {
   vec3 amp = clamp(min(mn, 1.0 - mx) / max(mx, vec3(1e-4)), 0.0, 1.0);
   float k = uSharpen * 0.2 * sqrt(dot(amp, vec3(0.333)));
   c = clamp(c + (4.0 * c - (n + s + e + w)) * k, 0.0, 1.0);
+  // M8: phone sensor noise after its noise reduction, on the display image.
+  // Strongest in the dark mid-tones, nearly clean in the blacks and fading
+  // in the highlights (critics measured the dusk references at about 0.6
+  // levels RMS in near-black and 2.4-2.8 in dark mid-tones; the engine's
+  // flat linear grain gave about 4 everywhere and buried the ripples).
+  // Mostly luma with a little colour; one grain per source pixel, the
+  // slightly soft clumps noise reduction leaves.
+  if (uGrain > 0.0) {
+    vec2 gp = floor(uv * uInSize) + uFrame * 7.13;
+    float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    float wgt = mix(0.22, 1.0, smoothstep(0.015, 0.11, l)) * (1.0 - 0.75 * smoothstep(0.3, 0.8, l));
+    float gl = hash(gp) + hash(gp + 31.7) - 1.0;
+    vec3 gc = vec3(hash(gp + 3.1), hash(gp + 5.9), hash(gp + 8.3)) - 0.5;
+    c += (gl + gc * 0.35) * (0.025 * uGrain * wgt);
+  }
   // TPDF dither, +/- 1 LSB of 8-bit, so dark gradients never band.
   float d = hash(fc + uFrame) + hash(fc * 1.37 + 17.0 + uFrame) - 1.0;
   c += d / 255.0;

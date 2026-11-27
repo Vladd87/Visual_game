@@ -102,6 +102,10 @@ class _UpscalePainter extends CustomPainter {
   final double dpr;
   final double sharpen;
 
+  /// Sensor-noise strength in the present pass (M8; `?pgrain=` for
+  /// captures). The engine's own film grain is off.
+  static final double grain = double.tryParse(Uri.base.queryParameters['pgrain'] ?? '') ?? 1.0;
+
   static bool _firstPaint = true;
   static int _paints = 0;
 
@@ -124,6 +128,7 @@ class _UpscalePainter extends CustomPainter {
       ..setFloat(3, img.height.toDouble())
       ..setFloat(4, sharpen)
       ..setFloat(5, (tick.value % 64).toDouble())
+      ..setFloat(6, grain)
       ..setImageSampler(0, img, filterQuality: FilterQuality.low);
     canvas.save();
     canvas.scale(1 / dpr);

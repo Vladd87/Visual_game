@@ -1273,3 +1273,9 @@ The critics score this system as "the camera and lens (depth of field, motion, g
 - **The grain is an overlay.** It is as strong in near-black as in the mid-tones (about 3.7–5 levels RMS), where the references are almost clean in deep shadow (0.5–0.7) and grainy in the dark mid-tones (2.4–2.8). It has no colour component and none of a phone's noise reduction. It also buries the ripple rings and reflections that make the water read as water (shot 8 reads as "grey mottled wet concrete").
 - **Exposure and the lantern.** The frame is underexposed (mean about 22/255, against about 69 for ref02 and 0.32–0.34 linear for the phone dusk references). The lantern never clips (peak about 249/212/176) and its glow is only about 20 px. A real exposure would blow out its core and spread a wide halo into the rainy air (refs 02, 03, 05, 10).
 
+**Changes for round 32 (post v2, built on round 31):**
+- **Phone-like sensor noise instead of flat film grain.** It is added in the app's final present pass, on the display image at the render's pixel size. It is strongest in the dark mid-tones (about 2.6 levels RMS), nearly clean in near-black (about 0.6) and fading in the highlights, as measured in the references. It is mostly luma with a little colour. The engine's flat linear grain is off.
+- **Exposure +0.4 EV** (1.6 → 2.1). Mean luminance rises from about 20–23 to 26–30 out of 255.
+- **A wider, stronger lens glow from the lantern** (bloom 0.18 → 0.3, scatter 0.85 → 0.92).
+- Depth of field and the vignette are unchanged.
+
