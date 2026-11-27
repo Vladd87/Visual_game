@@ -49,6 +49,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-26 | vegetation v5 (panel) | 3.56 | 4.03 | 3.80 | 3.0 | 0/4 (A/B-only critic) | Panel vs round 24: **−0.11** (critics +0.12 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M6 stops at round 24** |
 | round-27 | lantern v1 (panel) | 4.09 | 4.44 | 4.27 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 24: **+1.00** (critics +0.94 / +1.06). New best; lantern system 5 vs 2.5 and 5 vs 3 |
 | round-28 | lantern v2 (panel) | 4.00 | 4.22 | 4.11 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 27: **+0.50** (critics +0.38 / +0.62). New best; lantern system 3.5 vs 3.0 and 4.5 vs 3.5 |
+| round-29 | lantern v3 (panel) | 3.72 | 4.16 | 3.94 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.00** (critics −0.25 / +0.25). Rejected; round 28 stays the best. 1st sub-0.3 round in M7 |
 
 ## Round 1: water v1
 
@@ -1163,4 +1164,35 @@ Both are bigger jobs than a tuning round. M7 comes first: the lantern, fireflies
 - **Frame cues:** dark, thin corner edges and a rim line on the paper.
 - **Fireflies drawn out into visible streaks** (about three times the stretch), with a wider spread of sizes.
 - **Leaves back to rust, ochre, amber and brown,** keeping the size variety and the low-riding soaked ones.
+
+## Round 29: lantern v3 (M7)
+
+**What changed:** see "Changes for round 29" above.
+
+**Panel** (each critic compared this round with `captures/round-28` side by side, order flipped)
+
+| Critic | Round 29 (new) | Round 28 (best) | Difference | Lantern, fireflies and leaves, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 3.94 | 4.19 | −0.25 | 3.5 vs 4.0 |
+| b (new = Y) | 3.94 | 3.69 | +0.25 | 4.5 vs 4.0 |
+
+- **Gain +0.00**, critic spread 0.50. **Rejected by the ratchet** (it needs a gain above zero); round 28 stays the best. This is M7's first round under +0.3.
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 204k + 195k for the panel, 75k for the A/B critic.
+
+**The split:**
+- **The reflection.** Critic b found round 29's "dimmer, smeared, stretched, broken up by the ripples" (ref11, ref09). Critic a found the area under the lantern "nearly empty", so the lantern "reads as sitting on the stream bed". Critic a preferred round 28's clear reflection, while still calling it "a crisp, undistorted copy".
+- **The leaves.** Critic b preferred round 29's warmer tan-ochre. Critic a found them "flat stickers" and preferred round 28's darker olive-brown, the opposite of round 28's critic a.
+- **Firefly streaks.** Both noted that every streak in shot 8 points straight down, where fireflies rise in the finale. One counted that as better than dots, the other as "a stretched effect or lit rain".
+- Neither noticed the flame tip or the frame lines at this size.
+
+**What both agree on, and the biggest lantern tell for both:** the light it casts.
+- It lights banks 2–3 times farther away as brightly as the gravel beside the lantern.
+- The pools have hard edges: brightness jumps from 30 to 80 over about 18 px, with crescents on the bank crests.
+- There is no glow in the wet air (refs 02, 03, 10).
+
+**Changes for round 30 (lantern v4, built on round 28; round 29's changes reverted):**
+- **The light it casts.** Its reach is shorter (0.65 → 0.55 m), so the banks a few lantern-widths away fall off. Shadow edges are softer (penumbra 11 → 20), so the bank crests no longer cut the pool into crescents. The light sits at the paper's centre of glow (5.5 cm above the water, not the flame's 3.5 cm), as it leaves through the whole lower paper.
+- **Glow in the wet air:** the soft halo around the lantern is twice as strong (refs 02, 03).
+- **Reflection:** between rounds 28 and 29. It is slightly dimmer than round 28's (gain 13 → 11) and broken a little more at its edges (1.8 times the slope, against 1.0 and 3.5).
 

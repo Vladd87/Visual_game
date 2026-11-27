@@ -93,16 +93,13 @@ fragment {
     // Light through the paper (ref02): the base band, the flame's hot spot
     // above it, then a gentle falloff to the rim.
     float band = 1.0 - smoothstep(0.15, 0.2, v);
-    // The flame's hot spot: tight and bright at candle height.
-    float hot = exp(-(dx * dx * 2.5 + (v - 0.3) * (v - 0.3) * 45.0));
+    float hot = exp(-(dx * dx * 1.6 + (v - 0.27) * (v - 0.27) * 30.0));
     // Brightest at candle height, half as bright at the rim (round 27
     // critics: evenly lit).
     float body = mix(1.0, 0.45, smoothstep(0.2, 1.0, v)) * (1.0 - 0.25 * dx * dx);
-    float glow = mix(body, 0.5, band) + 1.8 * hot * (1.0 - band);
-    // Thin dark lines where the paper folds over the corner posts and the
-    // rim (round 28 critics: no frame cue; ref11).
-    float edge = mix(0.35, 1.0, smoothstep(0.0, 0.03, u) * smoothstep(1.0, 0.97, u));
-    edge *= mix(0.4, 1.0, smoothstep(1.0, 0.965, v));
+    float glow = mix(body, 0.5, band) + 1.1 * hot * (1.0 - band);
+    // Folded corners and the rim edge: a little darker.
+    float edge = mix(0.8, 1.0, smoothstep(0.0, 0.05, u) * smoothstep(1.0, 0.95, u));
     // Paper fibre: fine mottling and long vertical fibres.
     highp vec2 p = vec2(u, v) + panel * 3.7;
     float fib = 0.86 + 0.14 * VNoise(p * vec2(70.0, 110.0)) + 0.06 * (VNoise(p * vec2(5.0, 160.0)) - 0.5);
