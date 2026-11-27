@@ -51,6 +51,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-28 | lantern v2 (panel) | 4.00 | 4.22 | 4.11 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 27: **+0.50** (critics +0.38 / +0.62). New best; lantern system 3.5 vs 3.0 and 4.5 vs 3.5 |
 | round-29 | lantern v3 (panel) | 3.72 | 4.16 | 3.94 | 3.25 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.00** (critics −0.25 / +0.25). Rejected; round 28 stays the best. 1st sub-0.3 round in M7 |
 | round-30 | lantern v4 (panel) | 3.66 | 4.11 | 3.88 | 3.38 | 0/4 (A/B-only critic) | Panel vs round 28: **−0.03** (critics +0.25 / −0.31). Rejected. 2nd sub-0.3 round in a row → **M7 stops at round 28** |
+| round-31 | post v1 (panel) | 4.16 | 4.12 | 4.14 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.36** (critics +0.34 / +0.38). New best; camera system 4 vs 3 and 4.5 vs 3.5 |
 
 ## Round 1: water v1
 
@@ -1250,4 +1251,25 @@ M7's net gain is about **+1.5** over the M6 final, the largest of any system. A/
   - The lantern paper now uses a precision-safe hash, so its brush strokes have different shapes.
 
 The critics score this system as "the camera and lens (depth of field, motion, grain, bloom, sharpness)".
+
+**Panel** (each critic compared this round with `captures/round-28` side by side, order flipped)
+
+| Critic | Round 31 (new) | Round 28 (best) | Difference | Camera and lens, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.09 | 3.75 | +0.34 | 4 vs 3 |
+| b (new = X) | 4.19 | 3.81 | +0.38 | 4.5 vs 3.5 |
+
+- **Gain +0.36**, critic spread 0.03. **Round 31 is the new best.**
+- Absolute score 4.14 (inner 4.16, cover 4.12); lowest shot 3.5.
+- **A/B:** 0/4 fooled, 96–98 %. It still called the render's darks "smooth, noiseless", so the grain does not survive its crop and re-encoding.
+- Tokens: 185k + 184k for the panel, 73k for the A/B critic.
+
+**Why both preferred it:**
+- **Grain.** Without it, round 28's dark water "breaks into flat patches": 35–51 % of neighbouring pixels are identical, against at most 24 % in any reference. That reads as a clean render.
+- **The vignette.** "X's even field looks like a screen grab" (refs 04, 10, 11).
+- **Neither noticed the depth of field.** A check at f/1 shows why: the frame spans only about 2.0–2.6 m around a 2.2 m focus, so only the near foreground softens.
+
+**What both found wrong with the camera:**
+- **The grain is an overlay.** It is as strong in near-black as in the mid-tones (about 3.7–5 levels RMS), where the references are almost clean in deep shadow (0.5–0.7) and grainy in the dark mid-tones (2.4–2.8). It has no colour component and none of a phone's noise reduction. It also buries the ripple rings and reflections that make the water read as water (shot 8 reads as "grey mottled wet concrete").
+- **Exposure and the lantern.** The frame is underexposed (mean about 22/255, against about 69 for ref02 and 0.32–0.34 linear for the phone dusk references). The lantern never clips (peak about 249/212/176) and its glow is only about 20 px. A real exposure would blow out its core and spread a wide halo into the rainy air (refs 02, 03, 05, 10).
 
