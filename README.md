@@ -14,7 +14,7 @@ A small Flutter game for the Samsung Galaxy Z Fold8 Ultra. You guide a paper lan
 
 ## Install
 
-**Release build (recommended).** `releases/lantern-m7.2-release.apk`, about 35 MB ([direct download](https://github.com/Vladd87/Visual_game/raw/ccr-32d0ba79-c0iehd/releases/lantern-m7.2-release.apk)). Copy it to the phone and open it (allow installs from your file manager if asked), or run `adb install -r releases/lantern-m7.2-release.apk`. It opens on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Earlier milestone builds (`lantern-m1-…`, `m2`, `m4`, `m5`, `m6`) stay in `releases/` for comparison.
+**Release build (recommended).** `releases/lantern-m7.2-release.apk`, about 35 MB ([direct download](https://github.com/Vladd87/Visual_game/raw/ccr-32d0ba79-c0iehd/releases/lantern-m7.2-release.apk)). Copy it to the phone and open it (allow installs from your file manager if asked), or run `adb install -r releases/lantern-m7.2-release.apk`. It opens on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Earlier milestone builds (`lantern-m1-…`, `m2`, `m4`, `m5`, `m6`) stay in `releases/` for comparison. From m7.2 on, each build installs as its own app ("Lantern m7.2", package `dev.lantern.lantern.m7_2`), so several versions can sit side by side on the phone; older builds share the plain "Lantern" and replace each other.
 
 **Debug build.** It's 110 MB, over GitHub's 100 MB file limit, so it's split in two. It's slower (JIT plus Vulkan validation) and useful for logs, not for judging smoothness. Reassemble it first:
 
