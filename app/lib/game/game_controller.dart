@@ -286,6 +286,7 @@ class GameController extends ChangeNotifier {
       _captureFrames++;
       gameScene.update(0, w.time);
       _camera = rig.update(1 / 60, w.lantern.pos, aspect);
+      if (_camera is PerspectiveCamera) gameScene.cameraEye = (_camera as PerspectiveCamera).position;
       if (_captureFrames == cap.settleFrames) {
         cap.signalReady('shot=${cap.shot} t=${w.time.toStringAsFixed(2)} d=${w.lantern.pos.y.toStringAsFixed(2)} ff=${w.collected}');
       }
@@ -300,6 +301,7 @@ class GameController extends ChangeNotifier {
     final alpha = phase == AppPhase.playing ? _clock!.alpha : 1.0;
     gameScene.update(alpha, _realTime);
     _camera = rig.update(dt, w.lanternPose(alpha).pos, aspect);
+    if (_camera is PerspectiveCamera) gameScene.cameraEye = (_camera as PerspectiveCamera).position;
     governor.evaluate(_realTime, stats, platform.thermal.value);
     if (_realTime - _lastLog >= 1.0) {
       _lastLog = _realTime;

@@ -42,6 +42,10 @@ class GameScene {
   late final MeshGeometry _paperGeom;
   PreprocessedMaterial? _paperMat;
   late final Sprite _flame;
+
+  /// The camera's position, set by the controller each frame (the lantern
+  /// paper decides which panel faces are seen from inside with it).
+  vm.Vector3 cameraEye = vm.Vector3(0, 5, 5);
   late final Sprite _halo;
   bool _staticBuilt = false;
   PreprocessedMaterial? _waterMat;
@@ -694,6 +698,9 @@ class GameScene {
     // (Fresnel ~3 %); the light it casts slightly lower again (bank stripes).
     _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
     _paper.emissiveStrength = 0.1 + 1.6 * f * flicker;
+    _paperMat?.parameters
+      ?..setVec3('cam', cameraEye)
+      ..setFloat('yaw', pose.angle);
     _paperMat?.parameters.setFloat('glow', _tune('pglow', 0.15) + _tune('pglowf', 1.25) * f * flicker);
     final fl = 0.2 + 1.0 * f * flicker;
     _flame.color = vm.Vector4(1.0 * fl, 0.62 * fl, 0.26 * fl, 1.0) * _tune('flame', 4.0);

@@ -375,7 +375,10 @@ fragment {
     // Rain splashes: tiny crowns lit by the lantern and the sky. A crown
     // faces every way, so near the lantern it glints where the flat surface
     // cannot (ref03's splash crowns).
-    material.emissive += rain.z * (LanternIrradiance(wp) * 2.0 + material_params.ambient * 4.0);
+    // Away from the lantern a crown catches only the dusk sky: at the
+    // phone's full resolution ambient x4 made crisp white specks over all
+    // the water, like reflected stars (device screenshot, M7).
+    material.emissive += rain.z * (LanternIrradiance(wp) * 2.0 + material_params.ambient * 1.2);
     // Occlusion 0 removes the engine's image-based light (diffuse and
     // specular) without the custom-ambient variant; the lantern's direct
     // specular (glints) is unaffected.

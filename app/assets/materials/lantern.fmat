@@ -18,6 +18,8 @@ material {
     { type: float, name: glow, default: 1.0 },
     { type: vec3, name: tint, default: [1.0, 0.42, 0.13] },
     { type: float, name: inner, default: 0.6 },
+    { type: vec3, name: cam, default: [0.0, 5.0, -5.0] },
+    { type: float, name: yaw, default: 0.0 },
   ],
 }
 
@@ -84,11 +86,17 @@ fragment {
     float v = float(uv.y);
     float dx = (u - 0.5) * 2.0;
     // The inside faces take the flame's light directly; the outside shows
-    // what passes through the paper. Decided from the panel's outward
-    // normal (as built, before two-sided flipping) against the view
-    // direction, not from the rasteriser's facing, whose convention can
-    // differ between the browser and the phone's Vulkan.
-    float side = dot(normalize(v_normal), GetViewDirection()) < 0.0 ? 1.0 : 0.0;
+    // what passes through the paper. A face is seen from inside when the
+    // camera is behind its panel's outward normal. The normal comes from
+    // the panel index (UV) turned by the lantern's yaw, and the camera
+    // position is passed in: on the phone both gl_FrontFacing and the
+    // interpolated normal gave the opposite answer to the browser (device
+    // screenshot, M7), so nothing here depends on the rasteriser.
+    vec2 nl = panel < 0.5 ? vec2(0.0, -1.0) : panel < 1.5 ? vec2(1.0, 0.0) : panel < 2.5 ? vec2(0.0, 1.0) : vec2(-1.0, 0.0);
+    float cy = cos(material_params.yaw), sy = sin(material_params.yaw);
+    vec2 nw = vec2(cy * nl.x + sy * nl.y, -sy * nl.x + cy * nl.y);
+    highp vec3 toCam = material_params.cam - GetWorldPosition();
+    float side = dot(nw, vec2(toCam.xz)) < 0.0 ? 1.0 : 0.0;
 
     // Light through the paper (ref02): the base band, the flame's hot spot
     // above it, then a gentle falloff to the rim.
