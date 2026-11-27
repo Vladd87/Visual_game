@@ -199,10 +199,20 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
       final jx = _hash(i, j, 1), jy = _hash(i, j, 2);
       final p = V2(cx + (j + jx) * g, d0 + jy * g);
       final o = outside(p);
-      if (o < -0.01) continue;
+      if (o < -0.08) continue;
       final r = _hash(i, j, 3);
       final patch = _patch(p, 5);
-      if (o < 0.12) {
+      if (o < -0.01) {
+        // Rooted in the shallows: taller, near-upright clumps standing in
+        // the water a hand's width out from the bank, bases under the
+        // surface (ref01's iris clump; critics: "nothing crosses the
+        // waterline").
+        if (r > 0.12 + 0.35 * _smooth(0.4, 0.65, patch)) continue;
+        if (!clearOfRocks(p, 0.04)) continue;
+        place(PlantKind.edgeGrass, (r * 97).floor() % grassVariants, p, 1.6 + 0.8 * _hash(i, j, 5),
+            _hash(i, j, 6) * math.pi * 2,
+            tiltX: (_hash(i, j, 7) - 0.5) * 0.2, tiltZ: (_hash(i, j, 8) - 0.5) * 0.2, sink: 0.0);
+      } else if (o < 0.12) {
         // Dense along the waterline, with gaps where the bank is bare mud.
         if (r > 0.25 + 0.65 * _smooth(0.3, 0.6, patch)) continue;
         if (!clearOfRocks(p, 0.03)) continue;
@@ -220,8 +230,11 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
         // Stands of grass (up to most cells) separated by bare patches.
         final density = 0.85 * _smooth(0.45, 0.7, patch) * (1 - 0.4 * (o / 2.5)) + 0.02;
         if (r > density) continue;
-        if (!clearOfRocks(p, 0.03)) continue;
-        place(PlantKind.grass, (r * 97).floor() % grassVariants, p, 0.8 + 0.7 * _hash(i, j, 5),
+        // Irregular, not one clump per cell (critics: "even spacing"): an
+        // offset up to most of a cell beyond the cell, and sizes 0.5-2x.
+        final q = V2(p.x + (_hash(i, j, 8) - 0.5) * g * 1.6, p.y + (_hash(i, j, 9) - 0.5) * g * 1.6);
+        if (!clearOfRocks(q, 0.03)) continue;
+        place(PlantKind.grass, (r * 97).floor() % grassVariants, q, 0.5 + 1.5 * math.pow(_hash(i, j, 5), 1.6),
             _hash(i, j, 6) * math.pi * 2);
       }
     }
