@@ -58,6 +58,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-35 | post v5 (panel) | 3.94 | 4.09 | 4.02 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.30** (critics −0.25 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M8 stops at round 33** |
 | round-36 | grade v1 (panel) | 3.34 | 3.78 | 3.56 | 2.5 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.42** (critics −0.34 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round in M9 |
 | round-37 | grade v2 (panel) | 4.31 | 4.56 | 4.44 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.50** (critics +0.50 / +0.50). New best; resets the sub-0.3 count; grade 5 vs 4 and 5 vs 3.5 |
+| round-38 | grade v3 (panel) | 4.53 | 4.56 | 4.55 | 4.25 | 0/4 (A/B-only critic) | Panel vs round 37: **+0.08** (critics −0.28 / +0.44). New best by the ratchet; 1st sub-0.3 round since round 37 |
 
 ## Round 1: water v1
 
@@ -1464,4 +1465,31 @@ M8's net gain over the M7 final is about **+0.9**. Camera-system scores went fro
 
 **Changes for round 38 (grade v3, built on round 37):**
 - **The water carries the dusk sky.** The sky's level in the water's reflection goes from 1.2 to 2.5, so open water outside the lantern's pool is clearly brighter than the banks. In shot 8 the median is water 27 to banks 9 (it was 14 to 9), the large-scale structure of a dusk photo of a stream.
+
+## Round 38: grade v3 (M9)
+
+**What changed:** see "Changes for round 38" above (the sky's level in the water 1.2 → 2.5).
+
+**Panel** (each critic compared this round with `captures/round-37` side by side, order flipped)
+
+| Critic | Round 38 (new) | Round 37 (best) | Difference | Colour grade and tonal range, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 4.25 | 4.53 | −0.28 | 4.0 vs 3.5 |
+| b (new = Y) | 4.84 | 4.41 | +0.44 | 4.5 vs 4.0 |
+
+- **Gain +0.08**, critic spread 0.72. **Round 38 is the new best by the ratchet.** This is the first round under +0.3 since round 37. Absolute score 4.55; lowest shot 4.25.
+- **A/B:** 0/4 fooled, 97–98 %.
+- Tokens: 181k + 183k for the panel, 75k for the A/B critic.
+
+**The split:**
+- **Critic b:** the sky reflection is "the defining cue of water" at dusk. The water is now 1.05–1.5 times the banks instead of 0.7–0.96, so it no longer reads as a mud path (refs 06, 09, 11). Ripple arcs and flow streaks show (ref03). The cost is that the reflection is "milky, speckled lavender", in places like frost.
+- **Critic a:** at this steep view the water should reflect only a few percent of the sky. The bright, grainy water reads as snow, frost or pale sand (shots 2, 6, covers 1, 8), and its soft dark blobs "read as a procedural noise mask". On colour alone it preferred round 38: a cool stream against a warm lantern, the blue-hour split of refs 07 and 11.
+
+**What both say is now the biggest problem: the balance of light.**
+- The lantern lights banks a metre away to about 140/255 while unlit grass sits near 15: "an electric lamp against near-black dusk". The ratio is 30–40 times in linear light, with crisp edges.
+- Outside the pool everything sits on "one flat teal-green floor": a median about 14/255 and 90 % of pixels under 35, with no haze growing with distance. The dusk references have medians about 66–74, and even ref06's dark forest has its 90th percentile at about 71.
+- At dusk "the sky light dominates and a candle in a paper box lights almost nothing" (refs 02, 07); round 36's global black lift read as a filter instead.
+
+**Changes for round 39 (grade v4, built on round 38): the balance of light, not the black level.**
+- **More sky light and less candle light.** The image-based dusk ambient and the cool skylight are raised, and the lantern's light is lowered. Unlit banks and stones get real mid-tones from the sky while crevices stay dark, and the lantern lights only its immediate surroundings (refs 02, 07, 11).
 
