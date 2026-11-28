@@ -55,6 +55,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-32 | post v2 (panel) | 4.47 | 4.75 | 4.61 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 31: **+0.09** (critics +0.50 / −0.31). New best by the ratchet; 1st sub-0.3 round in M8 |
 | round-33 | post v3 (panel) | 3.97 | 4.41 | 4.19 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 32: **+0.47** (critics +0.50 / +0.44). New best; resets the sub-0.3 count; camera system 5.0 vs 3.5 and 5 vs 4 |
 | round-34 | post v4 (panel) | 4.12 | 4.34 | 4.23 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.00** (critics +0.50 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round since round 33 |
+| round-35 | post v5 (panel) | 3.94 | 4.09 | 4.02 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.30** (critics −0.25 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M8 stops at round 33** |
 
 ## Round 1: water v1
 
@@ -1365,4 +1366,46 @@ The critics score this system as "the camera and lens (depth of field, motion, g
 **Changes for round 35 (post v5, built on round 33; round 34's noise reverted):**
 - **A lens halo in wet air.** Bloom is stronger and wider (intensity 0.3 → 0.8, scatter 0.92 → 0.96), with the threshold raised (0.6 → 0.75) so that only the lantern and fireflies bloom, not the lit grass. The lantern's soft air glow is 1.6 times as strong. Around the lantern in shot 1, brightness rises by about +11 levels at 40 px and +4 at 160 px.
 - **A per-capture noise seed taken from the clock,** since `math.Random()` in the web build may repeat across page loads.
+
+## Round 35: post v5 (M8)
+
+**What changed:** see "Changes for round 35" above (a wider, stronger lens glow, plus a clock-based noise seed for captures).
+
+**Panel** (each critic compared this round with `captures/round-33` side by side, order flipped)
+
+| Critic | Round 35 (new) | Round 33 (best) | Difference | Camera and lens, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.22 | 4.47 | −0.25 | 5.0 vs 5.5 |
+| b (new = X) | 3.81 | 4.16 | −0.34 | 5.0 vs 6.0 |
+
+- **Gain −0.30**, critic spread 0.09: **both preferred round 33.** Rejected. This is the second round in a row under +0.3 (rounds 34 and 35), so **M8 stops at round 33**. The code is back at round 33; the clock-based capture seed stays, since it changes nothing visible.
+- **A/B:** 0/4 fooled, 97–98 %.
+- Tokens: 185k + 188k for the panel, 73k for the A/B critic.
+
+**Why both rejected the glow:**
+- **It flattens the scene.** Brightness 20–110 px from the lantern rose by 13–25 levels, and fine detail within 30–80 px dropped by 10–25 %. The lantern's edges lost 14–41 % of their sharpness. In cover 2 the wash reached the frame edges.
+- **It makes the fireflies into orbs:** green discs about 40–60 px wide.
+- **The references disagree with it.** "In ref02, a real paper lantern floating on a stream at night, the lantern has almost no halo and the water next to it stays dark." Halos as large as ref03's come with thick fog, which also hazes everything with distance; this scene has none, "so it reads as screen-space bloom, not air".
+- The camera critics of rounds 31–34 asked for "glow around the light in wet air". Seen side by side, a wider glow lost. Their real complaint was the light falling on the banks and the flat tone curve, not the bloom.
+
+## M8 post: summary
+
+M8 stops at round 33 under the stop rule: two rounds in a row under +0.3 (rounds 34 and 35).
+
+| Round | Change | Gain over best |
+|---|---|---|
+| 31 | depth of field f/2.8 on the lantern, film grain, vignette | **+0.36** |
+| 32 | phone-like noise shaped by brightness (present pass), exposure +0.4 EV, more bloom | **+0.09** |
+| 33 | shadow noise reduction and less sharpening, firefly exposure streaks, a per-launch noise seed | **+0.47** |
+| 34 | heavier, coloured noise | +0.00 (rejected) |
+| 35 | a wider, stronger lens glow | −0.30 (rejected) |
+
+M8's net gain over the M7 final is about **+0.9**. Camera-system scores went from about 3–3.5 to 5–6 out of 10. A/B critics were fooled 0/4 in every round.
+
+**What the camera critics still ask for:**
+- **A tone curve that is not a game's.** The frame sits in a compressed band (median about 24/255, 90 % of pixels between about 11 and 60), with no blue-hour colour. That is M9 (grade).
+- **Every other top giveaway belongs to earlier systems:**
+  - the cloned grass carpet (M6)
+  - water that does not read as rained on, with no glints or sky sheen and an intact lantern reflection (M2, M5, M7)
+  - the hard-edged light the lantern casts on the banks (M4, M7)
 
