@@ -1491,5 +1491,6 @@ M8's net gain over the M7 final is about **+0.9**. Camera-system scores went fro
 - At dusk "the sky light dominates and a candle in a paper box lights almost nothing" (refs 02, 07); round 36's global black lift read as a filter instead.
 
 **Changes for round 39 (grade v4, built on round 38): the balance of light, not the black level.**
-- **More sky light and less candle light.** The image-based dusk ambient and the cool skylight are raised, and the lantern's light is lowered. Unlit banks and stones get real mid-tones from the sky while crevices stay dark, and the lantern lights only its immediate surroundings (refs 02, 07, 11).
+- **More sky light and less candle light.** The image-based dusk ambient, the cool skylight and the custom shaders' ambient go up 1.5×, and the lantern's light down to 0.7×. Unlit banks and stones get real mid-tones from the sky while crevices stay dark, and the lantern lights only its immediate surroundings (refs 02, 07, 11).
+- **A middle step, from previews of shot 7.** Round 38 measures median 13, bright-to-dark ratio 9.7:1. Sky ×2 with candle ×0.6 gives 25 and 4.3:1. A stronger balance gives 34 and 3.3:1. More sky light also uncovers the grass carpet, the biggest giveaway, and gives back round 37's contrast.
 
