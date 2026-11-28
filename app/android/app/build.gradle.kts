@@ -33,6 +33,9 @@ android {
         if (tagId.isNotEmpty()) appId += ".$tagId"
         applicationId = appId
         manifestPlaceholders["impellerBackend"] = if (gles) "opengles" else "vulkan"
+        // Final release (-P lanternFinal=1): the launcher opens the game
+        // directly; development builds keep the bring-up test menu.
+        manifestPlaceholders["bringup"] = if ((project.findProperty("lanternFinal") as String?) == "1") "false" else "true"
         manifestPlaceholders["appLabel"] = listOfNotNull("Lantern", tag.ifEmpty { null }, if (gles) "GLES" else null).joinToString(" ")
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.

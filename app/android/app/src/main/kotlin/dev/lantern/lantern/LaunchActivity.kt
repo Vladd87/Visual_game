@@ -52,8 +52,20 @@ class LaunchActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (intent?.getBooleanExtra(EXTRA_AUTO_NEXT, false) == true && advanceAuto()) return
+        // Final release: no test menu, straight into the game.
+        if (!bringupMenu()) {
+            startGame(emptyList(), steps = false, auto = null)
+            return
+        }
         showMenu(CrashReport.build(this))
     }
+
+    private fun bringupMenu(): Boolean = try {
+        @Suppress("DEPRECATION")
+        val info = packageManager.getApplicationInfo(packageName, android.content.pm.PackageManager.GET_META_DATA)
+        info.metaData?.getString("dev.lantern.bringup")?.let { it != "false" }
+            ?: info.metaData?.getBoolean("dev.lantern.bringup", true) ?: true
+    } catch (_: Throwable) { true }
 
     private fun autoFile() = File(filesDir, "auto.txt")
 

@@ -9,6 +9,8 @@
         <meta-data android:name="io.flutter.embedding.android.EnableFlutterGPU" android:value="true" />
         <!-- vulkan normally; opengles in the diagnostic GLES variant. -->
         <meta-data android:name="io.flutter.embedding.android.ImpellerBackend" android:value="${impellerBackend}" />
+        <!-- true: the launcher shows the bring-up test menu; false (final release): straight into the game. -->
+        <meta-data android:name="dev.lantern.bringup" android:value="${bringup}" />
         <activity
             android:name=".MainActivity"
             android:exported="false"

@@ -10,6 +10,7 @@ import 'package:flutter_scene/scene.dart';
 
 import '../platform/platform_bridge.dart';
 import '../render/camera_rig.dart';
+import 'game_audio.dart';
 import '../render/game_scene.dart';
 import '../render/present.dart' show latestSceneFrame;
 import '../render/quality_governor.dart';
@@ -34,6 +35,8 @@ class GameController extends ChangeNotifier {
 
   late final Scene scene;
   late final GameScene gameScene;
+  // M10 sound (off in captures, on the web and in safe mode).
+  GameAudio? audio;
   World? world;
   WorldClock? _clock;
   AppPhase phase = AppPhase.loading;
@@ -95,6 +98,10 @@ class GameController extends ChangeNotifier {
       loadingText = 'filling the stream';
       notifyListeners();
       await gameScene.loadAssets();
+      if (capture == null) {
+        audio = GameAudio(scene);
+        unawaited(audio!.start(settings.volume));
+      }
     } else {
       await Diagnostics.checkpoint('no scene');
     }
@@ -323,6 +330,7 @@ class GameController extends ChangeNotifier {
   }
 
   void _onEvent(SimEvent e) {
+    audio?.onEvent(e);
     switch (e) {
       case CollisionEvent(:final strength):
         if (settings.haptics) unawaited(platform.haptic(0.25 + 0.75 * strength));

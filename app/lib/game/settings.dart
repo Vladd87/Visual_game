@@ -9,6 +9,8 @@ enum ControlMode { drag, tilt }
 class Settings extends ChangeNotifier {
   ControlMode control = ControlMode.drag;
   bool haptics = true;
+  // M10: sound level, 0 = off.
+  double volume = 0.8;
   QualityPreset quality = QualityPreset.high;
   bool performance120 = false;
   bool showPerf = false;
@@ -25,6 +27,7 @@ class Settings extends ChangeNotifier {
       _prefs = p;
       control = ControlMode.values[(p.getInt('control') ?? 0).clamp(0, ControlMode.values.length - 1)];
       haptics = p.getBool('haptics') ?? true;
+      volume = p.getDouble('volume') ?? 0.8;
       quality = QualityPreset.values[(p.getInt('quality') ?? 0).clamp(0, QualityPreset.values.length - 1)];
       performance120 = p.getBool('perf120') ?? false;
       bestFireflies = p.getInt('bestFireflies') ?? 0;
@@ -42,6 +45,7 @@ class Settings extends ChangeNotifier {
     if (p != null) {
       p.setInt('control', control.index);
       p.setBool('haptics', haptics);
+      p.setDouble('volume', volume);
       p.setInt('quality', quality.index);
       p.setBool('perf120', performance120);
     }

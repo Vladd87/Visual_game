@@ -452,6 +452,10 @@ class _SettingsBlock extends StatelessWidget {
       const SizedBox(height: 10),
       seg<ControlMode>('CONTROL', [(ControlMode.drag, 'drag'), (ControlMode.tilt, 'tilt')], s.control, c.setControl),
       seg<bool>('HAPTICS', [(true, 'on'), (false, 'off')], s.haptics, (v) => s.update((x) => x.haptics = v)),
+      seg<double>('SOUND', [(0.8, 'on'), (0.35, 'low'), (0.0, 'off')], s.volume, (v) {
+        s.update((x) => x.volume = v);
+        c.audio?.volume = v;
+      }),
       seg<QualityPreset>('QUALITY', [(QualityPreset.high, 'high'), (QualityPreset.medium, 'med'), (QualityPreset.low, 'low')], s.quality, c.setQuality),
       seg<bool>('REFRESH', [(false, '60 Hz'), (true, '120 Hz')], s.performance120, c.setPerformance120),
       if (s.control == ControlMode.tilt)

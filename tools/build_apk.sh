@@ -33,6 +33,8 @@ build() {
     # LANTERN_NO_TAG=1 builds the plain "Lantern" (final release).
     local tagarg=--android-project-arg=lanternTag=$tag
     [[ ${LANTERN_NO_TAG:-0} == 1 ]] && tagarg=
+    # LANTERN_FINAL=1: the final release, plain "Lantern" with no test menu.
+    [[ ${LANTERN_FINAL:-0} == 1 ]] && tagarg=--android-project-arg=lanternFinal=1
     if flutter build apk --"$mode" --target-platform android-arm64 $tagarg ${LANTERN_BUILD_ARGS:-}; then return 0; fi
     echo "build failed (try $i); retrying in 60 s in case of a registry rate limit" >&2
     sleep 60
