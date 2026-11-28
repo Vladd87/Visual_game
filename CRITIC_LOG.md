@@ -56,6 +56,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-33 | post v3 (panel) | 3.97 | 4.41 | 4.19 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 32: **+0.47** (critics +0.50 / +0.44). New best; resets the sub-0.3 count; camera system 5.0 vs 3.5 and 5 vs 4 |
 | round-34 | post v4 (panel) | 4.12 | 4.34 | 4.23 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.00** (critics +0.50 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round since round 33 |
 | round-35 | post v5 (panel) | 3.94 | 4.09 | 4.02 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.30** (critics −0.25 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M8 stops at round 33** |
+| round-36 | grade v1 (panel) | 3.34 | 3.78 | 3.56 | 2.5 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.42** (critics −0.34 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round in M9 |
 
 ## Round 1: water v1
 
@@ -1416,4 +1417,25 @@ M8's net gain over the M7 final is about **+0.9**. Camera-system scores went fro
 - **Blue-hour colour:** a faint blue lift in the shadows and a warm gain on the highlights. The darks go from a neutral grey-teal (13, 17, 17) to a cool blue-teal (17, 24, 25), while the lantern's pool stays amber (refs 05, 07, 15).
 - **A little more AgX contrast** (1.25 → 1.3) and **saturation 1.15**.
 - **Not used:** the engine's contrast control pivots on linear mid-grey (0.18). This scene's ambient sits at 0.005–0.02, so even ×1.15 clamped it to black (a test frame went to median 4/255).
+
+**Panel** (each critic compared this round with `captures/round-33` side by side, order flipped)
+
+| Critic | Round 36 (new) | Round 33 (best) | Difference | Colour grade and tonal range, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 4.00 | 4.34 | −0.34 | 4.0 vs 4.5 |
+| b (new = Y) | 3.12 | 3.62 | −0.50 | 4 vs 5 |
+
+- **Gain −0.42**, critic spread 0.16: **both preferred round 33.** Rejected. This is M9's first round under +0.3.
+- **A/B:** 0/4 fooled, 93–98 %.
+- Tokens: 176k + 185k for the panel, 73k for the A/B critic.
+
+**Why both rejected it:**
+- **Milky, lifted shadows:** "a flat teal-grey fill lies over every corner". The darkest 1 % went to (4, 10, 15) against round 33's (3, 6, 8), "a game night filter". The references have neutral or true blacks (ref11 about (7,7,7); refs 04, 05, 10 reach 0).
+- **It reveals the CG.** The brighter surroundings "show the repeated grass tufts and the ground texture all the way to the frame edges". In night shots with a strong light, "the surroundings fall into darkness and the light dominates" (refs 04, 10).
+- **Warmth in the wrong place.** The amber pushed into the lit grass and bed made the grass "neon yellow". In the references the strong colour stays in the lantern, and the light it casts is much less saturated. Cool shadows with orange highlights is "a well-known grading cliché, not something a camera produces".
+- **Contrast.** Round 33 already measures 3.3–5.3:1 (bright to dark areas, fine detail blurred away), round 36 3.7–6.1:1, the references 7–36:1. "Nothing in the frame is too bright for the camera": the lantern peaks at about 245/255 without clipping, and the 95th percentile is only 0.18–0.36.
+
+**Changes for round 37 (grade v2, built on round 33):**
+- **Back to round 33's exposure, with no colour grading:** no lift, no warm gain, saturation 1.
+- **A steeper AgX curve** (contrast 1.25 → 1.6): deeper neutral blacks and a brighter lantern core, widening the tonal range toward the references' instead of lifting it. In shot 1 the bright-to-dark ratio goes from 4.2:1 to about 8:1 (references 7–36:1). The darkest 1 % goes from (4, 8, 8) to near-neutral black, and the lantern's pool dominates while the banks recede.
 

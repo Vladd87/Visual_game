@@ -129,8 +129,12 @@ class GameScene {
       // M8 round 32: 1.6 -> 2.1 (+0.4 EV). Round 31 critics: the frame is
       // underexposed (mean about 22/255 against about 69 for ref02) and the
       // lantern never clips; a phone exposes a dusk scene brighter.
-      exposure: _tune('expo', 3.4),
-      // M9 grade (round 36): the frames sat in a compressed, murky band
+      exposure: _tune('expo', 2.1),
+      // M9 grade. Round 37: round 33's exposure, no colour grading, and a
+      // steeper AgX curve (1.25 -> 1.6) for deeper neutral blacks and a
+      // brighter lantern core. Round 36 (below, now off) lifted and tinted
+      // the shadows and read as "a game night filter" (-0.42).
+      // Round 36 notes: the frames sat in a compressed, murky band
       // (median 24/255, 95th percentile about 50) against the references'
       // 44-102 and 97-241, with no blue-hour colour. Graded in linear HDR
       // before AgX, so nothing is stretched after 8-bit quantisation:
@@ -138,8 +142,8 @@ class GameScene {
       // shadows and a warm gain on the highlights (refs 05, 07, 15). The
       // engine's own contrast pivots on linear mid-grey (0.18): this scene's
       // ambient sits at 0.005-0.02, so even x1.15 clamped it to black.
-      agxContrast: _tune('agxc', 1.3),
-      colorGradingEnabled: _tune('grade', 1) > 0,
+      agxContrast: _tune('agxc', 1.6),
+      colorGradingEnabled: _tune('grade', 0) > 0,
       contrast: _tune('gcon', 1.0),
       saturation: _tune('gsat', 1.15),
       lift: vm.Vector3(_tune('liftr', -0.0005), _tune('liftg', 0.0), _tune('liftb', 0.002)),
