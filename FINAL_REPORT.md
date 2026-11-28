@@ -82,10 +82,13 @@ I could not run the phone myself, so everything there depended on your screensho
 | Water drawn over the bank grass | a depth-guard issue | the water discards behind nearer geometry |
 | Lantern paper looked inside-out, with no characters | its hash collapsed at 16-bit precision | a precision-safe hash (m7.2) |
 | White specks over the water at full resolution | rain-splash glints far from the lantern | glints dimmed |
+| Whole stretches of bank smeared behind a hard edge (m8, m9) | the engine's depth of field misread depth on the phone and blurred those areas to its maximum radius | depth of field off (m10b and the final build). It never changed the browser image measurably: at this camera distance its true blur is under a pixel almost everywhere |
+
+**Confirmed on the phone:** the m7.2 paper fix. The m9 screenshots show brush strokes on the lantern's panels, though faint, because the paper glows nearly white.
 
 **Not yet confirmed on the phone:**
-- the m7.2 paper fix (characters and paper fibre on the lantern)
 - sound (m10a and the final build)
+- that turning depth of field off removes the bank smear (m10b and the final build)
 
 **Not measured at all, as you asked:**
 - frame pacing over a 20-minute run

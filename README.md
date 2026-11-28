@@ -10,7 +10,7 @@ A small Flutter game for the Samsung Galaxy Z Fold8 Ultra. You guide a paper lan
 > - M5: light rain on the water
 > - M6: ferns, sorrel and grass on wet-moss banks
 > - M7: a paper toro nagashi lantern with its reflection, soft fireflies and leaf-shaped leaves
-> - M8: a camera's signature (depth of field on the lantern, a vignette, phone-like sensor noise with shadow noise reduction, firefly motion streaks)
+> - M8: a camera's signature (a vignette, phone-like sensor noise with shadow noise reduction, firefly motion streaks). Its depth of field is now off: on the phone it smeared whole stretches of bank, and in the browser it never changed the image measurably.
 > - M9: the grade (a steep AgX curve with true neutral blacks, a deep amber pool, and water carrying the dusk sky)
 > - M10: sound, the final settings and the release build
 >
@@ -20,7 +20,7 @@ A small Flutter game for the Samsung Galaxy Z Fold8 Ultra. You guide a paper lan
 
 **Final release (recommended).** `releases/lantern-final-release.apk`, about 40 MB ([direct download](https://github.com/Vladd87/Visual_game/raw/ccr-32d0ba79-c0iehd/releases/lantern-final-release.apk)). Copy it to the phone and open it (allow installs from your file manager if asked), or run `adb install -r releases/lantern-final-release.apk`. It installs as plain **"Lantern"** (package `dev.lantern.lantern`) and opens straight into the game.
 
-**Milestone builds.** Every earlier build stays in `releases/` for comparison. From m7.2 on, each installs as its own app ("Lantern m7.2", package `dev.lantern.lantern.m7_2`), so several can sit side by side on the phone. They open on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Builds before m7.2 install as plain "Lantern", the same app as the final release, so installing one replaces the other. `lantern-m10a` is the test build of the sound.
+**Milestone builds.** Every earlier build stays in `releases/` for comparison. From m7.2 on, each installs as its own app ("Lantern m7.2", package `dev.lantern.lantern.m7_2`), so several can sit side by side on the phone. They open on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Builds before m7.2 install as plain "Lantern", the same app as the final release, so installing one replaces the other. `lantern-m10a` is the test build of the sound; `lantern-m10b` is the same with depth of field off, against the bank smear in m8–m10a.
 
 **Debug build.** It's 110 MB, over GitHub's 100 MB file limit, so it's split in two. It's slower (JIT plus Vulkan validation) and useful for logs, not for judging smoothness. Reassemble it first:
 
@@ -122,7 +122,7 @@ Blind critics still score every shot as clearly CG: about 4.4–4.6 out of 10 on
 
 `FINAL_REPORT.md` estimates what each fix would gain and cost.
 
-**Not yet confirmed on the phone:** the lantern paper's brush characters (fixed in m7.2) and the sound.
+**Not yet confirmed on the phone:** the sound, and that m10b and the final build no longer smear the banks. The lantern's brush characters (m7.2) are confirmed in the m9 screenshots.
 
 **Not measured,** as agreed: frame pacing over a 20-minute run, thermal stepping, 120 Hz behaviour, and tilt on each screen. Those need your playtest; the triple-tap perf overlay records them.
 
