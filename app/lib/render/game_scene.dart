@@ -463,7 +463,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0 * 0.6));
     // M11: glitter path (water.fmat Glitter).
     _waterMat!.parameters.setFloat('glitter', _tune('glitter', 1.0));
-    _waterMat!.parameters.setFloat('glitter_sigma', _tune('gsigma', 0.16));
+    _waterMat!.parameters.setFloat('glitter_sigma', _tune('gsigma', 0.3));
     _waterMat!.parameters.setFloat('rain_fine', _tune('rainfine', 1.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).

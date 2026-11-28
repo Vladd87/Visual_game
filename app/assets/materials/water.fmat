@@ -45,7 +45,7 @@ material {
     // M11: glitter from the lantern on small ripples (ref02): strength and
     // the spread (rad) of the facet tilts on calm water.
     { type: float, name: glitter, default: 1.0 },
-    { type: float, name: glitter_sigma, default: 0.16 },
+    { type: float, name: glitter_sigma, default: 0.3 },
     // M11: the finer rain dimple layers (1 = on).
     { type: float, name: rain_fine, default: 1.0 },
     { type: float, name: reflection, default: 1.0 },
@@ -261,17 +261,21 @@ fragment {
   // times a second, and lights up when that facet mirrors the paper
   // (LanternMirror). A glint keeps its true brightness but is drawn at
   // least about a pixel wide, dimmed by the area it covers.
-  vec3 Glitter(highp vec3 wp, vec3 v, vec2 macroSlope, highp float t, float sigma, float px) {
+  vec3 Glitter(highp vec3 wp, vec3 v, vec2 macroSlope, highp float t, float sigma, highp vec2 dpx, highp vec2 dpy) {
     highp vec2 rel = wp.xz - material_params.lantern_pos.xz;
     if (dot(rel, rel) > 1.44) return vec3(0.0);
-    const float cell = 0.008;
+    // M11 v2 (round 42 showed v1 as faint dashes on a grid): 6 mm cells, the
+    // glint at a random spot in its cell, and the dot measured in screen
+    // pixels (through the surface's pixel footprint), so a glint is a round
+    // point at any view angle, about 1.5 px across. A glint shows the
+    // paper's mirrored brightness: at night a camera saturates on them.
+    const float cell = 0.006;
     highp vec2 q = wp.xz / cell;
     highp vec2 id = floor(q);
     vec2 fq = vec2(fract(q));
-    // A glint is about 1.2 mm across; drawn at least 0.9 px.
-    float trueR = 0.0006 / cell;
-    float drawR = max(trueR, 0.9 * px / cell);
-    float areaK = (trueR * trueR) / (drawR * drawR);
+    // World offset (m) to screen pixels: invert the 2x2 footprint.
+    highp float det = dpx.x * dpy.y - dpx.y * dpy.x;
+    if (abs(det) < 1e-12) return vec3(0.0);
     highp float ts = t * 6.0;
     highp float slot = floor(ts);
     float w = float(fract(ts));
@@ -288,12 +292,14 @@ fragment {
       vec3 L = LanternMirror(wp, reflect(-v, nf));
       if (L.r + L.g + L.b <= 0.0) continue;
       highp vec2 h3 = RainHash2(id * 2.37 + sl * 5.11 + 3.0);
-      vec2 c = 0.25 + 0.5 * vec2(h3);
-      float dd = length(fq - c);
-      float dotm = 1.0 - smoothstep(drawR * 0.6, drawR, dd);
+      vec2 c = 0.1 + 0.8 * vec2(h3);
+      highp vec2 off = (vec2(fq) - c) * cell;
+      highp vec2 sp = vec2(dpy.y * off.x - dpy.x * off.y, -dpx.y * off.x + dpx.x * off.y) / det;
+      float dd = float(length(sp));
+      float dotm = 1.0 - smoothstep(0.45, 0.85, dd);
       float ndv = clamp(dot(nf, v), 0.0, 1.0);
       float fr = 0.025 + 0.975 * pow(1.0 - ndv, 5.0);
-      acc += L * (fr * dotm * areaK * wk);
+      acc += L * (fr * dotm * wk);
     }
     return acc;
   }
@@ -404,9 +410,8 @@ fragment {
     // M11: the glitter path (ref02); rougher in rain and turbulence.
     {
       highp vec2 gdx = dFdx(p), gdy = dFdy(p);
-      float gpx = float(max(length(gdx), length(gdy)));
       float sigma = material_params.glitter_sigma * (1.0 + 0.8 * material_params.rain + 0.8 * turb);
-      reflected += Glitter(wp, v, slope, t, sigma, gpx) * material_params.lantern_mirror * material_params.glitter;
+      reflected += Glitter(wp, v, slope, t, sigma, gdx, gdy) * material_params.lantern_mirror * material_params.glitter;
     }
 
     // --- foam ----------------------------------------------------------------------
