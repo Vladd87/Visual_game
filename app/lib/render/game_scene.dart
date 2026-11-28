@@ -180,7 +180,14 @@ class GameScene {
       // Depth of field from a thin lens focused on the lantern each frame
       // (PLAN §1 Lens; refs 09, 11). The low tier gathers 16 taps with no
       // post filter, the phone's budget.
-      depthOfFieldEnabled: _tune('dof', 2.8) > 0 && !Diagnostics.noEffects,
+      // M10: off by default. On the phone (m8, m9) it blurred whole stretches
+      // of bank to its maximum radius, with a hard edge (device screenshots,
+      // inner and cover). That only happens when its linear-depth input
+      // reads far from the true depth there; in the browser it never did,
+      // and at this camera distance the true blur is under a pixel almost
+      // everywhere (round 31: neither critic noticed it). `?dof=2.8` turns
+      // it back on in the browser for comparison.
+      depthOfFieldEnabled: _tune('dof', 0) > 0 && !Diagnostics.noEffects,
       depthOfFieldFStop: math.max(_tune('dof', 2.8), 0.5),
       depthOfFieldFocusDistance: 2.2,
       depthOfFieldQuality: DepthOfFieldQuality.low,
