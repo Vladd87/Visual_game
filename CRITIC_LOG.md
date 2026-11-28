@@ -57,6 +57,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-34 | post v4 (panel) | 4.12 | 4.34 | 4.23 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.00** (critics +0.50 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round since round 33 |
 | round-35 | post v5 (panel) | 3.94 | 4.09 | 4.02 | 3.75 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.30** (critics −0.25 / −0.34). Rejected. 2nd sub-0.3 round in a row → **M8 stops at round 33** |
 | round-36 | grade v1 (panel) | 3.34 | 3.78 | 3.56 | 2.5 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.42** (critics −0.34 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round in M9 |
+| round-37 | grade v2 (panel) | 4.31 | 4.56 | 4.44 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.50** (critics +0.50 / +0.50). New best; resets the sub-0.3 count; grade 5 vs 4 and 5 vs 3.5 |
 
 ## Round 1: water v1
 
@@ -1438,4 +1439,29 @@ M8's net gain over the M7 final is about **+0.9**. Camera-system scores went fro
 **Changes for round 37 (grade v2, built on round 33):**
 - **Back to round 33's exposure, with no colour grading:** no lift, no warm gain, saturation 1.
 - **A steeper AgX curve** (contrast 1.25 → 1.6): deeper neutral blacks and a brighter lantern core, widening the tonal range toward the references' instead of lifting it. In shot 1 the bright-to-dark ratio goes from 4.2:1 to about 8:1 (references 7–36:1). The darkest 1 % goes from (4, 8, 8) to near-neutral black, and the lantern's pool dominates while the banks recede.
+
+## Round 37: grade v2 (M9)
+
+**What changed:** see "Changes for round 37" above (round 33's exposure, no colour grading, AgX contrast 1.25 → 1.6).
+
+**Panel** (each critic compared this round with `captures/round-33` side by side, order flipped)
+
+| Critic | Round 37 (new) | Round 33 (best) | Difference | Colour grade and tonal range, new vs best |
+|---|---|---|---|---|
+| a (new = X) | 4.88 | 4.38 | +0.50 | 5 vs 4 |
+| b (new = Y) | 4.00 | 3.50 | +0.50 | 5 vs 3.5 |
+
+- **Gain +0.50**, critic spread 0.00. **Round 37 is the new best**, and the sub-0.3 count resets. Absolute score 4.44 (inner 4.31, cover 4.56); lowest shot 4.0.
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 185k + 187k for the panel, 74k for the A/B critic.
+
+**Why both preferred it:**
+- **True blacks.** The 1st percentile is about 1–2/255 instead of 6–7, and the p5–p95 range is about 12:1 instead of 5:1. "Real low-light frames do reach true black" (ref06 28 % near black; refs 01, 11 at 4–9). Round 33's even grey veil "doesn't read as mist", because real mist brightens near the lights (ref03).
+- **Deeper colour.** Mean saturation went from about 0.33 to 0.47, with a deep amber pool against cool shadow (refs 02, 11).
+- **An isolated pool of light.** About 350 px from the lantern, luminance is 11 instead of 22. The frame reads as "a candle-lit pool in darkness" (refs 02, 06), and the darkness hides the tiled grass carpet on the far bank.
+
+**What both want next from the grade:** outside the lantern's pool, water and banks sit at one flat level (about 9–14/255), which "reads as midnight, not dusk". At dusk, water reflecting the sky is much brighter than the banks (refs 01, 11), and real frames have large-scale light and dark structure. Critic b also warned that on a dim phone screen the darkest 40 % of the inner frame becomes near-black mush. Other notes: the lit grass turns acid yellow-green, and a lantern in wet air should lift the blacks most near the light.
+
+**Changes for round 38 (grade v3, built on round 37):**
+- **The water carries the dusk sky.** The sky's level in the water's reflection is raised, so open water outside the lantern's pool is clearly brighter than the banks, the large-scale structure of a dusk photo of a stream.
 
