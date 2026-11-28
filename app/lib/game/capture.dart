@@ -54,19 +54,16 @@ class CaptureConfig {
     switch (shot) {
       case 1:
         while (w.time < 7.0 && step()) {}
+      // M11: shots 2, 3 and 6 stand at fixed distances down the stream: where
+      // their M10 event rules (a rock within reach in the rock garden, two
+      // fireflies close by, the first collision) put them on the M10 course
+      // (captures/round-40). The bigger lantern changes the rock gaps and the
+      // autopilot's path, so the event rules chose other places and the
+      // paired comparison with the baseline lost its matching moments.
       case 2:
-        while (w.time < cap && step()) {
-          if (w.section.spec.name != 'rock garden') continue;
-          final near = w.course.rocksNear(w.lantern.pos.y - 0.2, w.lantern.pos.y + 0.2).any((r) =>
-              r.emergent && (r.pos - w.lantern.pos).length - r.radius < 0.07 && r.pos.y > w.lantern.pos.y - 0.05);
-          if (near) break;
-        }
+        while (w.lantern.pos.y < 7.35 && w.time < cap && step()) {}
       case 3:
-        while (w.time < cap && step()) {
-          if (w.time < 15) continue;
-          final close = w.fireflies.where((f) => !f.collected && (f.positionAt(w.time) - w.lantern.pos).length < 0.22).length;
-          if (close >= 2) break;
-        }
+        while (w.lantern.pos.y < 3.59 && w.time < cap && step()) {}
       case 4:
         final d = sectionStart('rain meadow') + 3.0;
         while (w.lantern.pos.y < d && w.time < cap && step()) {}
@@ -74,13 +71,7 @@ class CaptureConfig {
         final d = sectionStart('fern tunnel') + 2.5;
         while (w.lantern.pos.y < d && w.time < cap && step()) {}
       case 6:
-        var hitAt = -1.0;
-        while (w.time < cap && step()) {
-          for (final e in w.drainEvents()) {
-            if (e is CollisionEvent && w.time > 15 && hitAt < 0) hitAt = w.time;
-          }
-          if (hitAt >= 0 && w.time > hitAt + 0.12) break;
-        }
+        while (w.lantern.pos.y < 7.37 && w.time < cap && step()) {}
       case 7:
         final d = sectionStart('misty narrows') + 3.0;
         while (w.lantern.pos.y < d && w.time < cap && step()) {}

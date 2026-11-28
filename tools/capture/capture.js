@@ -125,7 +125,9 @@ async function lumaStats(page, buf) {
         logs.push(`[harness] timeout waiting for ready: ${e.message}`);
       }
       const file = path.join(outDir, aspect, `shot${shot}.png`);
-      const buf = await page.screenshot({ path: file });
+      // A software-rendered frame of the M11 view can take longer than
+      // Playwright's default 30 s screenshot timeout.
+      const buf = await page.screenshot({ path: file, timeout: 600000 });
       const st = await lumaStats(page, buf).catch(() => null);
       const maxSamplers = await page.evaluate(() => window.__maxSamplers).catch(() => -1);
       const overLimit = logs.some((l) => l.includes('SAMPLER_LIMIT'));
