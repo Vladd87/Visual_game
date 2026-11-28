@@ -107,7 +107,9 @@ class _UpscalePainter extends CustomPainter {
   /// captures). The engine's own film grain is off.
   static final double grain = double.tryParse(Uri.base.queryParameters['pgrain'] ?? '') ?? 1.0;
 
-  static final int _seed = math.Random().nextInt(256);
+  // From the clock: math.Random() in the web build may repeat across page
+  // loads, which gave the captures one shared noise pattern (round 34).
+  static final int _seed = DateTime.now().microsecondsSinceEpoch % 251;
 
   static bool _firstPaint = true;
   static int _paints = 0;

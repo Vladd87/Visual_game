@@ -149,14 +149,17 @@ class GameScene {
       // Damp air: the lantern (and fireflies) glow into a wide, faint halo
       // (refs 01, 03). Only emitters pass the threshold.
       bloomEnabled: Uri.base.queryParameters['nobloom'] != '1',
-      bloomThreshold: 0.6,
+      // Round 35: 0.6 -> 0.75, so only the lantern and fireflies bloom.
+      bloomThreshold: _tune('bthresh', 0.75),
       // M4 v8: 0.12 -> 0.18, so the lantern glows into the damp air
       // (critics: no halation or scatter around the light; ref03).
       // Round 32: 0.18 -> 0.3 and wider. Round 31 critics: a lens would
       // spread a wide halo from the lantern into the rainy air (refs 02,
       // 03), not a 20 px glow.
-      bloomIntensity: _tune('bloom', 0.3),
-      bloomScatter: _tune('bscatter', 0.92),
+      bloomIntensity: _tune('bloom', 0.8),
+      // Round 35: a lens halo in wet air (rounds 31-34 critics: the lantern
+      // "barely blooms", 218 -> 112 within 24 px; refs 02, 03, 04).
+      bloomScatter: _tune('bscatter', 0.96),
       // M8 post: a camera's signature (critics since M6: "everything sharp
       // on one plane", "no grain at this exposure", "no lens falloff").
       // Depth of field from a thin lens focused on the lantern each frame
@@ -734,7 +737,7 @@ class GameScene {
     _paperMat?.parameters.setFloat('glow', _tune('pglow', 0.15) + _tune('pglowf', 1.25) * f * flicker);
     final fl = 0.2 + 1.0 * f * flicker;
     _flame.color = vm.Vector4(1.0 * fl, 0.62 * fl, 0.26 * fl, 1.0) * _tune('flame', 4.0);
-    _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * ((0.03 + 0.18 * f * flicker) * _tune('halo', 1.0));
+    _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * ((0.03 + 0.18 * f * flicker) * _tune('halo', 1.6));
     final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
     // Focus on the lantern (M8).
     scene.depthOfField.focusDistance = (cameraEye - lp).length;

@@ -54,6 +54,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-31 | post v1 (panel) | 4.16 | 4.12 | 4.14 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 28: **+0.36** (critics +0.34 / +0.38). New best; camera system 4 vs 3 and 4.5 vs 3.5 |
 | round-32 | post v2 (panel) | 4.47 | 4.75 | 4.61 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 31: **+0.09** (critics +0.50 / −0.31). New best by the ratchet; 1st sub-0.3 round in M8 |
 | round-33 | post v3 (panel) | 3.97 | 4.41 | 4.19 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 32: **+0.47** (critics +0.50 / +0.44). New best; resets the sub-0.3 count; camera system 5.0 vs 3.5 and 5 vs 4 |
+| round-34 | post v4 (panel) | 4.12 | 4.34 | 4.23 | 3.5 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.00** (critics +0.50 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round since round 33 |
 
 ## Round 1: water v1
 
@@ -1333,4 +1334,35 @@ The critics score this system as "the camera and lens (depth of field, motion, g
 
 **Changes for round 34 (post v4, built on round 33):**
 - **Heavier, coloured sensor noise.** Luma grain is about 1.7 times stronger. Chroma noise comes in soft clumps about 2 source pixels across, the low-frequency colour mottling a phone leaves after noise reduction, at about half the luma's strength. Both still follow brightness: strongest in the dark mid-tones, lighter in near-black, fading in the highlights.
+
+## Round 34: post v4 (M8)
+
+**What changed:** see "Changes for round 34" above (heavier, coloured sensor noise).
+
+**Panel** (each critic compared this round with `captures/round-33` side by side, order flipped)
+
+| Critic | Round 34 (new) | Round 33 (best) | Difference | Camera and lens, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.50 | 4.00 | +0.50 | 4.5 vs 3.5 |
+| b (new = X) | 3.97 | 4.47 | −0.50 | 4.0 vs 4.5 |
+
+- **Gain +0.00**, critic spread 1.00. **Rejected** (the ratchet needs a gain above zero); round 33 stays the best. This is the first round under +0.3 since round 33 reset the count.
+- **A/B:** 0/4 fooled, 95–99 %.
+- Tokens: 181k + 196k for the panel, 74k for the A/B critic.
+
+**The split, on grain strength, settled by measurement:**
+- **Critic a** preferred the heavier noise over smooth shadows. It still found it mostly luma, weaker in the deepest shadows than real sensor noise, and correlated 0.59 between inner shots 1 and 2, as if one seed were reused.
+- **Critic b** measured both against the references:
+  - In tones 15–40, round 33's fine-detail energy is 3.1–3.5, against ref03 4.45, ref10 3.24 and ref11 3.39. Round 34 is about 5.0.
+  - In near-black, round 33 measures 1.5, round 34 2.5, and the references 0.7–1.25.
+  - Round 34's chroma speckle (0.49–0.75) is above the colour-clean shadows of refs 04, 10 and 11, because phone processing removes colour noise first.
+  - So round 33's grain level is the right one.
+
+**What both still name for the camera (as in rounds 31–33):**
+- **The lantern barely blooms.** Its glow falls from about 218 at the core to about 112 at 24 px, "essentially no halo", where lights in moist air bloom into wide halos (refs 02, 03, 04, 11).
+- **The frame is flat, lifted grey-green** with no blue-hour colour. That is M9 (grade).
+
+**Changes for round 35 (post v5, built on round 33; round 34's noise reverted):**
+- **A lens halo in wet air.** Bloom is stronger and wider (intensity 0.3 → 0.8, scatter 0.92 → 0.96), with the threshold raised (0.6 → 0.75) so that only the lantern and fireflies bloom, not the lit grass. The lantern's soft air glow is 1.6 times as strong. Around the lantern in shot 1, brightness rises by about +11 levels at 40 px and +4 at 160 px.
+- **A per-capture noise seed taken from the clock,** since `math.Random()` in the web build may repeat across page loads.
 
