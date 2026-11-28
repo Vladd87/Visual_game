@@ -1,0 +1,17 @@
+[debug] Injecting <script> tag. Using callback.
+[log] LANTERN_STEP settings
+[log] LANTERN_STEP gpu
+[log] LANTERN_STEP scene
+[log] LANTERN_STEP materials
+[log] LANTERN_STEP textures
+[log] LANTERN_STEP rocks
+[log] LANTERN_STEP plants
+[log] LANTERN_STEP environment
+[log] LANTERN_STEP assets loaded
+[log] LANTERN_STEP course
+[log] LANTERN_STEP frames
+[log] LANTERN_STEP frame 1
+[log] LANTERN_STEP first 3D paint
+[log] LANTERN_STEP frame 10
+[log] LANTERN_3D 1444x1603 meanLuma=17.4 litPct=71.8
+[log] LANTERN_STEP ready
