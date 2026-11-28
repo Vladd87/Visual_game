@@ -15,7 +15,7 @@ shift
 here=$(cd "$(dirname "$0")" && pwd)
 tmp="$out.parts"
 rm -rf "$tmp"
-mkdir -p "$tmp" "$out/inner" "$out/cover"
+mkdir -p "$tmp"
 node "$here/capture.js" "$tmp/a" --shots 1,2,3,4 --aspects inner "$@" > "$tmp/a.log" 2>&1 &
 pa=$!
 node "$here/capture.js" "$tmp/b" --shots 5,6,7,8 --aspects inner "$@" > "$tmp/b.log" 2>&1 &
@@ -26,6 +26,8 @@ status=0
 wait $pa || status=1
 wait $pb || status=1
 wait $pc || status=1
+# The round folder appears only once every process has finished.
+mkdir -p "$out/inner" "$out/cover"
 for p in a b c; do
   for asp in inner cover; do
     [[ -d "$tmp/$p/$asp" ]] && cp "$tmp/$p/$asp"/* "$out/$asp/" 2>/dev/null || true
