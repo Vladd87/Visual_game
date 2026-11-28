@@ -59,6 +59,7 @@ Every round follows the same steps (PLAN.md §5):
 | round-36 | grade v1 (panel) | 3.34 | 3.78 | 3.56 | 2.5 | 0/4 (A/B-only critic) | Panel vs round 33: **−0.42** (critics −0.34 / −0.50). Rejected; round 33 stays the best. 1st sub-0.3 round in M9 |
 | round-37 | grade v2 (panel) | 4.31 | 4.56 | 4.44 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.50** (critics +0.50 / +0.50). New best; resets the sub-0.3 count; grade 5 vs 4 and 5 vs 3.5 |
 | round-38 | grade v3 (panel) | 4.53 | 4.56 | 4.55 | 4.25 | 0/4 (A/B-only critic) | Panel vs round 37: **+0.08** (critics −0.28 / +0.44). New best by the ratchet; 1st sub-0.3 round since round 37 |
+| round-39 | grade v4 (panel) | 3.88 | 4.12 | 4.00 | 3.62 | 0/4 (A/B-only critic) | Panel vs round 38: **−0.48** (critics −0.36 / −0.59). Rejected. 2nd sub-0.3 round in a row → **M9 stops at round 38** |
 
 ## Round 1: water v1
 
@@ -1493,4 +1494,51 @@ M8's net gain over the M7 final is about **+0.9**. Camera-system scores went fro
 **Changes for round 39 (grade v4, built on round 38): the balance of light, not the black level.**
 - **More sky light and less candle light.** The image-based dusk ambient, the cool skylight and the custom shaders' ambient go up 1.5×, and the lantern's light down to 0.7×. Unlit banks and stones get real mid-tones from the sky while crevices stay dark, and the lantern lights only its immediate surroundings (refs 02, 07, 11).
 - **A middle step, from previews of shot 7.** Round 38 measures median 13, bright-to-dark ratio 9.7:1. Sky ×2 with candle ×0.6 gives 25 and 4.3:1. A stronger balance gives 34 and 3.3:1. More sky light also uncovers the grass carpet, the biggest giveaway, and gives back round 37's contrast.
+
+## Round 39: grade v4 (M9)
+
+**What changed:** see "Changes for round 39" above (more dusk sky light ×1.5, less candle ×0.7).
+
+**Panel** (each critic compared this round with `captures/round-38` side by side, order flipped)
+
+| Critic | Round 39 (new) | Round 38 (best) | Difference | Colour grade and tonal range, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 4.34 | 4.70 | −0.36 | 3.5 vs 4 |
+| b (new = X) | 3.66 | 4.25 | −0.59 | 3.5 vs 5.0 |
+
+- **Gain −0.48**, critic spread 0.23: **both preferred round 38.** Rejected. This is the second round in a row under +0.3 (rounds 38 and 39), so **M9 stops at round 38**. The code is back at round 38.
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 183k + 177k for the panel, 73k for the A/B critic.
+
+**Why both rejected it:**
+- **It lifts the dark evenly.** The banks rose by 55–60 % with "a flat, even ambient with no haze and no occlusion variation", which "turns the right-hand meadow into a clearly readable carpet of repeated grass tufts". With one small warm source at dusk, the unlit surroundings should fall away (refs 02, 04, 11).
+- **A green-teal cast:** "an olive-teal night LUT" against the neutral-to-warm wet dusk shadows of refs 01, 03 and 11.
+- **A weaker lantern:** its pool became smaller and less saturated, "bright but under-lighting, as if pasted on". Candlelight in photos is strongly saturated orange (ref02).
+
+**What both still ask of the grade:**
+- The tones sit in the bottom fifth: median about 0.05–0.09, 95th percentile about 0.2, against the references' mean of 0.26–0.50 and 95th percentile of 0.70–0.95 for the night ones.
+- Only the lantern face nears white: there is no halation, mist halo or wet glint anywhere.
+- The darkness is "a uniform, colourless dimming of the ambient", with no blue dusk fill against the warm lantern and no mist glow around it.
+
+Lifting the ambient (round 39) and the black level (round 36) both lost. The darkness that wins hides the weakest assets. The missing brights (glints on wet stone and leaves, a glitter path on the water, a halo in wet air) belong to the materials and the water, not the grade.
+
+## M9 grade: summary
+
+M9 stops at round 38 under the stop rule: two rounds in a row under +0.3 (rounds 38 and 39).
+
+| Round | Change | Gain over best |
+|---|---|---|
+| 36 | +0.7 EV, blue lift in the shadows, warm gain, saturation 1.15 | −0.42 (rejected) |
+| 37 | round 33 exposure, no tint, AgX contrast 1.25 → 1.6 (true blacks, about 12:1) | **+0.50** |
+| 38 | the sky's level in the water 1.2 → 2.5 (water brighter than the banks) | **+0.08** |
+| 39 | more dusk sky light ×1.5, less candle ×0.7 | −0.48 (rejected) |
+
+M9's net gain over the M8 final is about **+0.6**. Grade scores went from about 3.5–4.5 to 4.5–5 out of 10. A/B critics were fooled 0/4 in every round.
+
+**What the grade can no longer fix.** Every grade critic's top giveaways are now in the content:
+- the cloned grass carpet (M6)
+- water without dense rain rings, a glitter path or crisp reflections (M2, M5, M7)
+- the hard-edged light the lantern casts on the banks (M4, M7)
+- dry, matte stone and grass with no wet glints (M3, M6)
+- the lantern as a clean glowing box (M7)
 

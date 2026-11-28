@@ -66,7 +66,7 @@ class GameScene {
   // about a tenth of the open-sky radiance at envIntensity (blue hour).
   // (Doubled in M4 v2: sky light scattered in the tannin water fills the
   // rock shadows on the bed, which read as black holes.)
-  static final vm.Vector3 ambient = vm.Vector3(0.012, 0.016, 0.03) * _tune('amb', 1.5);
+  static final vm.Vector3 ambient = vm.Vector3(0.012, 0.016, 0.03);
 
   // Candle behind paper: deep amber (ref02 paper about 248/170/95, ref10
   // about 248/214/124), not the near-white a hotter emitter turns into under
@@ -207,7 +207,7 @@ class GameScene {
         : DirectionalLight(
             direction: vm.Vector3(0.8, -0.5, 0.3)..normalize(),
             color: vm.Vector3(0.32, 0.48, 1.0),
-            intensity: _tune('skyi', 0.135),
+            intensity: _tune('skyi', 0.09),
             castsShadow: false,
           );
     scene.antiAliasingMode = AntiAliasingMode.taa;
@@ -482,11 +482,7 @@ class GameScene {
   /// Render layer for things the water's planar mirror must not draw.
   static const int _noMirrorLayer = 1 << 4;
 
-  // M9 round 39: the balance of light. More dusk sky (image light,
-  // skylight and the custom shaders' ambient x1.5) and less candle (x0.7):
-  // round 38 critics found the lantern lit banks a metre away 30-40x the
-  // unlit grass, "an electric lamp against near-black dusk" (refs 02, 07).
-  static final double envIntensity = _tune('env', 0.285);
+  static final double envIntensity = _tune('env', 0.19);
 
   /// Radiance of the open sky the water reflects, in the same units as
   /// [envIntensity]. The stream's surface sees the open sky gap above the
@@ -751,7 +747,7 @@ class GameScene {
     // The paper far brighter than the scene (as a candle dominates ref02), so
     // its mirror image and glints read on the water at this steep view
     // (Fresnel ~3 %); the light it casts slightly lower again (bank stripes).
-    _lanternLight.intensity = (0.15 + 0.66 * f * flicker) * _tune('llight', 0.7);
+    _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
     _paper.emissiveStrength = 0.1 + 1.6 * f * flicker;
     _paperMat?.parameters
       ?..setVec3('cam', cameraEye)
