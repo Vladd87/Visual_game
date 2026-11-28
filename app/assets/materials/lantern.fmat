@@ -85,6 +85,49 @@ fragment {
     return ink;
   }
 
+  // M11: real characters in place of the made-up glyphs, which the critics
+  // read as "made-up marks that only look like CJK" once the bigger lantern
+  // made them legible (round 41). 平和 ("peace", common on toro nagashi) on
+  // two opposite panels, 心 ("heart") on the other two. Strokes in a unit
+  // cell, y up; each lands heavy and lifts thin.
+  float Stroke(vec2 q, vec2 a, vec2 b) {
+    vec2 s = Segment(q, a, b);
+    float w = mix(0.085, 0.05, s.y);
+    return 1.0 - smoothstep(w * 0.65, w, s.x);
+  }
+
+  float Kanji(vec2 q, int id) {
+    float k = 0.0;
+    if (id == 0) {
+      // 平
+      k = max(k, Stroke(q, vec2(0.18, 0.84), vec2(0.82, 0.86)));
+      k = max(k, Stroke(q, vec2(0.30, 0.72), vec2(0.40, 0.56)));
+      k = max(k, Stroke(q, vec2(0.70, 0.72), vec2(0.60, 0.56)));
+      k = max(k, Stroke(q, vec2(0.08, 0.44), vec2(0.92, 0.46)));
+      k = max(k, Stroke(q, vec2(0.50, 0.86), vec2(0.50, 0.04)));
+    } else if (id == 1) {
+      // 和: 禾 then 口
+      k = max(k, Stroke(q, vec2(0.40, 0.94), vec2(0.12, 0.86)));
+      k = max(k, Stroke(q, vec2(0.06, 0.68), vec2(0.46, 0.70)));
+      k = max(k, Stroke(q, vec2(0.26, 0.88), vec2(0.26, 0.04)));
+      k = max(k, Stroke(q, vec2(0.25, 0.64), vec2(0.04, 0.30)));
+      k = max(k, Stroke(q, vec2(0.28, 0.60), vec2(0.44, 0.44)));
+      k = max(k, Stroke(q, vec2(0.56, 0.68), vec2(0.56, 0.26)));
+      k = max(k, Stroke(q, vec2(0.56, 0.68), vec2(0.92, 0.68)));
+      k = max(k, Stroke(q, vec2(0.92, 0.68), vec2(0.90, 0.26)));
+      k = max(k, Stroke(q, vec2(0.56, 0.30), vec2(0.90, 0.30)));
+    } else {
+      // 心
+      k = max(k, Stroke(q, vec2(0.10, 0.52), vec2(0.18, 0.30)));
+      k = max(k, Stroke(q, vec2(0.30, 0.70), vec2(0.34, 0.16)));
+      k = max(k, Stroke(q, vec2(0.34, 0.16), vec2(0.78, 0.16)));
+      k = max(k, Stroke(q, vec2(0.78, 0.16), vec2(0.86, 0.32)));
+      k = max(k, Stroke(q, vec2(0.48, 0.76), vec2(0.58, 0.58)));
+      k = max(k, Stroke(q, vec2(0.74, 0.66), vec2(0.88, 0.48)));
+    }
+    return k;
+  }
+
   void Surface(inout MaterialInputs material) {
     highp vec2 uv = GetUV0();
     float panel = floor(float(uv.x));
@@ -111,7 +154,9 @@ fragment {
     // Brightest at candle height, half as bright at the rim (round 27
     // critics: evenly lit).
     float body = mix(1.0, 0.45, smoothstep(0.2, 1.0, v)) * (1.0 - 0.25 * dx * dx);
-    float glow = mix(body, 0.5, band) + 1.1 * hot * (1.0 - band);
+    // M11: a stronger hot spot where the flame stands behind the paper
+    // (critics: "evenly lit", "no flame hot spot"; ref10).
+    float glow = mix(body, 0.5, band) + 1.8 * hot * (1.0 - band);
     // Folded corners and the rim edge: a little darker.
     float edge = mix(0.8, 1.0, smoothstep(0.0, 0.05, u) * smoothstep(1.0, 0.95, u));
     // Paper fibre: fine mottling and long vertical fibres.
@@ -122,14 +167,18 @@ fragment {
     // opposite panels, two on the others, about 2.9 cm wide and 2 cm tall
     // on the 6.6 × 8.5 cm paper.
     float ink = 0.0;
-    float rows = fract(panel * 0.5) > 0.25 ? 2.0 : 3.0;
     if (side < 0.5) {
-      float cw = 0.44, ch = 0.235;
-      float c0 = 0.86 - ch * 3.0;
+      // M11: 平和 on panels 0 and 2, 心 on 1 and 3, about 4 cm a character.
+      // Seen from outside, u runs right to left: mirror it.
+      bool two = fract(panel * 0.5) < 0.25;
+      float cw = 0.4, ch = 0.31;
+      float c0 = two ? 0.9 - ch * 2.0 : 0.47;
+      float rows = two ? 2.0 : 1.0;
       float row = floor((v - c0) / ch);
-      vec2 q = vec2((u - 0.5) / cw + 0.5, fract((v - c0) / ch));
-      if (row >= 3.0 - rows && row < 3.0 && abs(u - 0.5) < cw * 0.5) {
-        ink = Glyph(q, panel * 13.0 + row * 3.1 + 1.0);
+      vec2 q = vec2(0.5 - (u - 0.5) / cw, fract((v - c0) / ch));
+      if (row >= 0.0 && row < rows && abs(u - 0.5) < cw * 0.5) {
+        int id = two ? (row > 0.5 ? 0 : 1) : 2;
+        ink = Kanji(q, id);
         // Dry-brush breaks.
         ink *= 0.75 + 0.25 * smoothstep(0.3, 0.6, VNoise(p * vec2(60.0, 90.0)));
       }
@@ -149,7 +198,7 @@ fragment {
       vec2 b = vec2(Hash(vec2(panel + 4.1, fk)), 0.05 + 0.9 * Hash(vec2(panel + 8.3, fk)));
       vec2 sg = Segment(vec2(u, v * 1.3), vec2(a.x, a.y * 1.3), vec2(b.x, b.y * 1.3));
       float d = sg.x;
-      wear *= 1.0 - 0.14 * exp(-d * d / 0.00002) + 0.05 * exp(-(d - 0.012) * (d - 0.012) / 0.00004);
+      wear *= 1.0 - 0.24 * exp(-d * d / 0.00002) + 0.08 * exp(-(d - 0.012) * (d - 0.012) / 0.00004);
     }
     // The bottom of the paper has soaked up water from the tray: more
     // translucent below a ragged tide line, with a darker dried edge.

@@ -64,7 +64,7 @@ class LanternModel {
           final upward = math.pow(math.sin(math.pi * (0.15 + 0.85 * v)), 0.8).toDouble();
           final interior = (i > 0 && i < nu && j > 0) ? 1.0 : 0.0;
           final wrinkle = (h(i, j, k) - 0.5) * 0.0016 * interior;
-          final bow = 0.0045 * across * upward + wrinkle;
+          final bow = 0.008 * across * upward + wrinkle;
           x += nx * bow;
           z += nz * bow;
           grid.add([x, y, z]);

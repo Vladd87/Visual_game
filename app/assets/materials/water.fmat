@@ -59,6 +59,9 @@ material {
     // the fraction of the overhead sky they hide (0 = open sky).
     { type: float, name: canopy_cover, default: 0.0 },
     { type: float, name: canopy_height, default: 2.5 },
+    // M11: how far (rad) the treeline drops along the stream's own direction,
+    // where the corridor between the banks opens to the sky.
+    { type: float, name: treeline_corridor, default: 0.0 },
     // How much of the broad wave tilt reaches the sky/leaf reflection.
     { type: float, name: sky_broad, default: 1.0 },
     // Leaf-cluster frequency multiplier (1 = clusters about 1-2 m across).
@@ -109,6 +112,14 @@ fragment {
     vec2 cu = vec2(az * 2.0, el * 3.0);
     float clumps = texture(normal_tex, cu * 0.37).b * 0.6 + texture(normal_tex, cu * 1.3 + 0.2).a * 0.4;
     float line = material_params.treeline + 0.38 * (texture(normal_tex, vec2(az * 0.9, 0.31)).b - 0.5);  // treeline height, rad
+    // M11: looking along the stream (world +-z), the trees stand back on both
+    // banks and the corridor between them opens to the sky, down toward the
+    // horizon. From the M11 camera the far water reflects rays only 20-35 deg
+    // above the horizon: under the plain treeline it all mirrored foliage and
+    // went pitch black (round 41 critics), where real dusk water is brightest
+    // far away (refs 02, 15).
+    float along = abs(r.z) / max(length(r.xz), 1e-4);
+    line -= material_params.treeline_corridor * along * along * along * along;
     float soft = material_params.treeline_soft;
     float gap = smoothstep(line - 0.64 * soft, line + 0.36 * soft, el + (clumps - 0.5) * 0.35);
     // Overhead, the reflection looks up through leaves overhanging the

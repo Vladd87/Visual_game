@@ -60,6 +60,8 @@ Every round follows the same steps (PLAN.md §5):
 | round-37 | grade v2 (panel) | 4.31 | 4.56 | 4.44 | 4.0 | 0/4 (A/B-only critic) | Panel vs round 33: **+0.50** (critics +0.50 / +0.50). New best; resets the sub-0.3 count; grade 5 vs 4 and 5 vs 3.5 |
 | round-38 | grade v3 (panel) | 4.53 | 4.56 | 4.55 | 4.25 | 0/4 (A/B-only critic) | Panel vs round 37: **+0.08** (critics −0.28 / +0.44). New best by the ratchet; 1st sub-0.3 round since round 37 |
 | round-39 | grade v4 (panel) | 3.88 | 4.12 | 4.00 | 3.62 | 0/4 (A/B-only critic) | Panel vs round 38: **−0.48** (critics −0.36 / −0.59). Rejected. 2nd sub-0.3 round in a row → **M9 stops at round 38** |
+| round-40 | M11 baseline: the M10 final, re-captured | 4.22 | 4.13 | 4.17 | 3.75 | (not run) | **M11.0:** captured at the critics' image size with the phone's detail (1444 × 1603 inner, 691 × 1613 cover). Scored only as round 41's comparison |
+| round-41 | M11.1 camera and lantern v1 (panel) | 4.91 | 5.00 | 4.95 | 4.50 | 0/4 (A/B-only critic) | Panel vs round 40: **+0.78** (critics +1.00 / +0.56). New best; viewpoint and lantern 5 vs 3.5 and 5 vs 4 |
 
 ## Round 1: water v1
 
@@ -1541,4 +1543,43 @@ M9's net gain over the M8 final is about **+0.6**. Grade scores went from about 
 - the hard-edged light the lantern casts on the banks (M4, M7)
 - dry, matte stone and grass with no wet glints (M3, M6)
 - the lantern as a clean glowing box (M7)
+
+## M11: second pass (your request after M10)
+
+Systems, in order: M11.1 camera and lantern, M11.2 water, M11.3 wetness, M11.4 mist, M11.5 banks and wind. Each round judges one system: every M11 feature has a switch, and the features of later systems are off. The stop rule and the ratchet are as before.
+
+**M11.0 capture change.** From round 40, captures render at 0.64 of the screen size (1444 × 1603 inner, 691 × 1613 cover), which is the size the critic packets keep (1600 px). The 3D scene renders at that full size (`?rscale=1`), close to the phone's own detail; until M10 the captures were half size with the scene at 0.7–0.8 of that. Round 40 is the M10 final re-captured this way, as the baseline. Shots 2, 3 and 6 now stand at fixed distances down the stream, where their M10 event rules put them, so the bigger lantern's different path does not move them.
+
+## Round 41: camera and lantern v1 (M11.1)
+
+**What changed** (PLAN.md decisions log, M11.1):
+- **Camera:** 45° down through a 46–50° lens from about 2.5 m (was 55°, 24–28°, 5 m), the same width of stream at the lantern.
+- **Lantern 1.5× bigger** (your choice): 9.9 × 12.75 cm of paper, glowing at 0.75 of before per patch; bowed, wrinkled, creased paper with a wet band and beaded drops.
+
+**Panel** (each critic compared this round with `captures/round-40` side by side, order flipped)
+
+| Critic | Round 41 (new) | Round 40 (best) | Difference | Viewpoint and lantern, new vs best |
+|---|---|---|---|---|
+| a (new = Y) | 5.03 | 4.03 | +1.00 | 5 vs 3.5 |
+| b (new = X) | 4.88 | 4.31 | +0.56 | 5 vs 4 |
+
+- **Gain +0.78**, critic spread 0.44: **both preferred round 41.** New best.
+- **A/B:** 0/4 fooled, 98–99 %.
+- Tokens: 193k + 195k for the panel, 76k for the A/B critic.
+
+**Why both preferred it:**
+- **The viewpoint.** Round 40 is "a high, almost straight-down, drone-like view" where the lantern is "a sugar cube on a map". Round 41 reads as "a person on the bank looking down, which is the framing of ref02": the lantern's side panels and open top show, and the stream recedes.
+- **The water.** At the lower angle it reads as water: dark where it mirrors the banks, bright where it mirrors the sky, with rain rings in those patches and "a proper mirrored reflection with a dark gap at the waterline". Round 40's steep view shows "a milky lavender sheen ... like frosted glass or wet sand".
+- **The lit streambed** is warmer and darker, seen through water, where round 40's reads as dry, chalky gravel under a flashlight.
+
+**New faults the lower camera shows:**
+- **Hard black shapes beside the lantern** (shots 1, 3, 4, 5): the shadow of the candle holder on the bed, seen through the water, "like shadows of figures that aren't there".
+- **Pitch-black far water** upstream (shots 1, 2, 6): the reflected treeline mask turns every ray under about 52° into foliage, and the far water now reflects at 20–35°.
+
+**What both still flag:**
+1. The cloned grass carpet on flat, bare banks (M11.5), now more visible from the angled view.
+2. The candle lights the banks like a spotlight: hard-edged pools, saturated yellow grass.
+3. The lantern is still a rigid, evenly glowing, pinkish-white box: no visible flame hot spot, the bow and creases too slight to see, and (the A/B critic) "made-up marks that only look like CJK characters".
+4. Still water: no current lines, weak rain (M11.2).
+5. Night rather than dusk, with no mist around the light (M11.4).
 

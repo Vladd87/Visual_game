@@ -35,6 +35,8 @@ material {
     { type: float, name: moss_bias, default: 0.0 },
     // M11: strength of the wet film (clear coat) on the banks; 0 = off.
     { type: float, name: wet_coat, default: 1.0 },
+    // M11: the soft shade of the lantern's tray on the bed below it (0 = none).
+    { type: float, name: lantern_shade, default: 0.0 },
   ],
 }
 
@@ -348,6 +350,19 @@ fragment {
       n = normalize(mix(n, pn, wet));
       rough = mix(rough, mix(0.7, 0.35, dome), wet);
       ao = mix(ao, 1.0, wet);
+    }
+
+    // M11: the tray blocks the candle's light downward, so the bed right
+    // under the lantern lies in a soft shade that widens with depth (the
+    // emitter is the whole paper, so the edge is a broad penumbra). It
+    // replaces the candle holder's cast shadow, which the lower M11 camera
+    // showed as hard black shapes beside the lantern (round 41 critics).
+    {
+      highp vec2 rel = wp.xz - material_params.lantern_pos.xz;
+      float depthBelow = max(float(material_params.lantern_pos.y - wp.y), 0.0);
+      float sig = 0.045 + 0.55 * depthBelow;
+      float shade = exp(-float(dot(rel, rel)) / (2.0 * sig * sig));
+      albedo *= 1.0 - material_params.lantern_shade * shade * wet;
     }
 
     // Contact shadow where rocks meet the ground.

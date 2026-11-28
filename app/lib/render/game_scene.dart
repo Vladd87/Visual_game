@@ -278,6 +278,10 @@ class GameScene {
     final base = Node(name: 'lanternBase', mesh: Mesh(CuboidGeometry(vm.Vector3(0.04 * ls, 0.01 * ls, 0.04 * ls)), baseMat));
     base.position = vm.Vector3(0, LanternModel.trayTop, 0);
     base.lightChannelMask = _lanternSelfChannel;
+    // M11: no cast shadow (the lower camera showed it as hard black shapes
+    // beside the lantern); ground.fmat shades the bed softly instead.
+    // `?baseshadow=1` restores it.
+    if (_tune('baseshadow', 0) <= 0) base.shadowCastingMode = ShadowCastingMode.off;
     _lantern.add(base);
     // The candle flame, upright, seen through the open top.
     _flame = Sprite(
@@ -442,6 +446,8 @@ class GameScene {
     _waterMat!.parameters.setFloat('sky_scale', 1.3939 * skyLevel);
     _waterMat!.parameters.setFloat('treeline', _tune('tree', 0.9));
     _waterMat!.parameters.setFloat('treeline_soft', _tune('tsoft', 0.08));
+    // M11: the sky corridor along the stream (water.fmat Sky).
+    _waterMat!.parameters.setFloat('treeline_corridor', _tune('corridor', 0.5));
     _waterMat!.parameters.setFloat('canopy_cover', _tune('canopy', 0.5));
     _waterMat!.parameters.setFloat('sky_broad', _tune('skybroad', 0.6));
     _waterMat!.parameters.setFloat('canopy_scale', _tune('cscale', 1.0));
@@ -454,7 +460,7 @@ class GameScene {
     _waterMat!.parameters.setFloat('foam_amount', _tune('foam', 1.0));
     // M7: the lantern's reflection (see water.fmat LanternMirror).
     // M11: dimmed with the paper's glow (paperDim).
-    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0 * 0.75));
+    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0 * 0.6));
     // M11: glitter path (water.fmat Glitter).
     _waterMat!.parameters.setFloat('glitter', _tune('glitter', 1.0));
     _waterMat!.parameters.setFloat('glitter_sigma', _tune('gsigma', 0.16));
@@ -527,6 +533,8 @@ class GameScene {
       m.parameters.setFloat('wet_coat', _wetCoat);
     }
     _groundMat!.parameters.setFloat('moss_bias', _tune('mossbias', 0.1));
+    // M11: soft tray shade on the bed under the lantern.
+    _groundMat!.parameters.setFloat('lantern_shade', _tune('lshade', 0.5));
     // Blue hour (Poly Haven aarfontein_dawn) behind a forest treeline, baked by
     // tools/bake/bake_env.py.
     await Diagnostics.checkpoint('environment');
@@ -835,7 +843,9 @@ class GameScene {
     _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
     // M11: the same candle behind 2.25 times the paper: each patch of
     // paper glows a little less (the phone showed it nearly white).
-    const paperDim = 0.75;
+    // M11 v2 (round 42): 0.6, so the paper stops clipping to white and its
+    // colour, hot spot and ink read (critics: "pinkish-white box").
+    const paperDim = 0.6;
     _paper.emissiveStrength = (0.1 + 1.6 * f * flicker) * paperDim;
     _paperMat?.parameters
       ?..setVec3('cam', cameraEye)
