@@ -11,3 +11,6 @@ spike/thermion_spike/web/thermion_dart.wasm
 # Large/unlicensed scratch
 *.keystore.bak
 captures/latest_title.png
+
+# In-progress parallel captures (tools/capture/capture_par.sh)
+captures/*.parts/
