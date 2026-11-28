@@ -2,7 +2,8 @@
 
 A small Flutter game for the Samsung Galaxy Z Fold8 Ultra. You guide a paper lantern down a stream at dusk; the ambition is that it looks like a photograph.
 
-> **Status: Milestone 9 (everything through the camera look, plus the AMOLED grade).** Gameplay, fold/unfold, Flex mode and the platform layer are in (M1). These systems went through the blind critic loop (`CRITIC_LOG.md`):
+> **Status: Milestone 10, shipped.** Every system of the plan (`PLAN.md` §4) is built and went through the blind critic loop (`CRITIC_LOG.md`, 39 rounds):
+> - M1: gameplay, fold/unfold, Flex mode and the platform layer
 > - M2: the water
 > - M3: scanned rocks and textured banks
 > - M4: the blue-hour lighting with an amber lantern key
@@ -11,12 +12,15 @@ A small Flutter game for the Samsung Galaxy Z Fold8 Ultra. You guide a paper lan
 > - M7: a paper toro nagashi lantern with its reflection, soft fireflies and leaf-shaped leaves
 > - M8: a camera's signature (depth of field on the lantern, a vignette, phone-like sensor noise with shadow noise reduction, firefly motion streaks)
 > - M9: the grade (a steep AgX curve with true neutral blacks, a deep amber pool, and water carrying the dusk sky)
+> - M10: sound, the final settings and the release build
 >
-> Audio and the final release come next (M10, see `PLAN.md` §4).
+> **The realism target was not met:** critics score it about 4.5 out of 10 against a target of 7.5. `FINAL_REPORT.md` explains what was built, what still gives it away and what would raise it next.
 
 ## Install
 
-**Release build (recommended).** `releases/lantern-m9-release.apk`, about 35 MB ([direct download](https://github.com/Vladd87/Visual_game/raw/ccr-32d0ba79-c0iehd/releases/lantern-m9-release.apk)); it installs as "Lantern m9". Copy it to the phone and open it (allow installs from your file manager if asked), or run `adb install -r releases/lantern-m9-release.apk`. It opens on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Earlier milestone builds (`lantern-m1-…`, `m2`, `m4`, `m5`, `m6`, `m7.2`, `m8`) stay in `releases/` for comparison. From m7.2 on, each build installs as its own app ("Lantern m7.2", package `dev.lantern.lantern.m7_2`), so several versions can sit side by side on the phone; older builds share the plain "Lantern" and replace each other.
+**Final release (recommended).** `releases/lantern-final-release.apk`, about 40 MB ([direct download](https://github.com/Vladd87/Visual_game/raw/ccr-32d0ba79-c0iehd/releases/lantern-final-release.apk)). Copy it to the phone and open it (allow installs from your file manager if asked), or run `adb install -r releases/lantern-final-release.apk`. It installs as plain **"Lantern"** (package `dev.lantern.lantern`) and opens straight into the game.
+
+**Milestone builds.** Every earlier build stays in `releases/` for comparison. From m7.2 on, each installs as its own app ("Lantern m7.2", package `dev.lantern.lantern.m7_2`), so several can sit side by side on the phone. They open on a small test menu (device bring-up): **Play** starts the game; **Auto test** runs the on-device diagnostics and **Copy** puts their report on the clipboard. Builds before m7.2 install as plain "Lantern", the same app as the final release, so installing one replaces the other. `lantern-m10a` is the test build of the sound.
 
 **Debug build.** It's 110 MB, over GitHub's 100 MB file limit, so it's split in two. It's slower (JIT plus Vulkan validation) and useful for logs, not for judging smoothness. Reassemble it first:
 
@@ -60,6 +64,7 @@ Settings are on the title card and the pause card:
 - **Control:** drag / tilt
 - **Haptics:** on / off
 - **Quality:** high / medium / low. High is the game; medium and low are only thermal fallbacks.
+- **Sound:** on / low / off. Light rain and the stream's burble loop underneath; short cues play for a firefly caught, a knock on a rock or bank, a leaf landing on the lantern, and reaching the pool. Sound pauses when the app goes to the background.
 - **Refresh:** 60 Hz (default, locked) / 120 Hz (Performance)
 
 Your best run is saved on the device.
@@ -76,7 +81,7 @@ Your best run is saved on the device.
 | `scale / notch` | Internal 3D render scale and how many governor steps below the screen's default it is (0 = full High quality) |
 | `thermal / headroom` | Android thermal status (none, light, moderate, severe…) and `getThermalHeadroom(10 s)`, where 1.0 means throttling |
 | `screen` | Active profile (cover, inner, flex, wide), display mode and refresh rate |
-| `[ export perf CSV ]` | Writes a once-per-second log to `Android/data/dev.lantern.lantern/files/lantern_perf_<time>.csv`. Copy it into `captures/device/`. |
+| `[ export perf CSV ]` | Writes a once-per-second log to `Android/data/dev.lantern.lantern/files/lantern_perf_<time>.csv` (for a milestone build, the folder carries its tag, such as `dev.lantern.lantern.m9`). Copy it into `captures/device/`. |
 
 ## Repository
 
@@ -86,9 +91,13 @@ Your best run is saved on the device.
 | `app/lib/sim/` | Deterministic simulation (unit-tested: `cd app && flutter test`) |
 | `app/android/.../kotlin/` | Display-mode lock, thermal, haptics, tilt |
 | `tools/capture/` | Playwright harness: `node tools/capture/capture.js captures/<round>` (8 shots × inner/cover), and `smoke.js` for a flow test |
-| `captures/` | Web captures per round; `captures/device/` is for your phone screenshots and perf CSVs |
+| `tools/build_apk.sh` | Builds an APK into `releases/`: `tools/build_apk.sh m11` for a tagged test build, `LANTERN_FINAL=1 tools/build_apk.sh final` for the plain release |
+| `tools/audio/` | `synth_audio.py` generates every sound in `app/assets/audio/` |
+| `captures/` | Web captures per round, and `captures/final/` from the shipping code; `captures/device/` is for your phone screenshots and perf CSVs |
 | `references/` | Real reference photos for the critic (never shipped) |
 | `ENGINE.md`, `PLAN.md` | Engine choice; plan and decisions log |
+| `CRITIC_LOG.md`, `FINAL_REPORT.md` | Every critic round; the final honest report |
+| `ASSETS.md` | Every asset and its CC0 source |
 
 ## Building
 
@@ -102,12 +111,19 @@ flutter test                                                   # simulation test
 
 Clear `build/app` before a debug APK build. With Flutter 3.50 on Gradle 9.5, Gradle's strict task validation trips on stale debug outputs inside the project directory (`compileFlutterBuildDebug`). A clean Android output dir avoids it. Release builds aren't affected.
 
-## Known weaknesses (M9)
+## Known weaknesses
 
-Blind critics still score every shot as clearly CG: about 4.0–4.6 out of 10 on recent panels, against a target of 7.5. In their order:
+Blind critics still score every shot as clearly CG: about 4.4–4.6 out of 10 on the final panels, against a target of 7.5. In the separate A/B test they picked the real photo in every pair of all 39 rounds. In their order:
 - **The banks** show identical grass tufts at even spacing over a flat, tiled ground, dry and matte (M6).
-- **The water** does not read as rained on: few rings, no glints, no sky sheen, and the lantern's reflection is an intact copy (M2, M5, M7).
-- **The lantern's light** ends in hard-edged crescents on the bank crests (M4, M7).
-- **The tone** is dark: a real night photo uses the full range, with glints on wet stone and leaves, a glitter path on the water and a halo in the wet air. Lifting the grade only showed more of the grass carpet (M9 stopped by its rule at round 38). The missing brights need wet materials and water, not a grade.
+- **The water** does not read as rained on: few rings, no glitter path from the lantern, soft reflections and a milky sky sheen (M2, M5, M7).
+- **The lantern's light** ends in hard-edged crescents on the bank crests, and banks a metre away are lit too brightly for a candle (M4, M7).
+- **Dry materials:** no glints on wet stone, leaves or grass, so the brightest part of the range stays empty. A grade can't fill it without lifting the whole frame (M9).
+- **The lantern** still reads as a clean glowing box at this camera distance (M7).
 
-Not yet measured on the phone: frame pacing over a 20-minute run, thermal stepping, and tilt on each screen. Those need your playtest; the triple-tap perf overlay records them. The test menu and bring-up materials are scaffolding and go before the final release. No audio yet (M10).
+`FINAL_REPORT.md` estimates what each fix would gain and cost.
+
+**Not yet confirmed on the phone:** the lantern paper's brush characters (fixed in m7.2) and the sound.
+
+**Not measured,** as agreed: frame pacing over a 20-minute run, thermal stepping, 120 Hz behaviour, and tilt on each screen. Those need your playtest; the triple-tap perf overlay records them.
+
+The final release is signed with the Android debug keystore, as planned. A store release needs a real signing key.
