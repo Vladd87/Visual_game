@@ -31,7 +31,7 @@ void main() {
         expect(hw, greaterThan(0.2));
         var free = 0.0, best = 0.0;
         for (var x = cx - hw; x <= cx + hw; x += 0.005) {
-          final blocked = c.rocks.any((r) => r.emergent && (V2(x, d) - r.pos).length < r.radius + 0.045);
+          final blocked = c.rocks.any((r) => r.emergent && (V2(x, d) - r.pos).length < r.radius + Course.lanternRadius);
           free = blocked ? 0 : free + 0.005;
           if (free > best) best = free;
         }
@@ -93,7 +93,9 @@ void main() {
     final f = w.fireflies.first;
     w.lantern.pos = f.positionAt(w.time + 1 / 120);
     w.step(V2.zero);
-    expect(w.collected, 1);
+    // At least one: since M11 the bigger lantern can reach a second firefly
+    // of the same group in the same step.
+    expect(w.collected, greaterThanOrEqualTo(1));
     expect(w.flame, greaterThan(0.55));
     expect(w.drainEvents().whereType<FireflyEvent>(), isNotEmpty);
   });

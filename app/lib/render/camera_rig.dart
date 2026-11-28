@@ -52,11 +52,30 @@ class ViewportInfo {
 
 /// Fixed tilted overhead camera that keeps the lantern at an anchor point.
 ///
-/// The camera never rotates (PLAN.md: fixed 55° pitch, long lens). It follows
-/// the lantern with a short lag and moves between screen profiles with a
-/// critically damped spring, so a fold/unfold reframes smoothly.
+/// The camera never rotates (PLAN.md: fixed pitch). It follows the lantern
+/// with a short lag and moves between screen profiles with a critically
+/// damped spring, so a fold/unfold reframes smoothly.
+///
+/// M11: a person on the bank with a phone, not a drone with a long lens.
+/// Until M10 the camera looked down at 55° through a 24-28° lens from 5 m
+/// (about 4 m up): high angle, long lens and no near objects are the cues
+/// that make real photos look like miniatures, and critics called the
+/// framing "map-like" from M3 on. Now it looks down at 45° through a
+/// 46-50° lens from about 2.5 m (about 1.6 m up). Each profile keeps the
+/// same width of stream at the lantern, so the lantern stays where it was
+/// on screen, and about the same stretch of stream ahead stays in view;
+/// the stream behind the lantern now recedes into the distance.
 class CameraRig {
-  static const double pitchDeg = 55;
+  static double _q(String k, double d) => double.tryParse(Uri.base.queryParameters[k] ?? '') ?? d;
+  static final double pitchDeg = _q('pitch', 45);
+
+  /// The same coverage at the lantern as [oldDist] through [oldVfov], seen
+  /// through [newVfov] (scaled by `?lens=` for tests).
+  static (double, double) _lens(double oldVfov, double oldDist, double newVfov) {
+    final v = newVfov * _q('lens', 1.0);
+    final cover = 2 * oldDist * math.tan(oldVfov * math.pi / 360);
+    return (v, cover / (2 * math.tan(v * math.pi / 360)));
+  }
 
   ScreenProfile profile = ScreenProfile.cover;
   Framing? _current;
@@ -77,14 +96,18 @@ class CameraRig {
   static Framing profileFraming(ScreenProfile p, ViewportInfo? info) {
     switch (p) {
       case ScreenProfile.cover:
-        return const Framing(vfovDeg: 28, distance: 5.0, anchorX: 0.5, anchorY: 0.36, renderScale: 0.80);
+        final (v, d) = _lens(28, 5.0, 50);
+        return Framing(vfovDeg: v, distance: d, anchorX: 0.5, anchorY: 0.36, renderScale: 0.80);
       case ScreenProfile.inner:
-        // Diorama: wider and further back; lantern beside the crease.
-        return Framing(vfovDeg: 24, distance: 5.0, anchorX: _creaseAnchorX(info), anchorY: 0.40, renderScale: 0.70);
+        // Wider; lantern beside the crease.
+        final (v, d) = _lens(24, 5.0, 46);
+        return Framing(vfovDeg: v, distance: d, anchorX: _creaseAnchorX(info), anchorY: 0.40, renderScale: 0.70);
       case ScreenProfile.flex:
-        return const Framing(vfovDeg: 17, distance: 5.2, anchorX: 0.5, anchorY: 0.46, renderScale: 0.75);
+        final (v, d) = _lens(17, 5.2, 36);
+        return Framing(vfovDeg: v, distance: d, anchorX: 0.5, anchorY: 0.46, renderScale: 0.75);
       case ScreenProfile.wide:
-        return const Framing(vfovDeg: 20, distance: 5.0, anchorX: 0.42, anchorY: 0.40, renderScale: 0.75);
+        final (v, d) = _lens(20, 5.0, 40);
+        return Framing(vfovDeg: v, distance: d, anchorX: 0.42, anchorY: 0.40, renderScale: 0.75);
     }
   }
 

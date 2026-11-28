@@ -66,7 +66,21 @@ Future<List<PlantModel>> loadPlants() async {
 /// A clump of grass blades rising from a small base and arching outward,
 /// each a tapering strip of three segments. UV v runs base (0) to tip (1)
 /// for a darker base and paler tip; u runs across the blade.
-MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13}) {
+/// M11: seven clump shapes instead of four, so the banks are no longer one
+/// tuft repeated (critics' top giveaway since M6): the four M6 clumps, a tall
+/// sparse one, a short dense tuft and a flattened, mostly dead one. Dead
+/// blades are shorter, droop more and use the straw half of the texture.
+const int grassClumpVariants = 7;
+
+MeshGeometry buildGrassClumpVariant(int s) => switch (s) {
+      0 || 1 || 2 || 3 => buildGrassClump(101 + s, blades: 16 + 4 * s, height: 0.09 + 0.02 * s, dead: 0.12),
+      4 => buildGrassClump(211, blades: 10, height: 0.2, dead: 0.2, leanMin: 0.35),
+      5 => buildGrassClump(223, blades: 28, height: 0.07, dead: 0.05, spread: 0.012),
+      _ => buildGrassClump(237, blades: 14, height: 0.08, dead: 0.7, leanMin: 0.6),
+    };
+
+MeshGeometry buildGrassClump(int seed,
+    {int blades = 14, double height = 0.13, double dead = 0.0, double leanMin = 0.25, double spread = 0.018}) {
   final rnd = math.Random(seed);
   const segs = 3;
   final pos = <double>[];
@@ -77,9 +91,11 @@ MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13}) 
     final az = rnd.nextDouble() * math.pi * 2;
     final dir = vm.Vector3(math.cos(az), 0, math.sin(az));
     final side = vm.Vector3(-dir.z, 0, dir.x);
-    final base = dir * (rnd.nextDouble() * 0.018);
-    final h = height * (0.55 + 0.6 * rnd.nextDouble());
-    final lean = 0.25 + 0.55 * rnd.nextDouble(); // how far the tip arches out, x height
+    final base = dir * (rnd.nextDouble() * spread);
+    final isDead = rnd.nextDouble() < dead;
+    final h = height * (0.55 + 0.6 * rnd.nextDouble()) * (isDead ? 0.8 : 1.0);
+    // How far the tip arches out, x height; dead blades droop further.
+    final lean = leanMin + 0.55 * rnd.nextDouble() + (isDead ? 0.35 : 0.0);
     final w0 = 0.0028 + 0.0022 * rnd.nextDouble();
     final first = pos.length ~/ 3;
     for (var s = 0; s <= segs; s++) {
@@ -93,7 +109,8 @@ MeshGeometry buildGrassClump(int seed, {int blades = 14, double height = 0.13}) 
         final q = p + side * (w * k);
         pos.addAll([q.x, q.y, q.z]);
         nrm.addAll([n.x, n.y, n.z]);
-        uv.addAll([k < 0 ? 0 : 1, t]);
+        // Living blades sample the left half of the texture, dead the right.
+        uv.addAll([isDead ? (k < 0 ? 0.6 : 0.9) : (k < 0 ? 0.1 : 0.4), t]);
       }
     }
     for (var s = 0; s < segs; s++) {
@@ -176,6 +193,18 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
 
   double outside(V2 p) => -(c.clearance(p) + shoreNoise(p));
 
+  // M11: clump shapes grow in patches, as real grass does: dry, flattened
+  // clumps gather in some places, tall sparse or short dense tufts in
+  // others, the four M6 clumps between.
+  int grassVariant(V2 p, int i, int j, double r) {
+    if (grassVariants < grassClumpVariants) return (r * 97).floor() % grassVariants;
+    final vn = _noise(p, 0.9, 17);
+    final k = _hash(i, j, 8);
+    if (vn > 0.66 && k < 0.6) return 6;
+    if (vn < 0.32 && k < 0.5) return k < 0.25 ? 4 : 5;
+    return (r * 97).floor() % 4;
+  }
+
   void place(PlantKind kind, int variant, V2 p, double scale, double yaw, {double tiltX = 0, double tiltZ = 0, double sink = 0.004}) {
     final y = groundHeight(c, p) - sink;
     final q = vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), yaw);
@@ -213,7 +242,7 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
         final len = math.sqrt(gx * gx + gy * gy) + 1e-9;
         final wx = gx / len, wz = -gy / len; // world x/z toward the water
         final lean = 0.25 + 0.3 * _hash(i, j, 4);
-        place(PlantKind.edgeGrass, (r * 97).floor() % grassVariants, p, 1.1 + 0.7 * _hash(i, j, 5),
+        place(PlantKind.edgeGrass, grassVariant(p, i, j, r), p, 1.1 + 0.7 * _hash(i, j, 5),
             _hash(i, j, 6) * math.pi * 2,
             tiltX: wz * lean, tiltZ: -wx * lean);
       } else if (o < 2.5) {
@@ -221,7 +250,7 @@ List<PlantPlacement> vegetationPlacements(Course c, List<RockPlacement> rocks, {
         final density = 0.85 * _smooth(0.45, 0.7, patch) * (1 - 0.4 * (o / 2.5)) + 0.02;
         if (r > density) continue;
         if (!clearOfRocks(p, 0.03)) continue;
-        place(PlantKind.grass, (r * 97).floor() % grassVariants, p, 0.8 + 0.7 * _hash(i, j, 5),
+        place(PlantKind.grass, grassVariant(p, i, j, r), p, 0.8 + 0.7 * _hash(i, j, 5),
             _hash(i, j, 6) * math.pi * 2);
       }
     }

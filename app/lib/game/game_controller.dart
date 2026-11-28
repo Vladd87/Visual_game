@@ -213,7 +213,10 @@ class GameController extends ChangeNotifier {
     _viewport = info;
     final prevProfile = rig.profile;
     rig.setViewport(info);
-    governor.setBase(rig.framing.renderScale);
+    // `?rscale=` (captures only): the internal 3D resolution as a share of
+    // the page, so a capture at the critic's image size can carry the
+    // phone's level of detail (M11).
+    governor.setBase(double.tryParse(Uri.base.queryParameters['rscale'] ?? '') ?? rig.framing.renderScale);
     if (prev != null && prevProfile != rig.profile) {
       // A screen switch keeps the run but soft-pauses it (PLAN.md decisions);
       // Flex mode keeps playing with the panel below.

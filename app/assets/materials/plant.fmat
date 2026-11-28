@@ -1,0 +1,116 @@
+// LANTERN plants (M11): ferns, sorrel and grass clumps, in place of the
+// engine's standard material, so they can move in the wind and carry the
+// rain's water film.
+//
+// Wind: the bank is sheltered and the rain is light, so the motion is gentle.
+// Each plant bends from its root (the displacement grows with the square of
+// the height up the model); slow gusts roll across the bank, so neighbouring
+// plants lean together, with a little sway of their own and a quick flutter
+// at the tips. Tip travel is about 10 % of the plant's height in a full gust.
+//
+// Colour: the texture (sRGB, decoded here as the standard material does)
+// times the per-instance tint (the vertex colour), varied in broad patches
+// across the bank, some yellower and drier, some darker and greener (critics:
+// "a cloned carpet").
+material {
+  name: "Plant",
+  shading_model: physical,
+  culling: none,
+  parameters: [
+    { type: sampler2d, name: color_tex, hint: default_white },
+    // Model height (m) the bend is measured against.
+    { type: float, name: height, default: 0.3 },
+    // Wind strength (0 = still) and time (s, from the CPU).
+    { type: float, name: wind, default: 1.0 },
+    { type: float, name: wind_time, default: 0.0 },
+    { type: vec2, name: wind_dir, default: [0.8, 0.6] },
+    { type: float, name: roughness, default: 0.5 },
+    // The rain's water film (clear coat) and the colour patches.
+    { type: float, name: wet_coat, default: 0.6 },
+    { type: float, name: patches, default: 1.0 },
+    // Light through thin fronds and blades from the lantern behind them.
+    { type: float, name: transmission, default: 0.25 },
+  ],
+}
+
+vertex {
+  void Vertex(inout VertexInputs vertex) {
+    float h = clamp(vertex.position.y / material_params.height, 0.0, 1.4);
+    float bend = h * h;
+    highp vec3 root = vertex.model_transform[3].xyz;
+    highp float t = material_params.wind_time;
+    vec2 dir = material_params.wind_dir;
+    // Gusts: long waves rolling across the bank along the wind.
+    highp float ph = dot(root.xz, dir) * 1.6 - t * 1.25;
+    float gust = 0.5 + 0.5 * sin(float(ph)) * (0.65 + 0.35 * sin(float(ph * 0.41 + 1.7)));
+    // Each plant's own sway, and a quick flutter that differs along it.
+    float own = sin(float(t * 2.3 + root.x * 13.1 + root.z * 7.7));
+    float flutter = sin(float(t * 8.7 + dot(vertex.world_position.xz, vec2(37.0, 29.0)))) * h;
+    float push = material_params.wind * material_params.height * 0.1;
+    float along = (0.35 + 0.65 * gust) * (0.8 + 0.2 * own) * bend + 0.06 * flutter;
+    float across = 0.25 * own * bend + 0.05 * flutter;
+    vec2 side = vec2(-dir.y, dir.x);
+    vec2 d = (dir * along + side * across) * push;
+    vertex.world_position.xz += d;
+    // Bending lowers the tip a little, so blades do not stretch.
+    vertex.world_position.y -= 0.5 * dot(d, d) / max(vertex.position.y, 0.02);
+  }
+}
+
+fragment {
+  // Sine-free hash and value noise (16-bit safe on the phone).
+  float PHash(highp vec2 p) {
+    p = mod(p, 289.0);
+    highp vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+  }
+
+  float PNoise(highp vec2 p) {
+    highp vec2 i = floor(p);
+    vec2 f = vec2(fract(p));
+    vec2 w = f * f * (3.0 - 2.0 * f);
+    float a = PHash(i), b = PHash(i + vec2(1.0, 0.0));
+    float c = PHash(i + vec2(0.0, 1.0)), d = PHash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, w.x), mix(c, d, w.x), w.y);
+  }
+
+  void Surface(inout MaterialInputs material) {
+    vec4 tex = texture(color_tex, GetUV0());
+    if (tex.a < 0.5) {
+      discard;
+    }
+    vec3 col = SRGBToLinear(tex.rgb) * GetVertexColor().rgb;
+    // Broad patches across the bank: drier and yellower in some, darker and
+    // lusher in others.
+    highp vec3 wp = GetWorldPosition();
+    float pa = PNoise(wp.xz * 0.9 + 3.1);
+    float pb = PNoise(wp.xz * 2.3 + 7.7);
+    float dryish = smoothstep(0.55, 0.85, pa) * material_params.patches;
+    float lush = smoothstep(0.55, 0.85, pb) * (1.0 - dryish) * material_params.patches;
+    float l = dot(col, vec3(0.3, 0.55, 0.15));
+    col = mix(col, vec3(l) * vec3(1.25, 1.05, 0.55), dryish * 0.55);
+    col = mix(col, col * vec3(0.72, 0.85, 0.7), lush * 0.6);
+
+    // Both sides of a blade face the camera: flip by view direction (the
+    // rasteriser's front-face flag is unreliable on the phone; M7).
+    vec3 n = normalize(GetWorldNormal());
+    vec3 v = normalize(v_viewvector);
+    if (dot(n, v) < 0.0) {
+      n = -n;
+    }
+
+    material.base_color = vec4(col, 1.0);
+    material.normal = n;
+    material.metallic = 0.0;
+    material.roughness = material_params.roughness;
+    material.occlusion = 1.0;
+    // The rain's film: glossy, following the blade.
+    material.clearcoat = material_params.wet_coat;
+    material.clearcoat_roughness = 0.1;
+    material.clearcoat_normal = n;
+    // Thin leaves let some of the lantern's light through from behind.
+    material.diffuse_transmission = material_params.transmission;
+    material.diffuse_transmission_color = col * 1.6;
+  }
+}

@@ -11,29 +11,91 @@ class LanternModel {
   /// Half-width of the paper at the tray and at the rim (m), the tray's top
   /// and the paper's height. ref02's lantern is taller than wide and opens
   /// a little toward the rim.
-  static const double halfBottom = 0.032, halfTop = 0.034, trayTop = 0.012, height = 0.085;
+  /// M11: 1.5 times the M7 size (9.6-10.2 cm wide, 12.75 cm of paper).
+  /// Retail toro nagashi lanterns are about 15 cm across; at 6.6 cm the
+  /// lantern was a toy next to real-size grass and pebbles, and its
+  /// characters were too small to read from the camera.
+  static const double scale = 1.5;
+  static const double halfBottom = 0.032 * scale, halfTop = 0.034 * scale, trayTop = 0.012 * scale, height = 0.085 * scale;
+
+  /// Height of the candle flame (and the light) above the lantern's base.
+  static const double candleY = 0.035 * scale;
 
   /// The four paper panels. UV x = panel index + across (0-1), y = up (0-1),
   /// as lantern.fmat expects.
+  /// M11: each panel is a grid, so the paper can bow outward a few
+  /// millimetres between the corners, carry small wrinkles, and stand a
+  /// little uneven at the rim: hand-folded paper, not a clean box (critics,
+  /// every panel since M7: "a clean glowing box").
   static MeshGeometry paperPanels() {
+    const nu = 8, nv = 10;
     final pos = <double>[], nrm = <double>[], uv = <double>[];
     final idx = <int>[];
     // Corners counter-clockwise seen from above, native axes (y up).
     const corners = [[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]];
+    // Each rim corner sits a little higher or lower (folded by hand).
+    const rimLift = [0.0021, -0.0012, 0.0016, -0.0019];
+    double h(int i, int j, int k) {
+      final x = math.sin(i * 12.9898 + j * 78.233 + k * 37.719) * 43758.5453;
+      return x - x.floorToDouble();
+    }
+
     for (var k = 0; k < 4; k++) {
       final a = corners[k], b = corners[(k + 1) % 4];
+      // Outward normal of this panel, in the horizontal plane.
       final nx = (a[1] + b[1]) == 0 ? (a[0] + b[0]) / 2 : 0.0;
       final nz = (a[0] + b[0]) == 0 ? (a[1] + b[1]) / 2 : 0.0;
       final base = pos.length ~/ 3;
-      for (final (c, t) in [(a, 0.0), (b, 1.0)]) {
-        for (final (y, half, v) in [(trayTop, halfBottom, 0.0), (trayTop + height, halfTop, 1.0)]) {
-          pos.addAll([c[0] * half, y, c[1] * half]);
-          nrm.addAll([nx, 0.12, nz]);
+      final grid = <List<double>>[];
+      for (var i = 0; i <= nu; i++) {
+        final t = i / nu;
+        for (var j = 0; j <= nv; j++) {
+          final v = j / nv;
+          final half = halfBottom + (halfTop - halfBottom) * v;
+          var x = (a[0] + (b[0] - a[0]) * t) * half;
+          var z = (a[1] + (b[1] - a[1]) * t) * half;
+          // Rim height: interpolate the two corners' lift along the top.
+          final lift = (rimLift[k] * (1 - t) + rimLift[(k + 1) % 4] * t) * v;
+          final y = trayTop + height * v + lift;
+          // Bow: the paper bulges between the corners and the tray, most
+          // near mid-height; a few small wrinkles on top. Corners and the
+          // bottom edge stay put.
+          final across = math.sin(math.pi * t);
+          final upward = math.pow(math.sin(math.pi * (0.15 + 0.85 * v)), 0.8).toDouble();
+          final interior = (i > 0 && i < nu && j > 0) ? 1.0 : 0.0;
+          final wrinkle = (h(i, j, k) - 0.5) * 0.0016 * interior;
+          final bow = 0.0045 * across * upward + wrinkle;
+          x += nx * bow;
+          z += nz * bow;
+          grid.add([x, y, z]);
           uv.addAll([k + t, v]);
         }
       }
-      // base: a-bottom, a-top, b-bottom, b-top
-      idx.addAll([base, base + 2, base + 3, base, base + 3, base + 1]);
+      // Normals from the grid (central differences), tilted a little up as
+      // before so the dusk sky lights the outside faintly.
+      for (var i = 0; i <= nu; i++) {
+        for (var j = 0; j <= nv; j++) {
+          final p0 = grid[(i > 0 ? i - 1 : i) * (nv + 1) + j], p1 = grid[(i < nu ? i + 1 : i) * (nv + 1) + j];
+          final q0 = grid[i * (nv + 1) + (j > 0 ? j - 1 : j)], q1 = grid[i * (nv + 1) + (j < nv ? j + 1 : j)];
+          final du = vm.Vector3(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]);
+          final dv = vm.Vector3(q1[0] - q0[0], q1[1] - q0[1], q1[2] - q0[2]);
+          final n = dv.cross(du)..normalize();
+          // Keep it facing outward.
+          if (n.x * nx + n.z * nz < 0) n.negate();
+          n.y += 0.12;
+          n.normalize();
+          final g = grid[i * (nv + 1) + j];
+          pos.addAll(g);
+          nrm.addAll([n.x, n.y, n.z]);
+        }
+      }
+      for (var i = 0; i < nu; i++) {
+        for (var j = 0; j < nv; j++) {
+          final p00 = base + i * (nv + 1) + j, p10 = p00 + nv + 1;
+          // Same winding as the M7 quads (a-bottom, b-bottom, b-top...).
+          idx.addAll([p00, p10, p10 + 1, p00, p10 + 1, p00 + 1]);
+        }
+      }
     }
     return MeshGeometry.fromArrays(
       positions: Float32List.fromList(pos),

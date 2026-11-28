@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'course.dart';
 import 'vec2.dart';
 import 'world.dart';
 
@@ -46,7 +47,7 @@ class Autopilot {
       final rel = l.pos - r.pos;
       final ahead = r.pos.y - l.pos.y;
       if (ahead < -0.05) continue;
-      final clear = rel.length - r.radius - 0.045;
+      final clear = rel.length - r.radius - Course.lanternRadius;
       if (clear < 0.18) {
         final cx = w.course.centerX(r.pos.y);
         final away = rel.x.abs() < 0.02 ? ((cx - r.pos.x).abs() > 0.02 ? (cx - r.pos.x).sign : 1.0) : rel.x.sign;

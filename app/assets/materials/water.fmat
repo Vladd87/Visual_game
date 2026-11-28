@@ -42,6 +42,12 @@ material {
     { type: float, name: normal_strength, default: 1.0 },
     { type: float, name: refraction, default: 1.4 },
     { type: float, name: foam_amount, default: 1.0 },
+    // M11: glitter from the lantern on small ripples (ref02): strength and
+    // the spread (rad) of the facet tilts on calm water.
+    { type: float, name: glitter, default: 1.0 },
+    { type: float, name: glitter_sigma, default: 0.16 },
+    // M11: the finer rain dimple layers (1 = on).
+    { type: float, name: rain_fine, default: 1.0 },
     { type: float, name: reflection, default: 1.0 },
     // Mean elevation (rad) of the treeline seen in the reflection; the
     // texture varies it by +-0.19 rad with azimuth.
@@ -186,6 +192,14 @@ fragment {
       acc += RingLayer(p, t * 1.3, 0.032, 5.0, 0.05, 0.007, 5.0, 0.24) * fine;
       acc += RingLayer(p, t * 1.1, 0.045, 6.0, 0.06, 0.007, 4.5, 0.24) * fine;
     }
+    // M11: denser small dimples (ref05, ref01): light rain pocks the whole
+    // surface with rings a centimetre or two across. Smaller crests, so a
+    // stricter pixel limit.
+    float finer = smoothstep(1.6, 2.4, 0.005 / max(px, 1e-5)) * material_params.rain_fine;
+    if (finer > 0.0) {
+      acc += RingLayer(p, t * 1.5, 0.022, 7.0, 0.04, 0.005, 6.0, 0.2) * finer;
+      acc += RingLayer(p, t * 1.7, 0.026, 8.0, 0.04, 0.005, 6.0, 0.2) * finer;
+    }
     return acc * amount;
   }
 
@@ -197,7 +211,8 @@ fragment {
   }
 
   // The lantern's paper seen along a reflected ray (M7): its glowing panels
-  // as a 6.6 cm box (turned by the lantern's yaw) standing 1.2-9.7 cm above
+  // M11: sizes x1.5 (LanternModel.scale); was a 6.6 cm box at 1.2-9.7 cm.
+  // as a 9.9 cm box (turned by the lantern's yaw) standing 1.8-14.6 cm above
   // its base, the dark tray below. Ripples tilt the ray, so the reflection
   // breaks into a column of glints under the lantern (ref02). Returns its
   // radiance in units of the lantern's light colour.
@@ -208,14 +223,14 @@ fragment {
     // World to lantern-local: the transpose of a rotation about +Y.
     highp vec2 o = vec2(cy * ow.x - sy * ow.y, sy * ow.x + cy * ow.y);
     highp vec2 d = vec2(cy * rd.x - sy * rd.z, sy * rd.x + cy * rd.z);
-    const float h = 0.033;
+    const float h = 0.0495;
     highp vec2 inv = 1.0 / max(abs(d), vec2(1e-5)) * sign(d + vec2(1e-9));
     highp vec2 t0 = (vec2(-h) - o) * inv, t1 = (vec2(h) - o) * inv;
     highp vec2 tn = min(t0, t1), tf = max(t0, t1);
     highp float tNear = max(tn.x, tn.y), tFar = min(tf.x, tf.y);
     if (tNear <= 0.0 || tNear >= tFar) return vec3(0.0);
-    float base = float(material_params.lantern_pos.y) - 0.035;
-    float v = (float(wp.y + rd.y * tNear) - base - 0.012) / 0.085;
+    float base = float(material_params.lantern_pos.y) - 0.0525;
+    float v = (float(wp.y + rd.y * tNear) - base - 0.018) / 0.1275;
     // Soft edges: thin chords at the box's silhouette, top and bottom.
     float chord = float((tFar - tNear) * length(d));
     float edge = smoothstep(0.0, 0.008, chord);
@@ -223,6 +238,53 @@ fragment {
     // Brightest low, where the candle sits (lantern.fmat).
     float profile = mix(1.0, 0.45, smoothstep(0.15, 1.0, v));
     return material_params.lantern_light * (profile * edge * span);
+  }
+
+  // M11: glitter (ref02). On real water at night a light source is seen
+  // in thousands of tiny glints: capillary ripples and rain dimples tilt
+  // small patches of surface every which way, and each patch tilted just
+  // right mirrors the light into the camera. With the light low on the
+  // water, the lit patches form a path from the light toward the viewer.
+  // Here the surface is cut into 8 mm cells; each has one facet with a
+  // random tilt (spread [sigma]) on top of the ripples, renewed several
+  // times a second, and lights up when that facet mirrors the paper
+  // (LanternMirror). A glint keeps its true brightness but is drawn at
+  // least about a pixel wide, dimmed by the area it covers.
+  vec3 Glitter(highp vec3 wp, vec3 v, vec2 macroSlope, highp float t, float sigma, float px) {
+    highp vec2 rel = wp.xz - material_params.lantern_pos.xz;
+    if (dot(rel, rel) > 1.44) return vec3(0.0);
+    const float cell = 0.008;
+    highp vec2 q = wp.xz / cell;
+    highp vec2 id = floor(q);
+    vec2 fq = vec2(fract(q));
+    // A glint is about 1.2 mm across; drawn at least 0.9 px.
+    float trueR = 0.0006 / cell;
+    float drawR = max(trueR, 0.9 * px / cell);
+    float areaK = (trueR * trueR) / (drawR * drawR);
+    highp float ts = t * 6.0;
+    highp float slot = floor(ts);
+    float w = float(fract(ts));
+    vec3 acc = vec3(0.0);
+    for (int k = 0; k < 2; k++) {
+      highp float sl = slot + float(k);
+      float wk = k == 0 ? 1.0 - w : w;
+      highp vec2 h1 = RainHash2(id + sl * 7.31);
+      highp vec2 h2 = RainHash2(id * 1.73 + sl * 3.17 + 11.0);
+      // A bell-shaped random tilt (sum of two uniforms, sd = sigma).
+      vec2 g = (vec2(h1) + vec2(h2) - 1.0) * 2.45 * sigma;
+      vec2 fs = macroSlope + g;
+      vec3 nf = normalize(vec3(-fs.x, 1.0, -fs.y));
+      vec3 L = LanternMirror(wp, reflect(-v, nf));
+      if (L.r + L.g + L.b <= 0.0) continue;
+      highp vec2 h3 = RainHash2(id * 2.37 + sl * 5.11 + 3.0);
+      vec2 c = 0.25 + 0.5 * vec2(h3);
+      float dd = length(fq - c);
+      float dotm = 1.0 - smoothstep(drawR * 0.6, drawR, dd);
+      float ndv = clamp(dot(nf, v), 0.0, 1.0);
+      float fr = 0.025 + 0.975 * pow(1.0 - ndv, 5.0);
+      acc += L * (fr * dotm * areaK * wk);
+    }
+    return acc;
   }
 
   // Planar reflection sampled at a ripple-displaced world point.
@@ -328,6 +390,13 @@ fragment {
     // Full ripple and rain tilt (the sky reflection uses a gentler one).
     vec3 nG = normalize(vec3(-slope.x, 1.0, -slope.y));
     reflected += LanternMirror(wp, reflect(-v, nG)) * f * material_params.lantern_mirror;
+    // M11: the glitter path (ref02); rougher in rain and turbulence.
+    {
+      highp vec2 gdx = dFdx(p), gdy = dFdy(p);
+      float gpx = float(max(length(gdx), length(gdy)));
+      float sigma = material_params.glitter_sigma * (1.0 + 0.8 * material_params.rain + 0.8 * turb);
+      reflected += Glitter(wp, v, slope, t, sigma, gpx) * material_params.lantern_mirror * material_params.glitter;
+    }
 
     // --- foam ----------------------------------------------------------------------
     // Streaks: long along the flow, narrow across it, advected downstream.

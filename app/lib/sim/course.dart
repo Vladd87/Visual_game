@@ -92,7 +92,8 @@ class Course {
   double get endD => poolCenter.y + poolRadius;
 
   static const double startD = 0.0;
-  static const double lanternRadius = 0.045;
+  // M11: the lantern is 1.5 times its M7 size (LanternModel.scale).
+  static const double lanternRadius = 0.045 * 1.5;
 
   factory Course.generate(int seed) {
     final rng = Rng(seed);

@@ -8,7 +8,8 @@
 // Instance colour carries a small per-rock tint (rgb) so repeats differ.
 material {
   name: "Rock",
-  shading_model: lit,
+  // M11: physical, for the clear coat (the rain's water film).
+  shading_model: physical,
   culling: back,
   parameters: [
     // Four samplers: the rock set's packed pair and the bank atlas (moss
@@ -19,6 +20,8 @@ material {
     { type: sampler2d, name: s_t1, hint: default_white },
     { type: sampler2d, name: s_t2, hint: default_white },
     { type: float, name: damp, default: 0.35 },
+    // M11: strength of the wet film (clear coat); 0 = off.
+    { type: float, name: wet_coat, default: 1.0 },
   ],
 }
 
@@ -39,6 +42,14 @@ fragment {
       gy *= 24.0 / m;
     }
     return textureGrad(t, a, gx, gy);
+  }
+
+  // Sine-free hash (16-bit safe on the phone, as ground.fmat).
+  float RockHash(highp vec2 p) {
+    p = mod(p, 289.0);
+    highp vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
   }
 
   void Surface(inout MaterialInputs material) {
@@ -106,11 +117,37 @@ fragment {
     rough = mix(rough, 0.07, band * (1.0 - moss * 0.8));
     rough = mix(rough, 0.25, under);
 
+    // M11: the rain's water film on stone (refs 01, 04, 13): a glossy coat
+    // over the textured rock, thinner on moss, full in the splash band;
+    // beads of water on the upward faces above it.
+    float coat = clamp(max(band, damp * 1.8 * (1.0 - moss * 0.6)), 0.0, 1.0) * (1.0 - under);
+    float coatRough = mix(0.12, 0.05, band);
+    vec3 coatN = normalize(mix(n, geo, 0.65));
+    if (geo.y > 0.35 && y > 0.03) {
+      highp vec2 dq = wp.xz / 0.008 + 0.61;
+      highp vec2 did = floor(dq);
+      vec2 df = vec2(fract(dq));
+      if (RockHash(did + 2.3) < 0.3) {
+        vec2 c = 0.3 + 0.4 * vec2(RockHash(did + 4.1), RockHash(did + 8.7));
+        float rad = 0.22 + 0.14 * RockHash(did + 6.2);
+        vec2 o = (df - c) / rad;
+        float o2 = dot(o, o);
+        if (o2 < 1.0) {
+          coatN = normalize(geo * sqrt(1.0 - o2) + vec3(o.x, 0.0, o.y) * 0.9);
+          coat = 1.0;
+          coatRough = 0.04;
+        }
+      }
+    }
+
     material.base_color = vec4(col, 1.0);
     material.normal = n;
     material.metallic = 0.0;
     material.roughness = clamp(rough, 0.05, 1.0);
     material.occlusion = arh.r;
+    material.clearcoat = coat * material_params.wet_coat;
+    material.clearcoat_roughness = coatRough;
+    material.clearcoat_normal = coatN;
     // Submerged stone loses its sheen; the water surface takes the highlight.
     material.specular = mix(1.0, 0.08, under);
   }

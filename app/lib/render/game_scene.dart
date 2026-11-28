@@ -47,6 +47,8 @@ class GameScene {
   /// paper decides which panel faces are seen from inside with it).
   vm.Vector3 cameraEye = vm.Vector3(0, 5, 5);
   late final Sprite _halo;
+  // M11: light scattered by the drizzle, far wider than the flame's glow.
+  late final Sprite _haloWide;
   bool _staticBuilt = false;
   PreprocessedMaterial? _waterMat;
   PreprocessedMaterial? _groundMat;
@@ -61,6 +63,8 @@ class GameScene {
   List<PlantModel> _plants = const [];
   List<MeshGeometry> _grassClumps = const [];
   Material? _fernMat, _sorrelMat, _grassMat;
+  // M11: the plant materials with wind (plant.fmat), for the per-frame time.
+  final List<PreprocessedMaterial> _plantMats = [];
   final List<Node> _plantNodes = [];
   // Sky-lit ambient for the hand-made terms in water.fmat and ground.fmat:
   // about a tenth of the open-sky radiance at envIntensity (blue hour).
@@ -269,26 +273,38 @@ class GameScene {
       ..baseColorFactor = vm.Vector4(0.06, 0.04, 0.025, 1)
       ..metallicFactor = 0
       ..roughnessFactor = 0.8;
-    final base = Node(name: 'lanternBase', mesh: Mesh(CuboidGeometry(vm.Vector3(0.04, 0.01, 0.04)), baseMat));
-    base.position = vm.Vector3(0, 0.012, 0);
+    // M11: sizes scale with the lantern (LanternModel.scale).
+    const ls = LanternModel.scale;
+    final base = Node(name: 'lanternBase', mesh: Mesh(CuboidGeometry(vm.Vector3(0.04 * ls, 0.01 * ls, 0.04 * ls)), baseMat));
+    base.position = vm.Vector3(0, LanternModel.trayTop, 0);
     base.lightChannelMask = _lanternSelfChannel;
     _lantern.add(base);
     // The candle flame, upright, seen through the open top.
     _flame = Sprite(
         texture: LanternModel.flameTexture(),
-        width: _tune('flamew', 0.014),
-        height: _tune('flameh', 0.03),
+        // A slightly bigger candle for the bigger lantern (M11).
+        width: _tune('flamew', 0.014 * 1.25),
+        height: _tune('flameh', 0.03 * 1.25),
         blendMode: SpriteBlendMode.additive,
         facing: BillboardFacing.axisLocked);
     _lantern.add(Node(name: 'lanternFlame', mesh: _flame.mesh)
-      ..position = vm.Vector3(0, 0.03, 0)
+      ..position = vm.Vector3(0, LanternModel.candleY - 0.005 * ls, 0)
       ..shadowCastingMode = ShadowCastingMode.off);
     // Glow in the damp air around the flame (refs 01, 03): a faint additive
     // halo that dissolves where it meets the bed or banks.
     _halo = Sprite(texture: _haloTexture(), width: 0.7, height: 0.7, blendMode: SpriteBlendMode.additive);
     _halo.material.softDepthFade = 0.05;
     _lantern.add(Node(name: 'lanternHalo', mesh: _halo.mesh)
-      ..position = vm.Vector3(0, 0.035, 0)
+      ..position = vm.Vector3(0, LanternModel.candleY, 0)
+      ..shadowCastingMode = ShadowCastingMode.off);
+    // M11: drizzle scatters a little of the lantern's light into a wide,
+    // faint glow in the air (ref03: a halo large next to its source;
+    // critics: "no halo in the wet air"). It fades where it meets the
+    // banks and the bed, so it reads as air, not a disc.
+    _haloWide = Sprite(texture: _haloTexture(), width: 1.8, height: 1.8, blendMode: SpriteBlendMode.additive);
+    _haloWide.material.softDepthFade = 0.15;
+    _lantern.add(Node(name: 'lanternHaloWide', mesh: _haloWide.mesh)
+      ..position = vm.Vector3(0, LanternModel.candleY + 0.03, 0)
       ..shadowCastingMode = ShadowCastingMode.off);
     _lanternLight = PointLight(
       color: lanternColor,
@@ -305,7 +321,9 @@ class GameScene {
       // waterline blob brighter than the lantern). The lantern's own parts
       // are on another light channel, so the larger sphere no longer
       // whitens them.
-      radius: _tune('lrad', 0.06),
+      // M11: the emitter is now 9.9 x 12.75 cm: a larger sphere, softer
+      // shadow edges.
+      radius: _tune('lrad', 0.06 * ls),
       // Wide penumbra: the bank lip and rocks cast soft-edged shade, not the
       // hard bright stripes critics flagged (round 12).
       shadowSoftness: 11.0,
@@ -317,7 +335,7 @@ class GameScene {
       channelMask: 0xFF & ~_lanternSelfChannel & ~_waterChannel,
     );
     _lanternLightNode = Node(name: 'lanternLight')..addComponent(PointLightComponent(_lanternLight));
-    _lanternLightNode.position = vm.Vector3(0, 0.035, 0);
+    _lanternLightNode.position = vm.Vector3(0, LanternModel.candleY, 0);
     _lantern.add(_lanternLightNode);
     scene.add(_lantern);
 
@@ -363,6 +381,10 @@ class GameScene {
       // Wet: a soft sheen.
       ..roughnessFactor = 0.45
       ..doubleSided = true;
+    // M11: a film of water over the leaf (it floats in the rain).
+    leafMat
+      ..clearcoat = 0.9 * _wetCoat
+      ..clearcoatRoughness = 0.07;
     _leafMesh = InstancedMesh(geometry: leafGeometry(), material: leafMat);
     // Mixed yellow and brown, as fallen leaves on a stream (ref08).
     const leafShades = [
@@ -431,7 +453,12 @@ class GameScene {
     _waterMat!.parameters.setFloat('normal_strength', _tune('nstr', 0.5));
     _waterMat!.parameters.setFloat('foam_amount', _tune('foam', 1.0));
     // M7: the lantern's reflection (see water.fmat LanternMirror).
-    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0));
+    // M11: dimmed with the paper's glow (paperDim).
+    _waterMat!.parameters.setFloat('lantern_mirror', _tune('lmirror', 13.0 * 0.75));
+    // M11: glitter path (water.fmat Glitter).
+    _waterMat!.parameters.setFloat('glitter', _tune('glitter', 1.0));
+    _waterMat!.parameters.setFloat('glitter_sigma', _tune('gsigma', 0.16));
+    _waterMat!.parameters.setFloat('rain_fine', _tune('rainfine', 1.0));
     // Ground and rocks bind few textures: Android guarantees only 16 fragment
     // samplers and the lit pipeline already uses about ten (surface_pack.dart).
     await Diagnostics.checkpoint('textures');
@@ -461,19 +488,43 @@ class GameScene {
     // M6 vegetation (Poly Haven fern_02 and shrub_sorrel_01, CC0).
     await Diagnostics.checkpoint('plants');
     _plants = await loadPlants();
-    _fernMat = _plantMaterial(await _loadTexture('assets/textures/plants/fern_02_col.png', content: TextureContent.color));
-    _sorrelMat = _plantMaterial(await _loadTexture('assets/textures/plants/shrub_sorrel_01_col.png', content: TextureContent.color));
+    final fernTex = await _loadTexture('assets/textures/plants/fern_02_col.png', content: TextureContent.color);
+    final sorrelTex = await _loadTexture('assets/textures/plants/shrub_sorrel_01_col.png', content: TextureContent.color);
+    final grassTex = _grassGradient();
+    _fernMat = _plantMaterial(fernTex);
+    _sorrelMat = _plantMaterial(sorrelTex);
     _grassMat = PhysicallyBasedMaterial()
-      ..baseColorTexture = _grassGradient()
+      ..baseColorTexture = grassTex
       ..doubleSided = true
       ..metallicFactor = 0
       // Rain-wet blades: a soft sheen.
-      ..roughnessFactor = 0.5;
-    _grassClumps = [for (var s = 0; s < 4; s++) buildGrassClump(101 + s, blades: 16 + 4 * s, height: 0.09 + 0.02 * s)];
+      ..roughnessFactor = 0.5
+      // M11: and a thin glossy film of rain on top.
+      ..clearcoat = 0.6 * _wetCoat
+      ..clearcoatRoughness = 0.12;
+    // `?grassm11=0`: the four M6 clumps, all living blades.
+    final grassM11 = _tune('grassm11', 1) > 0;
+    _grassClumps = grassM11
+        ? [for (var s = 0; s < grassClumpVariants; s++) buildGrassClumpVariant(s)]
+        : [for (var s = 0; s < 4; s++) buildGrassClump(101 + s, blades: 16 + 4 * s, height: 0.09 + 0.02 * s)];
+    // M11: the same plants, moving in the wind and wet (plant.fmat).
+    // `?plantfmat=0` keeps the M6 materials.
+    if (_tune('plantfmat', 1) > 0 && !Diagnostics.safeRender) {
+      double avgHeight(int kind) {
+        final hs = [for (final p in _plants) if (p.kind == kind) p.height];
+        return hs.isEmpty ? 0.3 : hs.reduce((a, b) => a + b) / hs.length;
+      }
+
+      _fernMat = await _windPlant(fernTex, height: avgHeight(0), roughness: 0.5);
+      _sorrelMat = await _windPlant(sorrelTex, height: avgHeight(1), roughness: 0.5);
+      _grassMat = await _windPlant(grassTex, height: 0.14, roughness: 0.5);
+    }
     // M5: rain wets the banks and rocks (0.35 was the light drizzle of M3/M4).
     final damp = _tune('damp', 0.7);
     for (final m in [_groundMat!, ..._rockMats]) {
       m.parameters.setFloat('damp', damp);
+      // M11: the rain's water film (clear coat); `?wetcoat=0` turns it off.
+      m.parameters.setFloat('wet_coat', _wetCoat);
     }
     _groundMat!.parameters.setFloat('moss_bias', _tune('mossbias', 0.1));
     // Blue hour (Poly Haven aarfontein_dawn) behind a forest treeline, baked by
@@ -564,16 +615,43 @@ class GameScene {
     ..alphaCutoff = 0.5
     ..doubleSided = true
     ..metallicFactor = 0
-    ..roughnessFactor = 0.5;
+    ..roughnessFactor = 0.5
+    // M11: rain-wet fronds and leaves: a thin glossy film.
+    ..clearcoat = 0.6 * _wetCoat
+    ..clearcoatRoughness = 0.12;
+
+  /// M11: a plant material that bends in the wind (plant.fmat).
+  Future<Material> _windPlant(Texture2D tex, {required double height, required double roughness}) async {
+    final m = await loadFmatMaterial('assets/materials/plant.fmat');
+    _bind(m, 'color_tex', tex);
+    m.parameters
+      ..setFloat('height', height)
+      ..setFloat('roughness', roughness)
+      // `?wind=0` holds them still.
+      ..setFloat('wind', _tune('wind', 1.0))
+      ..setFloat('wet_coat', 0.6 * _wetCoat)
+      ..setFloat('patches', _tune('patches', 1.0))
+      ..setFloat('transmission', _tune('ptrans', 0.25));
+    _plantMats.add(m);
+    return m;
+  }
+
+  /// M11: strength of the rain's water film on every surface (1 = on).
+  static double get _wetCoat => _tune('wetcoat', 1.0);
 
   /// Blade colour from base (dark, shaded by the clump) to tip (paler).
+  /// M11: two halves: living blades (left, u < 0.5) and dead, straw-coloured
+  /// ones (right; buildGrassClumpVariant picks the half per blade).
   static Texture2D _grassGradient() {
-    const w = 4, h = 64;
+    const w = 8, h = 64;
     final px = Uint8List(w * h * 4);
     for (var y = 0; y < h; y++) {
       final t = y / (h - 1); // v = 0 at the base
-      final r = (46 + 96 * t).round(), g = (62 + 110 * t).round(), b = (24 + 38 * t).round();
       for (var x = 0; x < w; x++) {
+        final dead = x >= w ~/ 2;
+        final r = dead ? (58 + 92 * t).round() : (46 + 96 * t).round();
+        final g = dead ? (46 + 80 * t).round() : (62 + 110 * t).round();
+        final b = dead ? (26 + 44 * t).round() : (24 + 38 * t).round();
         final o = (y * w + x) * 4;
         px[o] = r;
         px[o + 1] = g;
@@ -755,15 +833,20 @@ class GameScene {
     // its mirror image and glints read on the water at this steep view
     // (Fresnel ~3 %); the light it casts slightly lower again (bank stripes).
     _lanternLight.intensity = 0.15 + 0.66 * f * flicker;
-    _paper.emissiveStrength = 0.1 + 1.6 * f * flicker;
+    // M11: the same candle behind 2.25 times the paper: each patch of
+    // paper glows a little less (the phone showed it nearly white).
+    const paperDim = 0.75;
+    _paper.emissiveStrength = (0.1 + 1.6 * f * flicker) * paperDim;
     _paperMat?.parameters
       ?..setVec3('cam', cameraEye)
       ..setFloat('yaw', pose.angle);
-    _paperMat?.parameters.setFloat('glow', _tune('pglow', 0.15) + _tune('pglowf', 1.25) * f * flicker);
+    _paperMat?.parameters.setFloat('glow', (_tune('pglow', 0.15) + _tune('pglowf', 1.25) * f * flicker) * _tune('pdim', paperDim));
     final fl = 0.2 + 1.0 * f * flicker;
     _flame.color = vm.Vector4(1.0 * fl, 0.62 * fl, 0.26 * fl, 1.0) * _tune('flame', 4.0);
     _halo.color = vm.Vector4(1.0, 0.42, 0.13, 1.0) * ((0.03 + 0.18 * f * flicker) * _tune('halo', 1.0));
-    final lp = vm.Vector3(pose.pos.x, 0.035 + bob, -pose.pos.y);
+    // M11: `?mist=0` turns the wide glow off.
+    _haloWide.color = vm.Vector4(1.0, 0.5, 0.22, 1.0) * ((0.006 + 0.045 * f * flicker) * _tune('mist', 1.0));
+    final lp = vm.Vector3(pose.pos.x, LanternModel.candleY + bob, -pose.pos.y);
     // Focus on the lantern (M8).
     scene.depthOfField.focusDistance = (cameraEye - lp).length;
     final ll = lanternColor * _lanternLight.intensity;
@@ -779,13 +862,18 @@ class GameScene {
       // streaks everywhere read as an overlay).
       sky: vm.Vector3(0.002, 0.0025, 0.004),
     );
+    // M11: wind time for the plants (plant.fmat).
+    for (final m in _plantMats) {
+      m.parameters.setFloat('wind_time', realTime % 3600.0);
+    }
     for (final m in [_waterMat, _groundMat]) {
       if (m == null) continue;
       m.parameters.setVec3('lantern_pos', lp);
       m.parameters.setVec3('lantern_light', ll);
       m.parameters.setFloat('lantern_range', lanternRange);
       // The same extended-source near field for the custom lantern terms.
-      m.parameters.setFloat('lantern_soft', _tune('lsoft', 0.0055));
+      // M11: the bigger emitter softens the near field (source radius x1.5).
+      m.parameters.setFloat('lantern_soft', _tune('lsoft', 0.0055 * LanternModel.scale * LanternModel.scale));
       if (m == _waterMat) m.parameters.setFloat('lantern_yaw', pose.angle);
     }
 

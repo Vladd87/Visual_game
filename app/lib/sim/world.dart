@@ -42,7 +42,8 @@ class Tuning {
   static const double flameDecayPerSec = 1 / 270; // goes out at ~4.5 min with no fireflies
   static const double rainDecayBoost = 0.45; // up to +45% decay in heavy rain
   static const double fireflyGain = 0.06;
-  static const double pickupRadius = 0.075;
+  // M11: lantern radius plus the same 3 cm reach as before.
+  static const double pickupRadius = Course.lanternRadius + 0.03;
   static const double restitution = 0.25;
   static const double leafSmotherLoss = 0.03;
 }
