@@ -22,3 +22,17 @@ Only CC0 assets ship in the app. Every file is logged here with its source, URL 
 Planned sources (PLAN.md §3): Poly Haven models, textures and HDRIs, and ambientCG materials, all CC0. Audio will be synthesised offline (`tools/audio/`), so it is CC0 by construction.
 
 `references/` holds the critic's benchmark photos. They have their own licences (see `references/SOURCES.md`) and are never packaged into the app.
+
+## Audio (M10): procedural, CC0 by construction
+
+`tools/audio/synth_audio.py` generates every sound from noise and sine waves (no recordings, no third-party samples), seeded for reproducibility. Output in `app/assets/audio/`, 22.05 kHz mono 16-bit WAV:
+
+| File | What it is |
+|---|---|
+| `rain_loop.wav` | 20 s seamless loop: fine rain hiss plus about 45 tiny drop plinks per second of varied pitch and level |
+| `stream_loop.wav` | 20 s seamless loop: slow water burble (band-passed noise through wandering resonances) with occasional bubble chirps |
+| `firefly.wav` | soft glassy chime (E6 with fifth and octave partials), played when a firefly is collected |
+| `knock.wav` | dull wooden knock with a short click, played on a collision |
+| `rustle.wav` | wet leaf and paper rustle, played when a leaf smothers the lantern |
+| `finale.wav` | slow, soft rising C-major arpeggio, played when the run is won |
+
