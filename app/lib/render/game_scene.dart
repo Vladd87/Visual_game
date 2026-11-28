@@ -129,7 +129,21 @@ class GameScene {
       // M8 round 32: 1.6 -> 2.1 (+0.4 EV). Round 31 critics: the frame is
       // underexposed (mean about 22/255 against about 69 for ref02) and the
       // lantern never clips; a phone exposes a dusk scene brighter.
-      exposure: _tune('expo', 2.1),
+      exposure: _tune('expo', 3.4),
+      // M9 grade (round 36): the frames sat in a compressed, murky band
+      // (median 24/255, 95th percentile about 50) against the references'
+      // 44-102 and 97-241, with no blue-hour colour. Graded in linear HDR
+      // before AgX, so nothing is stretched after 8-bit quantisation:
+      // +0.7 EV, a little more AgX contrast, a faint blue lift in the
+      // shadows and a warm gain on the highlights (refs 05, 07, 15). The
+      // engine's own contrast pivots on linear mid-grey (0.18): this scene's
+      // ambient sits at 0.005-0.02, so even x1.15 clamped it to black.
+      agxContrast: _tune('agxc', 1.3),
+      colorGradingEnabled: _tune('grade', 1) > 0,
+      contrast: _tune('gcon', 1.0),
+      saturation: _tune('gsat', 1.15),
+      lift: vm.Vector3(_tune('liftr', -0.0005), _tune('liftg', 0.0), _tune('liftb', 0.002)),
+      gain: vm.Vector3(_tune('gainr', 1.03), 1.0, _tune('gainb', 0.96)),
       environmentIntensity: envIntensity,
       // Unlit dusk mist hugging the water: dark, so it deepens distance
       // rather than lifting the blacks into a veil.

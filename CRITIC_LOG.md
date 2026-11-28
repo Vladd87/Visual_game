@@ -1409,3 +1409,11 @@ M8's net gain over the M7 final is about **+0.9**. Camera-system scores went fro
   - water that does not read as rained on, with no glints or sky sheen and an intact lantern reflection (M2, M5, M7)
   - the hard-edged light the lantern casts on the banks (M4, M7)
 
+## Round 36: grade v1 (M9)
+
+**What changed** (built on round 33, judged against it):
+- **Exposure +0.7 EV** (2.1 → 3.4, graded in linear HDR before AgX, so nothing is stretched after 8-bit quantisation). In shot 1 the median rises from 24 to 33/255, the 95th percentile from 55 to 71 and the 5th from 11 to 16. That is still below the references (median 44–102) but toward a phone's dusk exposure. The M8 critics called the round-33 frame "a game tone-mapper's compressed band".
+- **Blue-hour colour:** a faint blue lift in the shadows and a warm gain on the highlights. The darks go from a neutral grey-teal (13, 17, 17) to a cool blue-teal (17, 24, 25), while the lantern's pool stays amber (refs 05, 07, 15).
+- **A little more AgX contrast** (1.25 → 1.3) and **saturation 1.15**.
+- **Not used:** the engine's contrast control pivots on linear mid-grey (0.18). This scene's ambient sits at 0.005–0.02, so even ×1.15 clamped it to black (a test frame went to median 4/255).
+
