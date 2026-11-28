@@ -487,7 +487,10 @@ class GameScene {
   /// Radiance of the open sky the water reflects, in the same units as
   /// [envIntensity]. The stream's surface sees the open sky gap above the
   /// channel, which the banks see only partly. Was 0.25 x 1.6 = 0.4; 1.2 from M4 v6.
-  static final double skyLevel = _tune('skylvl', 1.2);
+  // M9 round 38: 1.2 -> 2.5. Round 37 critics: water and banks sat at one
+  // flat level, "midnight, not dusk"; at dusk the water carries the sky
+  // and is much brighter than the banks (refs 01, 11).
+  static final double skyLevel = _tune('skylvl', 2.5);
 
   /// Reach of the lantern's light (m). M4 v7: 1.0 -> 0.65, so the banks show
   /// a hot spot near the lantern that dies quickly (refs 02, 10) instead of

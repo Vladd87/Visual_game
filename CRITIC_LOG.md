@@ -1463,5 +1463,5 @@ M8's net gain over the M7 final is about **+0.9**. Camera-system scores went fro
 **What both want next from the grade:** outside the lantern's pool, water and banks sit at one flat level (about 9–14/255), which "reads as midnight, not dusk". At dusk, water reflecting the sky is much brighter than the banks (refs 01, 11), and real frames have large-scale light and dark structure. Critic b also warned that on a dim phone screen the darkest 40 % of the inner frame becomes near-black mush. Other notes: the lit grass turns acid yellow-green, and a lantern in wet air should lift the blacks most near the light.
 
 **Changes for round 38 (grade v3, built on round 37):**
-- **The water carries the dusk sky.** The sky's level in the water's reflection is raised, so open water outside the lantern's pool is clearly brighter than the banks, the large-scale structure of a dusk photo of a stream.
+- **The water carries the dusk sky.** The sky's level in the water's reflection goes from 1.2 to 2.5, so open water outside the lantern's pool is clearly brighter than the banks. In shot 8 the median is water 27 to banks 9 (it was 14 to 9), the large-scale structure of a dusk photo of a stream.
 
